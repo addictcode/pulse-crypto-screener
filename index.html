@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse — скринер крипто-фьючерсов</title>
+<meta name="description" content="Реалтайм-скринер крипто-фьючерсов: цены, объёмы, фандинг, открытый интерес, ликвидации, сигналы пампов и всплесков объёма. Binance + Bybit.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0e17'/%3E%3Cpath d='M5 20 L11 20 L13 12 L17 25 L20 8 L23 20 L27 20' stroke='%234f8cff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="logo"><svg viewBox="0 0 32 32" width="22" height="22"><path d="M5 20 L11 20 L13 12 L17 25 L20 8 L23 20 L27 20" stroke="#4f8cff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>PULSE<span>фьючерсный скринер</span></div>
+  <div class="stat" id="st-btc"><s>BTC</s><b>—</b><i>—</i></div>
+  <div class="stat" id="st-eth"><s>ETH</s><b>—</b><i>—</i></div>
+  <div class="stat wide" id="st-liq">Ликв. 5м <b class="down">▼—</b> <b class="up">▲—</b></div>
+  <div class="stat wide" id="st-vol" title="Суммарный оборот отслеживаемых пар за 24 часа">Σ Объём <b>—</b></div>
+  <div class="spacer"></div>
+  <select id="exchange" title="Источник данных">
+    <option value="binance">Binance Futures</option>
+    <option value="bybit">Bybit Perp</option>
+  </select>
+  <div class="conn" id="conn"><i></i><span>подключение…</span></div>
+</header>
+
+<div id="toolbar">
+  <div class="viewtgl">
+    <button id="v-table" class="on" title="Табличный режим">☰ Таблица</button>
+    <button id="v-grid" title="Сетка живых графиков">▦ Графики</button>
+    <button id="v-dens" title="Карта плотностей: крупные лимитные заявки в стаканах">▤ Плотности</button>
+  </div>
+  <input id="search" type="text" placeholder="Поиск монеты…" spellcheck="false" autocomplete="off">
+  <select id="minvol" title="Минимальный объём торгов за 24 часа">
+    <option value="0">Объём: все</option>
+    <option value="1000000">≥ $1M</option>
+    <option value="5000000">≥ $5M</option>
+    <option value="10000000">≥ $10M</option>
+    <option value="50000000">≥ $50M</option>
+    <option value="100000000">≥ $100M</option>
+  </select>
+  <button id="watchonly" class="tgl" title="Показывать только избранное">★ Избранное</button>
+  <button id="sound" class="tgl" title="Звуковые уведомления о сигналах">🔔 Звук</button>
+  <div class="spacer"></div>
+  <div id="count" class="muted"></div>
+</div>
+
+<main>
+  <section id="tablewrap">
+    <table id="grid">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <div id="boot"><div class="spin"></div>Загрузка рыночных данных…</div>
+  </section>
+
+  <section id="gridwrap">
+    <div id="gridbar">
+      <div id="gtfs">
+        <button data-m="1" class="tf">1м</button>
+        <button data-m="5" class="tf on">5м</button>
+        <button data-m="15" class="tf">15м</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="gprev" class="pgbtn">‹</button>
+      <span id="gpage" class="muted">1 / 1</span>
+      <button id="gnext" class="pgbtn">›</button>
+    </div>
+    <div id="gridcells"></div>
+  </section>
+
+  <section id="denswrap">
+    <div id="densbar">
+      <select id="densmin" title="Минимальный размер плотности">
+        <option value="50000">от $50K</option>
+        <option value="100000">от $100K</option>
+        <option value="250000">от $250K</option>
+        <option value="500000">от $500K</option>
+        <option value="1000000">от $1M</option>
+      </select>
+      <select id="denssort" title="Сортировка">
+        <option value="dist">Сначала ближние</option>
+        <option value="usd">Сначала крупные</option>
+      </select>
+      <div class="densnote">Сканер стаканов топ-40 пар: заявки кратно крупнее среднего уровня, не дальше 5% от цены. Подсветка — плотность ближе 0.5%.</div>
+    </div>
+    <div id="denstable">
+      <table id="dgrid">
+        <thead><tr>
+          <th class="left">Пара</th><th>Цена</th><th>Уровень</th><th>Сторона</th>
+          <th title="Расстояние от текущей цены">Дист.</th><th>Объём</th>
+          <th title="Во сколько раз крупнее среднего уровня стакана">× сред.</th><th>Обн.</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside id="side">
+    <div id="chartbox">
+      <div id="chart-head">
+        <div class="ch-row">
+          <i id="ch-ava"></i>
+          <div id="ch-sym">—</div>
+          <div id="ch-price" class="ch-price">—</div>
+          <div id="ch-pct" class="ch-pct">—</div>
+          <div class="spacer"></div>
+          <button id="ch-expand" title="Развернуть график на весь экран">⛶</button>
+          <button id="ch-close" title="Закрыть">✕</button>
+        </div>
+        <div class="ch-row">
+          <div id="tfs"></div>
+          <div class="spacer"></div>
+          <button id="ch-dens" title="Показывать крупные лимитные заявки (стены стакана) на графике">≡ Стены</button>
+          <button id="ch-ind" title="Индикаторы">ƒ Индикаторы</button>
+        </div>
+        <div id="ch-meta">—</div>
+        <div id="bt-stats" class="hidden"></div>
+        <div id="indmenu" class="hidden"></div>
+      </div>
+      <div id="chart-area">
+        <div id="tools">
+          <button data-tool="" class="on" title="Курсор / выбор построений">⌖</button>
+          <button data-tool="trend" title="Трендовая линия">╱</button>
+          <button data-tool="ray" title="Луч">➤</button>
+          <button data-tool="hline" title="Горизонтальный уровень">─</button>
+          <button data-tool="rect" title="Прямоугольник (зона)">▭</button>
+          <button data-tool="fib" title="Уровни Фибоначчи">Fib</button>
+          <div class="tsep"></div>
+          <button id="t-del" title="Удалить выбранное построение (Del)">✕</button>
+          <button id="t-clear" title="Удалить все построения по паре">🗑</button>
+        </div>
+        <div id="chart-col">
+          <div id="chart-main"></div>
+          <div id="subpanes"></div>
+        </div>
+      </div>
+    </div>
+    <div id="paneltabs">
+      <button data-tab="signals" class="on">⚡ Сигналы</button>
+      <button data-tab="liqs">💥 Ликвидации</button>
+    </div>
+    <div id="signals" class="list"><div class="empty">Сигналы появятся по мере накопления данных</div></div>
+    <div id="liqs" class="list hidden"><div class="empty">Ожидание ликвидаций…</div></div>
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
