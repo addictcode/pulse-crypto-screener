@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Pulse</title>
+</head>
+<body>
+
+<header class="mast">
+  <span class="logo">Pulse</span>
+  <nav class="views" aria-label="Views">
+    <a class="view is-active" href="#" aria-current="page">Screener</a>
+    <a class="view" href="#" aria-disabled="true" title="Density map is the next milestone">Densities</a>
+  </nav>
+  <div class="market">
+    <div class="mk"><span class="mk-label">BTC</span><span class="mk-val"><span id="m-btc">&nbsp;</span><span id="m-btc-c"></span></span></div>
+    <div class="mk"><span class="mk-label">ETH</span><span class="mk-val"><span id="m-eth">&nbsp;</span><span id="m-eth-c"></span></span></div>
+    <div class="mk m-opt"><span class="mk-label">Volume 24h</span><span class="mk-val" id="m-vol">&nbsp;</span></div>
+    <div class="mk" title="Share of pairs up over 24h"><span class="mk-label">Breadth</span><span class="breadth" id="breadth"><i></i><i></i></span><span class="mk-val" id="breadth-v">&nbsp;</span></div>
+    <div class="mk sessions-wrap"><span class="mk-label">Sessions</span><span class="sessions" id="sessions"><span>Asia</span><span>London</span><span>New York</span></span></div>
+  </div>
+  <time class="clock" id="clock">00:00:00<span>UTC</span></time>
+</header>
+
+<main class="desk">
+  <section class="panel screener" aria-label="Screener">
+    <div class="p-head">
+      <h2 class="p-title">Screener</h2>
+      <div class="presets" role="tablist" aria-label="Presets" id="presets"></div>
+      <div class="filters">
+        <label class="field"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><span class="sr">Search symbol</span><input id="q" type="search" placeholder="Symbol" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
+        <label class="field vol-field"><span>Volume</span>
+          <select id="minvol">
+            <option value="0">any</option>
+            <option value="5000000">&ge; $5M</option>
+            <option value="50000000" selected>&ge; $50M</option>
+            <option value="200000000">&ge; $200M</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="table-wrap" id="table-wrap">
+      <table class="grid">
+        <thead><tr id="head"></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="panel instrument" id="instrument" aria-label="Selected instrument">
+    <div class="ins-head">
+      <div>
+        <h1 class="ins-sym" id="ins-sym">&nbsp;</h1>
+        <p class="ins-name" id="ins-name">&nbsp;</p>
+      </div>
+      <div class="ins-quote">
+        <span class="ins-price" id="ins-price">&nbsp;</span>
+        <span class="ins-chg" id="ins-chg">&nbsp;</span>
+      </div>
+    </div>
+    <div class="tags" id="tags" aria-label="Active highlights"></div>
+    <dl class="ins-stats">
+      <div><dt>24h range</dt><dd><span class="range"><span id="rng-lo">&nbsp;</span><span class="range-line"><i id="rng-mark"></i></span><span id="rng-hi">&nbsp;</span></span></dd></div>
+      <div><dt>Funding</dt><dd><span id="ins-fund">&nbsp;</span><span class="sub" id="ins-fund-t">&nbsp;</span></dd></div>
+      <div><dt>Open interest</dt><dd><span id="ins-oi">&nbsp;</span><span class="sub" id="ins-oi15">&nbsp;</span></dd></div>
+      <div><dt>Volume 24h</dt><dd><span id="ins-vol">&nbsp;</span><span class="sub" id="ins-volx">&nbsp;</span></dd></div>
+    </dl>
+    <div class="chart-bar">
+      <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
+      <div class="legend" aria-hidden="true">
+        <span class="down"><i class="dot"></i><span class="mute">Long liq</span></span>
+        <span class="up"><i class="dot"></i><span class="mute">Short liq</span></span>
+      </div>
+    </div>
+    <div class="chart" id="chart"></div>
+    <section class="book" aria-label="Order book walls">
+      <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta">walls within 5%</span></div>
+      <p class="empty-note">Wall detection arrives with the density scanner, the next milestone.</p>
+    </section>
+  </aside>
+
+  <section class="panel wire" aria-label="Wire">
+    <div class="p-head"><h2 class="p-title">Wire</h2><span class="p-meta" id="wire-meta">signals, newest first</span></div>
+    <div class="stories" id="stories">
+      <p class="empty-note">The signal detector is not running yet. Pumps, volume surges, open interest and funding alerts land here once it ships.</p>
+    </div>
+  </section>
+
+  <section class="panel liqs" aria-label="Liquidations">
+    <div class="p-head"><h2 class="p-title">Liquidations</h2><span class="p-meta">last 5 min</span></div>
+    <div class="split">
+      <span class="down" id="liq-l">Longs $0</span>
+      <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
+      <span class="up" id="liq-s">Shorts $0</span>
+    </div>
+    <ol class="liq-list" id="liqs"></ol>
+  </section>
+</main>
+
+<footer class="statusbar">
+  <span class="conn" id="st-conn">Connecting</span>
+  <span>Binance USDT-M</span>
+  <span id="st-pairs">&nbsp;</span>
+  <span id="st-age">&nbsp;</span>
+  <span class="keys">
+    <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> select</span>
+    <span><kbd>/</kbd> search</span>
+    <span><kbd>W</kbd> watchlist</span>
+    <a href="https://www.tradingview.com/" target="_blank" rel="noopener">Charts by TradingView</a>
+  </span>
+</footer>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
