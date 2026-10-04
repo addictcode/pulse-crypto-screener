@@ -11,21 +11,30 @@ import '@phosphor-icons/web/fill/style.css';
 import './styles.css';
 
 import { PriceChart } from './chart';
+import { Densities } from './densities';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
 import { connect, Market } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
+import { initViews } from './views';
 
 const market = new Market();
 const instrument = new InstrumentPanel(market);
 const chart = new PriceChart(market);
 new Masthead(market);
 new LiquidationsPanel(market);
-new Screener(market, (symbol) => {
+
+// the screener owns the selection; the density view selects through it so both stay in step
+let densities: Densities | null = null;
+const screener = new Screener(market, (symbol) => {
   instrument.show(symbol);
   chart.show(symbol);
+  densities?.setSelected(symbol);
 });
+densities = new Densities(market, (symbol) => screener.select(symbol));
+densities.setSelected(screener.selected);
+initViews((view) => densities?.setActive(view === 'densities'));
 
 const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
 connect(market, `${scheme}://${location.host}/ws/market`);

@@ -30,11 +30,24 @@ export interface Liquidation {
   time: number;
 }
 
+/** Mirror of dev.pulse.depth.Wall. distance is signed percent from the mid, age in seconds. */
+export interface Wall {
+  symbol: string;
+  side: 'BID' | 'ASK';
+  price: number;
+  size: number;
+  distance: number;
+  multiple: number;
+  age: number;
+  eatMinutes: number | null;
+}
+
 export type StreamMessage =
   | { type: 'snapshot'; ts: number; rows: SymbolMetrics[]; liquidations: Liquidation[] }
   | { type: 'delta'; ts: number; rows: SymbolMetrics[] }
   | { type: 'liquidations'; items: Liquidation[] }
-  | { type: 'sparklines'; series: Record<string, number[]> };
+  | { type: 'sparklines'; series: Record<string, number[]> }
+  | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> };
 
 export interface CandleDto {
   time: number;

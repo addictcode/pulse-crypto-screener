@@ -1,4 +1,4 @@
-import type { Liquidation, StreamMessage, SymbolMetrics } from './types';
+import type { Liquidation, StreamMessage, SymbolMetrics, Wall } from './types';
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting';
 
@@ -24,6 +24,11 @@ export class Market {
   readonly rows = new Map<string, SymbolMetrics>();
   readonly sparklines = new Map<string, number[]>();
   liquidations: Liquidation[] = [];
+  /** Every detected wall, nearest to its price first. */
+  walls: Wall[] = [];
+  /** Symbols with a live order book, and how far from the price that book is fully known. */
+  readonly coverage = new Map<string, number>();
+  private wallsBySymbol = new Map<string, Wall[]>();
   connection: ConnectionState = 'connecting';
   /** Server timestamp of the newest tick, used to show how fresh the data is. */
   lastTick = 0;
@@ -33,6 +38,7 @@ export class Market {
   readonly delta = new Emitter<Array<[SymbolMetrics | undefined, SymbolMetrics]>>();
   readonly newLiquidations = new Emitter<Liquidation[]>();
   readonly sparklinesUpdated = new Emitter<void>();
+  readonly wallsUpdated = new Emitter<void>();
   readonly connectionChanged = new Emitter<ConnectionState>();
 
   apply(message: StreamMessage) {
@@ -58,11 +64,32 @@ export class Market {
         this.liquidations = [...message.items.slice().reverse(), ...this.liquidations].slice(0, RECENT_LIQUIDATIONS);
         this.newLiquidations.emit(message.items);
         break;
+      case 'walls':
+        this.walls = message.walls;
+        this.wallsBySymbol = new Map();
+        for (const wall of message.walls) {
+          const list = this.wallsBySymbol.get(wall.symbol);
+          if (list) list.push(wall);
+          else this.wallsBySymbol.set(wall.symbol, [wall]);
+        }
+        this.coverage.clear();
+        Object.entries(message.coverage).forEach(([symbol, pct]) => this.coverage.set(symbol, pct));
+        this.wallsUpdated.emit();
+        break;
       case 'sparklines':
         Object.entries(message.series).forEach(([symbol, series]) => this.sparklines.set(symbol, series));
         this.sparklinesUpdated.emit();
         break;
     }
+  }
+
+  wallsFor(symbol: string): Wall[] {
+    return this.wallsBySymbol.get(symbol) ?? [];
+  }
+
+  /** The wall closest to the price, which is the one a trader reacts to. */
+  nearestWall(symbol: string): Wall | null {
+    return this.wallsBySymbol.get(symbol)?.[0] ?? null;
   }
 
   setConnection(state: ConnectionState) {

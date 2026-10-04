@@ -11,8 +11,8 @@
 <header class="mast">
   <span class="logo">Pulse</span>
   <nav class="views" aria-label="Views">
-    <a class="view is-active" href="#" aria-current="page">Screener</a>
-    <a class="view" href="#" aria-disabled="true" title="Density map is the next milestone">Densities</a>
+    <a class="view" href="#screener" data-view="screener">Screener</a>
+    <a class="view" href="#densities" data-view="densities">Densities</a>
   </nav>
   <div class="market">
     <div class="mk"><span class="mk-label">BTC</span><span class="mk-val"><span id="m-btc">&nbsp;</span><span id="m-btc-c"></span></span></div>
@@ -70,14 +70,14 @@
     <div class="chart-bar">
       <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
       <div class="legend" aria-hidden="true">
-        <span class="down"><i class="dot"></i><span class="mute">Long liq</span></span>
-        <span class="up"><i class="dot"></i><span class="mute">Short liq</span></span>
+        <span class="dim"><i class="dash"></i><span class="mute">Walls</span></span>
+        <span class="dim"><i class="dot"></i><span class="mute">Liquidations</span></span>
       </div>
     </div>
     <div class="chart" id="chart"></div>
     <section class="book" aria-label="Order book walls">
-      <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta">walls within 5%</span></div>
-      <p class="empty-note">Wall detection arrives with the density scanner, the next milestone.</p>
+      <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta" id="book-meta">walls within 5%</span></div>
+      <div class="ladder" id="ladder"></div>
     </section>
   </aside>
 
@@ -85,6 +85,33 @@
     <div class="p-head"><h2 class="p-title">Wire</h2><span class="p-meta" id="wire-meta">signals, newest first</span></div>
     <div class="stories" id="stories">
       <p class="empty-note">The signal detector is not running yet. Pumps, volume surges, open interest and funding alerts land here once it ships.</p>
+    </div>
+  </section>
+
+  <section class="panel densmap" aria-label="Density map">
+    <div class="p-head">
+      <h2 class="p-title">Densities</h2>
+      <div class="seg" role="group" aria-label="Distance from price" id="dm-dist"></div>
+      <div class="seg" role="group" aria-label="Minimum wall size" id="dm-size"></div>
+      <div class="seg" role="group" aria-label="Side" id="dm-side"></div>
+      <span class="p-meta" id="dm-meta"></span>
+    </div>
+    <div class="map-wrap" id="map-wrap">
+      <svg id="map" role="img" aria-label="Walls by distance from price and size"></svg>
+      <div class="map-tip" id="map-tip" hidden></div>
+    </div>
+  </section>
+
+  <section class="panel walllist" aria-label="Walls">
+    <div class="p-head"><h2 class="p-title">Walls</h2><span class="p-meta" id="wl-meta">nearest to price first</span></div>
+    <div class="table-wrap">
+      <table class="grid walls-grid">
+        <thead><tr>
+          <th class="sym">Symbol</th><th>Side</th><th>Price</th><th>Size</th><th>Distance</th>
+          <th class="c-sm">&times; avg</th><th class="c-sm">Age</th><th class="c-sm">Eaten in</th>
+        </tr></thead>
+        <tbody id="wl-rows"></tbody>
+      </table>
     </div>
   </section>
 

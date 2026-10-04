@@ -32,6 +32,21 @@ export const hms = (time: number) => new Date(time).toISOString().slice(11, 19);
 /** BTCUSDT -> BTC. Every pair here is USDT-margined, so the quote is noise. */
 export const base = (symbol: string) => symbol.replace(/USDT$/, '');
 
+/** 45s, 12m, 2h 05m */
+export const age = (seconds: number) => {
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+};
+
+export const eatTime = (minutes: number | null) => {
+  if (minutes === null) return '\u2013';
+  if (minutes < 1) return '<1 min';
+  if (minutes < 120) return `~${Math.round(minutes)} min`;
+  return `~${Math.round(minutes / 60)} h`;
+};
+
 export const countdown = (until: number | null, now = Date.now()) => {
   if (until === null) return '–';
   const minutes = Math.max(0, Math.round((until - now) / 60_000));

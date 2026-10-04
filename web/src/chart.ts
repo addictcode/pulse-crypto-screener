@@ -5,6 +5,7 @@ import {
   HistogramSeries,
   LineStyle,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type SeriesMarker,
@@ -12,7 +13,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 
-import { priceDigits, px } from './format';
+import { priceDigits, px, usd } from './format';
 import type { Market } from './market';
 import { load, save } from './storage';
 import type { CandleDto, Liquidation } from './types';
@@ -44,6 +45,7 @@ export class PriceChart {
   private markers: ISeriesMarkersPluginApi<Time> | null = null;
   private markerList: SeriesMarker<Time>[] = [];
   private lastBar: Bar | null = null;
+  private wallLines = new Map<string, IPriceLine>();
   private symbol = '';
   private interval = load('interval', '5m');
   private request = 0;
@@ -65,6 +67,7 @@ export class PriceChart {
       const mine = changes.find(([, next]) => next.symbol === this.symbol);
       if (mine) this.tick(mine[1].price);
     });
+    market.wallsUpdated.on(() => this.syncWalls());
     market.newLiquidations.on((items) => {
       const mine = items.filter((l) => l.symbol === this.symbol);
       if (mine.length) this.addLiquidationMarkers(mine);
@@ -159,6 +162,8 @@ export class PriceChart {
 
     this.markerList = [];
     this.markers = createSeriesMarkers(this.candles, []);
+    this.wallLines.clear();
+    this.syncWalls();
     this.addLiquidationMarkers(this.market.liquidations.filter((l) => l.symbol === this.symbol));
     this.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, bars.length - 110), to: bars.length + 3 });
   }
@@ -180,6 +185,36 @@ export class PriceChart {
       };
     }
     this.candles.update(this.lastBar);
+  }
+
+  /** Walls of this pair as dashed price lines, updated in place so they do not flicker. */
+  private syncWalls() {
+    if (!this.candles) return;
+    const wanted = new Map(this.market.wallsFor(this.symbol).map((w) => [`${w.side}:${w.price}`, w]));
+    for (const [key, line] of this.wallLines) {
+      if (!wanted.has(key)) {
+        this.candles.removePriceLine(line);
+        this.wallLines.delete(key);
+      }
+    }
+    for (const [key, wall] of wanted) {
+      const existing = this.wallLines.get(key);
+      if (existing) {
+        existing.applyOptions({ title: usd(wall.size) });
+        continue;
+      }
+      this.wallLines.set(
+        key,
+        this.candles.createPriceLine({
+          price: wall.price,
+          color: css(wall.side === 'BID' ? '--up' : '--down'),
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: usd(wall.size),
+        }),
+      );
+    }
   }
 
   private addLiquidationMarkers(items: Liquidation[]) {

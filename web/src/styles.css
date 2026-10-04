@@ -442,3 +442,70 @@ table.grid { width: 100%; border-collapse: separate; border-spacing: 0; }
 .view[aria-disabled="true"] { cursor: default; }
 .statusbar .conn[data-state="connecting"]::before,
 .statusbar .conn[data-state="reconnecting"]::before { background: var(--accent); }
+
+/* ---------- views ---------- */
+.densmap { grid-area: map; display: none; }
+.walllist { grid-area: list; display: none; }
+body[data-view="densities"] .desk { grid-template-areas: "map map instrument" "list list instrument"; }
+body[data-view="densities"] .screener,
+body[data-view="densities"] .wire,
+body[data-view="densities"] .liqs { display: none; }
+body[data-view="densities"] .densmap,
+body[data-view="densities"] .walllist { display: flex; }
+.view { cursor: pointer; }
+.view[aria-current="page"] { color: var(--ink); border-color: var(--rule-strong); background: var(--bg-1); }
+
+/* segmented filter, same language as the timeframe switch */
+.seg { display: flex; gap: 2px; }
+.seg button { font: 11.5px var(--f-num); color: var(--ink-3); padding: 3px 8px; border: 1px solid transparent; white-space: nowrap; }
+.seg button:hover { color: var(--ink-2); }
+.seg button[aria-pressed="true"] { color: var(--ink); border-color: var(--rule-strong); background: var(--bg-2); }
+.densmap .p-head { gap: 16px; }
+
+/* ---------- density map ---------- */
+.map-wrap { position: relative; flex: 1; min-height: 0; }
+.map-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.map-wrap .empty-note { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; margin: auto; }
+.m-grid { stroke: var(--rule-soft); stroke-width: 1; }
+.m-zone { fill: var(--accent); fill-opacity: .035; }
+.m-price { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 4; }
+.m-tick { font: 11px var(--f-num); fill: var(--ink-3); }
+.m-side { font: italic 500 15px var(--f-display); fill: var(--ink-3); }
+.m-label { font: 500 11px var(--f-ui); fill: var(--ink-2); pointer-events: none; }
+.m-label.sel { fill: var(--accent); }
+.b { stroke-width: 1; cursor: pointer; transition: stroke-width .15s; }
+.b.bid { fill: var(--up); stroke: var(--up); }
+.b.ask { fill: var(--down); stroke: var(--down); }
+.b.young { stroke-dasharray: 2 2; }
+.b:hover { stroke-width: 2; }
+.b.sel { stroke: var(--accent); stroke-width: 2; }
+.map-tip {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  background: var(--bg-2);
+  border: 1px solid var(--rule-strong);
+  padding: 9px 11px;
+  font: 11.5px/1.55 var(--f-num);
+  white-space: nowrap;
+}
+.map-tip b { font: 500 13px var(--f-ui); margin-right: 8px; }
+.map-tip .k { color: var(--ink-3); display: inline-block; width: 68px; }
+
+/* ---------- wall list ---------- */
+.walls-grid tbody tr.is-selected td { background: var(--bg-sel); }
+.walls-grid tbody tr.is-selected td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+/* ---------- order book ladder ---------- */
+.book .empty-note { padding: 0 16px 14px; }
+
+@media (max-width: 900px) {
+  .map-wrap { flex: none; height: 420px; }
+  .densmap .p-head { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px 14px; }
+  .densmap .p-meta { flex-basis: 100%; }
+  /* on a phone the map comes first in the density view, the instrument after the list */
+  body[data-view="densities"] .densmap { order: 1; }
+  body[data-view="densities"] .walllist { order: 2; }
+  body[data-view="densities"] .instrument { order: 3; }
+  .walllist .table-wrap { max-height: 60dvh; }
+}

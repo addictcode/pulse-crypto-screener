@@ -2,22 +2,34 @@ import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
 import { sparkline } from './sparkline';
 import { load, save } from './storage';
-import type { SymbolMetrics } from './types';
+import type { SymbolMetrics, Wall } from './types';
+import { currentView } from './views';
 
-type Key = keyof SymbolMetrics | 'star' | 'spark';
+type Key = keyof SymbolMetrics | 'star' | 'spark' | 'wall';
+
+/** Per-row data that does not live in SymbolMetrics. */
+interface RowContext {
+  starred: boolean;
+  spark: number[] | undefined;
+  wall: Wall | null;
+}
 
 interface Column {
   key: Key;
   label: string;
   cls?: string;
   sortable?: boolean;
-  cell: (r: SymbolMetrics, starred: boolean, spark: number[] | undefined) => string;
+  /** Sort value for keys that are not SymbolMetrics fields. */
+  value?: (r: SymbolMetrics, ctx: RowContext) => number | null;
+  /** Columns where the smallest value is the interesting one start ascending. */
+  ascendingFirst?: boolean;
+  cell: (r: SymbolMetrics, ctx: RowContext) => string;
 }
 
 interface Preset {
   id: string;
   label: string;
-  test: (r: SymbolMetrics, starred: boolean) => boolean;
+  test: (r: SymbolMetrics, ctx: RowContext) => boolean;
 }
 
 const abs = (v: number | null) => (v === null ? 0 : Math.abs(v));
@@ -30,15 +42,18 @@ export const RULES = {
   funding: 0.03,
   oiRise: 3,
   bigLiquidations: 250_000,
+  nearWall: 1,
+  hotWall: 0.5,
 };
 
 const PRESETS: Preset[] = [
   { id: 'all', label: 'All', test: () => true },
   { id: 'movers', label: 'Movers', test: (r) => abs(r.ch5m) >= RULES.move5m || abs(r.ch1h) >= RULES.move1h },
-  { id: 'surge', label: 'Volume surge', test: (r) => (r.surge ?? 0) >= RULES.surge },
-  { id: 'funding', label: 'Funding skew', test: (r) => abs(r.funding) >= RULES.funding },
+  { id: 'surge', label: 'Surge', test: (r) => (r.surge ?? 0) >= RULES.surge },
+  { id: 'funding', label: 'Funding', test: (r) => abs(r.funding) >= RULES.funding },
   { id: 'oi', label: 'OI rising', test: (r) => (r.oiCh15m ?? 0) >= RULES.oiRise },
-  { id: 'watch', label: 'Watchlist', test: (_r, starred) => starred },
+  { id: 'walls', label: 'Near walls', test: (_r, ctx) => ctx.wall !== null && Math.abs(ctx.wall.distance) <= RULES.nearWall },
+  { id: 'watch', label: 'Watchlist', test: (_r, ctx) => ctx.starred },
 ];
 
 const meter = (v: number | null) => {
@@ -54,13 +69,13 @@ const pctCell = (v: number | null, extra = '') =>
 const COLUMNS: Column[] = [
   {
     key: 'star', label: '', cls: 'c-star', sortable: false,
-    cell: (r, starred) =>
+    cell: (r, { starred }) =>
       `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? 'Remove from' : 'Add to'} watchlist"><i class="${starred ? 'ph-fill' : 'ph'} ph-star"></i></button></td>`,
   },
   { key: 'symbol', label: 'Symbol', cls: 'sym', cell: (r) => `<td class="sym">${base(r.symbol)}</td>` },
   {
-    key: 'spark', label: '2h', cls: 'spark c-sm', sortable: false,
-    cell: (_r, _s, spark) => `<td class="spark c-sm">${spark ? sparkline(spark) : ''}</td>`,
+    key: 'spark', label: '2h', cls: 'spark c-md', sortable: false,
+    cell: (_r, { spark }) => `<td class="spark c-md">${spark ? sparkline(spark) : ''}</td>`,
   },
   { key: 'price', label: 'Price', cell: (r) => `<td>${px(r.price)}</td>` },
   { key: 'ch5m', label: '5m', cell: (r) => pctCell(r.ch5m) },
@@ -78,14 +93,22 @@ const COLUMNS: Column[] = [
     key: 'funding', label: 'Funding', cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${abs(r.funding) >= RULES.funding ? 'hot' : 'dim'}">${pct(r.funding, 4)}</td>`,
   },
+  {
+    key: 'wall', label: 'Wall', cls: 'c-sm', ascendingFirst: true,
+    value: (_r, { wall }) => (wall ? Math.abs(wall.distance) : null),
+    cell: (_r, { wall }) =>
+      wall
+        ? `<td class="c-sm ${Math.abs(wall.distance) <= RULES.hotWall ? 'hot strong' : wall.side === 'BID' ? 'up' : 'down'}" title="${wall.side === 'BID' ? 'Bid' : 'Ask'} wall ${usd(wall.size)}">${pct(wall.distance, 2)}</td>`
+        : '<td class="c-sm flat">\u2013</td>',
+  },
   { key: 'oi', label: 'OI', cls: 'c-md', cell: (r) => `<td class="dim c-md">${usd(r.oi)}</td>` },
   {
     key: 'oiCh15m', label: 'OI 15m', cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${tone(r.oiCh15m, 0.1)}${(r.oiCh15m ?? 0) >= RULES.oiRise ? ' strong' : ''}">${pct(r.oiCh15m, 1)}</td>`,
   },
   {
-    key: 'liq5m', label: 'Liq 5m', cls: 'c-md',
-    cell: (r) => `<td class="c-md ${r.liq5m >= RULES.bigLiquidations ? 'strong' : 'dim'}">${r.liq5m > 0 ? usd(r.liq5m) : '–'}</td>`,
+    key: 'liq5m', label: 'Liq 5m', cls: 'c-lg',
+    cell: (r) => `<td class="c-lg ${r.liq5m >= RULES.bigLiquidations ? 'strong' : 'dim'}">${r.liq5m > 0 ? usd(r.liq5m) : '–'}</td>`,
   },
 ];
 
@@ -134,6 +157,7 @@ export class Screener {
     });
     market.delta.on((changes) => changes.forEach(([prev, next]) => this.refreshRow(prev, next)));
     market.sparklinesUpdated.on(() => this.refreshSparklines());
+    market.wallsUpdated.on(() => this.refreshWalls());
     setInterval(() => this.periodic(), RESORT_EVERY_MS);
   }
 
@@ -182,15 +206,17 @@ export class Screener {
     const q = this.state.query.trim().toUpperCase();
     const rows = [...this.market.rows.values()].filter(
       (r) =>
-        preset.test(r, this.starred.has(r.symbol)) &&
+        preset.test(r, this.context(r)) &&
         (this.state.preset === 'watch' || r.vol24h >= this.state.minVolume) &&
         (!q || base(r.symbol).includes(q)),
     );
-    const key = this.state.sortKey as keyof SymbolMetrics;
+    const column = COLUMNS.find((c) => c.key === this.state.sortKey);
+    const value = (r: SymbolMetrics) =>
+      column?.value ? column.value(r, this.context(r)) : r[this.state.sortKey as keyof SymbolMetrics];
     const dir = this.state.ascending ? 1 : -1;
     return rows.sort((a, b) => {
-      const av = a[key];
-      const bv = b[key];
+      const av = value(a);
+      const bv = value(b);
       if (av === null) return 1; // missing values sink regardless of direction
       if (bv === null) return -1;
       if (typeof av === 'string') return (av as string).localeCompare(bv as string) * dir;
@@ -198,11 +224,30 @@ export class Screener {
     });
   }
 
+  private context(r: SymbolMetrics): RowContext {
+    return {
+      starred: this.starred.has(r.symbol),
+      spark: this.market.sparklines.get(r.symbol),
+      wall: this.market.nearestWall(r.symbol),
+    };
+  }
+
   private rowHtml(r: SymbolMetrics) {
     const selected = r.symbol === this.state.selected;
-    const starred = this.starred.has(r.symbol);
-    const spark = this.market.sparklines.get(r.symbol);
-    return `<tr data-sym="${r.symbol}" tabindex="${selected ? 0 : -1}"${selected ? ' class="is-selected"' : ''}>${COLUMNS.map((c) => c.cell(r, starred, spark)).join('')}</tr>`;
+    const ctx = this.context(r);
+    return `<tr data-sym="${r.symbol}" tabindex="${selected ? 0 : -1}"${selected ? ' class="is-selected"' : ''}>${COLUMNS.map((c) => c.cell(r, ctx)).join('')}</tr>`;
+  }
+
+  /** Walls rescan once a second; only their cells change. */
+  private refreshWalls() {
+    const index = COLUMNS.findIndex((c) => c.key === 'wall');
+    const column = COLUMNS[index];
+    this.body.querySelectorAll<HTMLTableRowElement>('tr[data-sym]').forEach((tr) => {
+      const row = this.market.rows.get(tr.dataset.sym!);
+      if (!row) return;
+      const html = column.cell(row, this.context(row));
+      if (tr.children[index].outerHTML !== html) tr.children[index].outerHTML = html;
+    });
   }
 
   /** Swaps cells in place: cheaper than re-rendering and keeps hover and focus intact. */
@@ -233,7 +278,7 @@ export class Screener {
   private renderPresets() {
     const rows = [...this.market.rows.values()];
     this.presetsEl.innerHTML = PRESETS.map((p) => {
-      const n = rows.filter((r) => p.test(r, this.starred.has(r.symbol)) && (p.id === 'watch' || r.vol24h >= this.state.minVolume)).length;
+      const n = rows.filter((r) => p.test(r, this.context(r)) && (p.id === 'watch' || r.vol24h >= this.state.minVolume)).length;
       return `<button class="preset" role="tab" data-preset="${p.id}" aria-selected="${p.id === this.state.preset}">${p.label}<span class="count">${n}</span></button>`;
     }).join('');
   }
@@ -265,7 +310,7 @@ export class Screener {
       const th = (e.target as HTMLElement).closest<HTMLElement>('[data-sort]');
       const column = th && COLUMNS.find((c) => c.key === th.dataset.sort);
       if (!column || column.sortable === false) return;
-      this.state.ascending = this.state.sortKey === column.key ? !this.state.ascending : column.key === 'symbol';
+      this.state.ascending = this.state.sortKey === column.key ? !this.state.ascending : column.key === 'symbol' || !!column.ascendingFirst;
       this.state.sortKey = column.key;
       this.render();
     });
@@ -306,7 +351,7 @@ export class Screener {
         this.toggleStar(this.state.selected);
         return;
       }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && currentView() === 'screener') {
         const current = this.body.querySelector<HTMLElement>('tr.is-selected');
         const next = current && (e.key === 'ArrowDown' ? current.nextElementSibling : current.previousElementSibling);
         if (next instanceof HTMLElement && next.dataset.sym) {
