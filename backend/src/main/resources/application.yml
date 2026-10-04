@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: pulse-backend
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+pulse:
+  binance:
+    enabled: true
+    rest-url: https://fapi.binance.com
+    # the legacy /stream endpoint accepts subscriptions but delivers nothing
+    stream-url: wss://fstream.binance.com/market/stream
+    kline-history: 120
+    max-streams-per-connection: 800
+    rest-requests-per-second: 15
+    open-interest-poll: 60s
+    stale-after: 30s
+  stream:
+    broadcast-interval-ms: 500
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
