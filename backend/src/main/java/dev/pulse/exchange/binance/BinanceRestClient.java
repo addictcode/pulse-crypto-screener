@@ -1,35 +1,58 @@
 package dev.pulse.exchange.binance;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import dev.pulse.depth.DepthSnapshot;
 import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.MarkPriceUpdate;
 import dev.pulse.market.TickerUpdate;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Thin wrapper over the public USDT-M REST API with client-side rate limiting, so a bootstrap
- * of several hundred symbols never trips Binance's request weight limit.
+ * Thin wrapper over the public USDT-M REST API that keeps us inside Binance's limits.
  * <p>
- * Two lanes: background work (history, open interest) and interactive requests from the UI.
- * With one shared queue a chart request at startup would wait behind ~500 history loads.
+ * Requests go through separate lanes so slow background work never delays what a user is
+ * waiting for: background (history, open interest), interactive (chart history) and depth
+ * (order book snapshots, which are expensive). On top of that every response reports the weight
+ * used in the current minute; when it gets close to the limit, all lanes pause until the minute
+ * rolls over, and a 429 or 418 stops everything for as long as Binance asks.
  */
+@Slf4j
 final class BinanceRestClient {
 
     private static final int INTERACTIVE_REQUESTS_PER_SECOND = 5;
+    private static final String USED_WEIGHT_HEADER = "X-MBX-USED-WEIGHT-1M";
+    private static final Duration DEFAULT_BACKOFF = Duration.ofSeconds(60);
 
     private final RestClient http;
     private final BinanceParser parser;
+    private final int weightLimit;
     private final RateLimiter background;
     private final RateLimiter interactive = new RateLimiter(INTERACTIVE_REQUESTS_PER_SECOND);
+    private final RateLimiter depth;
 
-    BinanceRestClient(RestClient http, BinanceParser parser, int backgroundRequestsPerSecond) {
+    private volatile long pausedUntil;
+    private volatile int usedWeight;
+
+    BinanceRestClient(RestClient http, BinanceParser parser, int backgroundRequestsPerSecond, int depthRequestsPerSecond, int weightLimit) {
         this.http = http;
         this.parser = parser;
+        this.weightLimit = weightLimit;
         this.background = new RateLimiter(backgroundRequestsPerSecond);
+        this.depth = new RateLimiter(depthRequestsPerSecond);
+    }
+
+    int usedWeight() {
+        return usedWeight;
     }
 
     List<Instrument> instruments() {
@@ -58,6 +81,11 @@ final class BinanceRestClient {
         return parser.openInterest(get(background, "/fapi/v1/openInterest?symbol={symbol}", symbol));
     }
 
+    /** The deepest snapshot Binance offers (1000 levels per side, weight 20). */
+    DepthSnapshot depthSnapshot(String symbol) {
+        return parser.depthSnapshot(symbol, get(depth, "/fapi/v1/depth?symbol={symbol}&limit=1000", symbol));
+    }
+
     private List<Candle> klines(RateLimiter lane, String symbol, String interval, int limit) {
         JsonNode body = get(lane, "/fapi/v1/klines?symbol={symbol}&interval={interval}&limit={limit}", symbol, interval, limit);
         return parser.restKlines(body, System.currentTimeMillis());
@@ -69,6 +97,39 @@ final class BinanceRestClient {
      */
     private JsonNode get(RateLimiter lane, String uriTemplate, Object... variables) {
         lane.acquire();
-        return http.get().uri(uriTemplate, variables).retrieve().body(JsonNode.class);
+        waitWhilePaused();
+        try {
+            ResponseEntity<JsonNode> response = http.get().uri(uriTemplate, variables).retrieve().toEntity(JsonNode.class);
+            trackWeight(response.getHeaders().getFirst(USED_WEIGHT_HEADER));
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS || e.getStatusCode().value() == 418) {
+                String retryAfter = e.getResponseHeaders() == null ? null : e.getResponseHeaders().getFirst("Retry-After");
+                Duration backoff = retryAfter == null ? DEFAULT_BACKOFF : Duration.ofSeconds(Long.parseLong(retryAfter));
+                pausedUntil = System.currentTimeMillis() + backoff.toMillis();
+                log.warn("Binance rate limit hit ({}), pausing REST for {} s", e.getStatusCode().value(), backoff.toSeconds());
+            }
+            throw e;
+        }
+    }
+
+    private void trackWeight(String header) {
+        if (header == null) {
+            return;
+        }
+        usedWeight = Integer.parseInt(header);
+        if (usedWeight >= weightLimit) {
+            long now = System.currentTimeMillis();
+            long nextMinute = (now / 60_000 + 1) * 60_000;
+            pausedUntil = Math.max(pausedUntil, nextMinute);
+            log.info("Binance weight {} of the minute used, pausing REST for {} ms", usedWeight, nextMinute - now);
+        }
+    }
+
+    private void waitWhilePaused() {
+        long wait;
+        while ((wait = pausedUntil - System.currentTimeMillis()) > 0) {
+            LockSupport.parkNanos(wait * 1_000_000);
+        }
     }
 }

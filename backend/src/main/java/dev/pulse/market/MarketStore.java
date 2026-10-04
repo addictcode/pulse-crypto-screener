@@ -77,6 +77,25 @@ public class MarketStore implements MarketSink {
         }
     }
 
+    public double volume24h(String symbol) {
+        SymbolState state = states.get(symbol);
+        return state == null ? 0 : state.quoteVolume24h();
+    }
+
+    public Double volumePerMinute(String symbol, int minutes) {
+        SymbolState state = states.get(symbol);
+        return state == null ? null : state.volumePerMinute(minutes);
+    }
+
+    /** Most traded symbols first; the depth feed keeps order books only for these. */
+    public List<String> topByVolume(int limit) {
+        return states.entrySet().stream()
+                .sorted(Comparator.comparingDouble((Map.Entry<String, SymbolState> e) -> e.getValue().quoteVolume24h()).reversed())
+                .limit(limit)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
     public boolean isListed(String symbol) {
         return states.containsKey(symbol);
     }

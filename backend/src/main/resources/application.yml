@@ -20,6 +20,11 @@ pulse:
     rest-url: https://fapi.binance.com
     # the legacy /stream endpoint accepts subscriptions but delivers nothing
     stream-url: wss://fstream.binance.com/market/stream
+    # order book diff streams are only served on the public endpoint
+    public-stream-url: wss://fstream.binance.com/public/stream
+    # a 1000-level snapshot costs 20 weight; one per second stays well inside the 2400/min budget
+    depth-snapshots-per-second: 1
+    weight-limit: 2000
     kline-history: 120
     max-streams-per-connection: 800
     rest-requests-per-second: 15
@@ -30,3 +35,15 @@ pulse:
     allowed-origins:
       - http://localhost:5173
       - http://127.0.0.1:5173
+  density:
+    enabled: true
+    books: 60
+    reselect-interval: 10m
+    scan-interval-ms: 1000
+    max-distance-pct: 5
+    prune-distance-pct: 10
+    bucket-pct: 0.05
+    multiple: 8
+    min-notional: 25000
+    volume-share: 0.0003
+    max-per-side: 3

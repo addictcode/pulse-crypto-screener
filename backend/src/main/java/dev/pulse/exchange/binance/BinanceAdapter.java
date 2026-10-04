@@ -14,10 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import dev.pulse.config.PulseProperties;
 import dev.pulse.exchange.ExchangeAdapter;
@@ -27,7 +27,6 @@ import dev.pulse.market.Instrument;
 import dev.pulse.market.MarketSink;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Binance USDT-M futures. Startup order matters: streams open before the candle history
@@ -52,11 +51,15 @@ public class BinanceAdapter implements ExchangeAdapter {
 
     private volatile List<Instrument> instruments = List.of();
 
-    public BinanceAdapter(PulseProperties properties, MarketSink sink, JsonMapper mapper, RestClient.Builder restBuilder) {
+    private final ApplicationEventPublisher events;
+
+    BinanceAdapter(PulseProperties properties, MarketSink sink, BinanceParser parser, BinanceRestClient rest,
+                   ApplicationEventPublisher events) {
         this.config = properties.binance();
         this.sink = sink;
-        this.parser = new BinanceParser(mapper);
-        this.rest = new BinanceRestClient(restBuilder.baseUrl(config.restUrl()).build(), parser, config.restRequestsPerSecond());
+        this.parser = parser;
+        this.rest = rest;
+        this.events = events;
     }
 
     @Override
@@ -80,6 +83,8 @@ public class BinanceAdapter implements ExchangeAdapter {
             openStreams();
             loadHistory();
             pollOpenInterest();
+            // the depth feed waits for this: its snapshots are expensive and should not compete with history
+            events.publishEvent(new BinanceBootstrapped());
         } catch (RuntimeException e) {
             log.error("Binance bootstrap failed, retrying in 30 s", e);
             sleep(Duration.ofSeconds(30));

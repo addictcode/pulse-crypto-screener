@@ -3,6 +3,8 @@ package dev.pulse.exchange.binance;
 import java.util.ArrayList;
 import java.util.List;
 
+import dev.pulse.depth.DepthSnapshot;
+import dev.pulse.depth.DepthUpdate;
 import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.Liquidation;
@@ -109,6 +111,24 @@ final class BinanceParser {
         return result;
     }
 
+    /** A diff-depth frame from the public stream, or {@code null} for acks and anything else. */
+    DepthUpdate depthUpdate(String frame) {
+        JsonNode data = mapper.readTree(frame).path("data");
+        if (!"depthUpdate".equals(data.path("e").asString())) {
+            return null;
+        }
+        double[][] bids = levels(data.path("b"));
+        double[][] asks = levels(data.path("a"));
+        return new DepthUpdate(data.path("s").asString(), data.path("U").asLong(), data.path("u").asLong(),
+                data.path("pu").asLong(), data.path("E").asLong(), bids[0], bids[1], asks[0], asks[1]);
+    }
+
+    DepthSnapshot depthSnapshot(String symbol, JsonNode node) {
+        double[][] bids = levels(node.path("bids"));
+        double[][] asks = levels(node.path("asks"));
+        return new DepthSnapshot(symbol, node.path("lastUpdateId").asLong(), bids[0], bids[1], asks[0], asks[1]);
+    }
+
     double openInterest(JsonNode node) {
         return num(node, "openInterest");
     }
@@ -132,6 +152,17 @@ final class BinanceParser {
         PositionSide side = "SELL".equals(o.path("S").asString()) ? PositionSide.LONG : PositionSide.SHORT;
         double price = num(o, "ap") > 0 ? num(o, "ap") : num(o, "p");
         return new Liquidation(o.path("s").asString(), side, price, num(o, "z"), o.path("T").asLong());
+    }
+
+    /** [["price", "qty"], ...] into parallel arrays. */
+    private static double[][] levels(JsonNode array) {
+        double[] prices = new double[array.size()];
+        double[] quantities = new double[array.size()];
+        for (int i = 0; i < array.size(); i++) {
+            prices[i] = array.get(i).get(0).asDouble();
+            quantities[i] = array.get(i).get(1).asDouble();
+        }
+        return new double[][] {prices, quantities};
     }
 
     private static double num(JsonNode node, String field) {

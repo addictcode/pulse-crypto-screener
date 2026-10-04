@@ -127,6 +127,23 @@ final class SymbolState {
                 Math.round(liq5m));
     }
 
+    synchronized double quoteVolume24h() {
+        return quoteVolume24h;
+    }
+
+    /** Average traded value per minute over the last {@code minutes} candles, or null without history. */
+    synchronized Double volumePerMinute(int minutes) {
+        if (candles.size() < minutes) {
+            return null;
+        }
+        double sum = 0;
+        int counted = 0;
+        for (var it = candles.descendingIterator(); it.hasNext() && counted < minutes; counted++) {
+            sum += it.next().quoteVolume();
+        }
+        return sum / minutes;
+    }
+
     synchronized List<Double> sparkline(int points) {
         return MetricsCalculator.sparkline(new ArrayList<>(candles), points);
     }

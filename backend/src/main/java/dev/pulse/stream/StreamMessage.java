@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import dev.pulse.depth.Wall;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.SymbolMetrics;
 
@@ -34,6 +35,17 @@ public sealed interface StreamMessage {
         @JsonProperty
         public String type() {
             return "liquidations";
+        }
+    }
+
+    /**
+     * Every wall currently detected, nearest to the price first, plus how much of each tracked
+     * book is fully known. Sent whole once a second: a few hundred walls at most.
+     */
+    record Walls(long ts, List<Wall> walls, Map<String, Double> coverage) implements StreamMessage {
+        @JsonProperty
+        public String type() {
+            return "walls";
         }
     }
 

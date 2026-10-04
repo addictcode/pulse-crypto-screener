@@ -11,6 +11,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import dev.pulse.depth.DensityScanner;
 import dev.pulse.market.MarketStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class MarketSocketHandler extends TextWebSocketHandler {
     private static final int BUFFER_LIMIT_BYTES = 4 * 1024 * 1024;
 
     private final MarketStore store;
+    private final DensityScanner density;
     private final JsonMapper mapper;
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
@@ -40,6 +42,8 @@ public class MarketSocketHandler extends TextWebSocketHandler {
         long now = System.currentTimeMillis();
         send(safe, new StreamMessage.Snapshot(now, store.snapshot(now), store.recentLiquidations(50)));
         send(safe, new StreamMessage.Sparklines(store.sparklines(24)));
+        DensityScanner.DensityState walls = density.latest();
+        send(safe, new StreamMessage.Walls(walls.ts(), walls.walls(), walls.coverage()));
     }
 
     @Override

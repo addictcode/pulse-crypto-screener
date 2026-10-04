@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import dev.pulse.depth.DensityScanner;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.MarketStore;
 import dev.pulse.market.SymbolMetrics;
@@ -21,6 +22,8 @@ public class MarketBroadcaster {
 
     private final MarketStore store;
     private final MarketSocketHandler sockets;
+    private final DensityScanner density;
+    private long lastWallsTs;
 
     @Scheduled(fixedRateString = "${pulse.stream.broadcast-interval-ms}")
     void tick() {
@@ -36,6 +39,11 @@ public class MarketBroadcaster {
         }
         if (!liquidations.isEmpty()) {
             sockets.broadcast(new StreamMessage.Liquidations(liquidations));
+        }
+        DensityScanner.DensityState walls = density.latest();
+        if (walls.ts() != lastWallsTs) {
+            lastWallsTs = walls.ts();
+            sockets.broadcast(new StreamMessage.Walls(walls.ts(), walls.walls(), walls.coverage()));
         }
     }
 

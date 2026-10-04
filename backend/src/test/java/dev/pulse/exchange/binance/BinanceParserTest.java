@@ -66,6 +66,26 @@ class BinanceParserTest {
     }
 
     @Test
+    void parsesDepthUpdateAndSnapshot() {
+        var update = parser.depthUpdate("""
+                {"stream":"btcusdt@depth@500ms","data":{"e":"depthUpdate","E":1791152545116,"T":1791152545110,
+                "s":"BTCUSDT","U":11734827360804,"u":11734827390088,"pu":11734827360739,
+                "b":[["86200.1","1.250"],["86199.9","0"]],"a":[["86200.2","3.5"]]}}
+                """);
+        var snapshot = parser.depthSnapshot("BTCUSDT", mapper.readTree("""
+                {"lastUpdateId":11734828309436,"bids":[["86200.1","1.2"]],"asks":[["86200.2","0.4"],["86200.3","2"]]}
+                """));
+
+        assertThat(update.symbol()).isEqualTo("BTCUSDT");
+        assertThat(update.previousFinalUpdateId()).isEqualTo(11734827360739L);
+        assertThat(update.bidPrices()).containsExactly(86200.1, 86199.9);
+        assertThat(update.bidQuantities()).containsExactly(1.25, 0.0);
+        assertThat(snapshot.lastUpdateId()).isEqualTo(11734828309436L);
+        assertThat(snapshot.askQuantities()).containsExactly(0.4, 2.0);
+        assertThat(parser.depthUpdate("{\"result\":null,\"id\":3}")).isNull();
+    }
+
+    @Test
     void ignoresSubscriptionAcks() {
         parser.dispatch("{\"result\":null,\"id\":1}", sink);
 
