@@ -22,6 +22,7 @@ import org.springframework.web.client.RestClient;
 import dev.pulse.config.PulseProperties;
 import dev.pulse.exchange.ExchangeAdapter;
 import dev.pulse.exchange.ExchangeStatus;
+import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.MarketSink;
 import jakarta.annotation.PreDestroy;
@@ -106,7 +107,7 @@ public class BinanceAdapter implements ExchangeAdapter {
         for (Instrument instrument : instruments) {
             pending.add(workers.submit(() -> {
                 try {
-                    sink.onCandleHistory(instrument.symbol(), rest.klines(instrument.symbol(), config.klineHistory()));
+                    sink.onCandleHistory(instrument.symbol(), rest.historyKlines(instrument.symbol(), config.klineHistory()));
                     historyLoaded.incrementAndGet();
                 } catch (RuntimeException e) {
                     log.warn("Binance: klines for {} failed: {}", instrument.symbol(), e.getMessage());
@@ -147,6 +148,11 @@ public class BinanceAdapter implements ExchangeAdapter {
     @Scheduled(fixedDelay = 10_000)
     void watchdog() {
         connections.forEach(c -> c.restartIfStale(config.staleAfter()));
+    }
+
+    @Override
+    public List<Candle> candles(String symbol, String interval, int limit) {
+        return rest.chartKlines(symbol, interval, limit);
     }
 
     @Override

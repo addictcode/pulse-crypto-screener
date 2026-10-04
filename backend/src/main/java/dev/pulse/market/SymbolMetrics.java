@@ -12,6 +12,8 @@ public record SymbolMetrics(
         Double ch15m,
         Double ch1h,
         Double ch24h,
+        Double high24h,
+        Double low24h,
         double vol24h,
         Double surge,
         Double natr,

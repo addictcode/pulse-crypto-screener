@@ -77,6 +77,10 @@ public class MarketStore implements MarketSink {
         }
     }
 
+    public boolean isListed(String symbol) {
+        return states.containsKey(symbol);
+    }
+
     public List<String> symbols() {
         return states.keySet().stream().sorted().toList();
     }

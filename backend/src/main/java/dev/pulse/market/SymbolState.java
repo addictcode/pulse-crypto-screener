@@ -25,6 +25,8 @@ final class SymbolState {
 
     private double price;
     private double openPrice24h;
+    private double highPrice24h;
+    private double lowPrice24h;
     private double quoteVolume24h;
     private double markPrice;
     private Double fundingRate;
@@ -37,6 +39,8 @@ final class SymbolState {
     synchronized void applyTicker(TickerUpdate t) {
         price = t.lastPrice();
         openPrice24h = t.openPrice24h();
+        highPrice24h = t.highPrice24h();
+        lowPrice24h = t.lowPrice24h();
         quoteVolume24h = t.quoteVolume24h();
     }
 
@@ -110,6 +114,9 @@ final class SymbolState {
                 round(MetricsCalculator.changePct(history, price, 15), 3),
                 round(MetricsCalculator.changePct(history, price, 60), 3),
                 round(openPrice24h > 0 ? (price / openPrice24h - 1) * 100 : null, 3),
+                // the ticker refreshes once a second, the live price can already be outside its range
+                highPrice24h > 0 ? Math.max(highPrice24h, price) : null,
+                lowPrice24h > 0 ? Math.min(lowPrice24h, price) : null,
                 Math.round(quoteVolume24h),
                 round(MetricsCalculator.surge(history), 2),
                 round(MetricsCalculator.natr(history, 14), 3),
