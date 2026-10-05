@@ -13,6 +13,7 @@ import dev.pulse.depth.DepthSnapshot;
 import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.MarkPriceUpdate;
+import dev.pulse.market.OpenInterestPoint;
 import dev.pulse.market.TickerUpdate;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
@@ -79,6 +80,12 @@ final class BinanceRestClient {
 
     double openInterest(String symbol) {
         return parser.openInterest(get(background, "/fapi/v1/openInterest?symbol={symbol}", symbol));
+    }
+
+    /** Recent 5-minute open interest, so the 15-minute change is known right after startup. */
+    List<OpenInterestPoint> openInterestHistory(String symbol, int points) {
+        return parser.openInterestHistory(
+                get(background, "/futures/data/openInterestHist?symbol={symbol}&period=5m&limit={limit}", symbol, points));
     }
 
     /** The deepest snapshot Binance offers (1000 levels per side, weight 20). */

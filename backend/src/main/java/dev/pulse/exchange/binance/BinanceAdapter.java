@@ -38,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(prefix = "pulse.binance", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class BinanceAdapter implements ExchangeAdapter {
 
+    /** Five 5-minute points: always at least one 15 minutes old. */
+    private static final int OPEN_INTEREST_HISTORY_POINTS = 5;
     private static final List<String> MARKET_WIDE_STREAMS = List.of("!ticker@arr", "!markPrice@arr@1s", "!forceOrder@arr");
 
     private final PulseProperties.Binance config;
@@ -82,6 +84,7 @@ public class BinanceAdapter implements ExchangeAdapter {
             rest.premiumIndex().forEach(sink::onMarkPrice);
             openStreams();
             loadHistory();
+            loadOpenInterestHistory();
             pollOpenInterest();
             // the depth feed waits for this: its snapshots are expensive and should not compete with history
             events.publishEvent(new BinanceBootstrapped());
@@ -119,6 +122,11 @@ public class BinanceAdapter implements ExchangeAdapter {
                 }
             }));
         }
+        awaitAll(pending);
+        log.info("Binance: candle history for {} symbols in {} s", historyLoaded.get(), (System.currentTimeMillis() - started) / 1000);
+    }
+
+    private static void awaitAll(List<Future<?>> pending) {
         for (Future<?> future : pending) {
             try {
                 future.get();
@@ -129,7 +137,26 @@ public class BinanceAdapter implements ExchangeAdapter {
                 // already logged inside the task
             }
         }
-        log.info("Binance: candle history for {} symbols in {} s", historyLoaded.get(), (System.currentTimeMillis() - started) / 1000);
+    }
+
+    /**
+     * Seeds each symbol with the last ~20 minutes of 5-minute open interest. Without it the
+     * "OI 15m" column and the open interest signal stay empty for the first quarter of an hour.
+     */
+    private void loadOpenInterestHistory() {
+        List<Future<?>> pending = new ArrayList<>();
+        for (Instrument instrument : instruments) {
+            pending.add(workers.submit(() -> {
+                try {
+                    rest.openInterestHistory(instrument.symbol(), OPEN_INTEREST_HISTORY_POINTS)
+                            .forEach(p -> sink.onOpenInterest(instrument.symbol(), p.contracts(), p.time()));
+                } catch (RuntimeException e) {
+                    log.debug("Binance: open interest history for {} failed: {}", instrument.symbol(), e.getMessage());
+                }
+            }));
+        }
+        awaitAll(pending);
+        log.info("Binance: open interest history loaded");
     }
 
     /**

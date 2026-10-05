@@ -10,6 +10,7 @@ import dev.pulse.market.Instrument;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.MarkPriceUpdate;
 import dev.pulse.market.MarketSink;
+import dev.pulse.market.OpenInterestPoint;
 import dev.pulse.market.PositionSide;
 import dev.pulse.market.TickerUpdate;
 import tools.jackson.databind.JsonNode;
@@ -127,6 +128,15 @@ final class BinanceParser {
         double[][] bids = levels(node.path("bids"));
         double[][] asks = levels(node.path("asks"));
         return new DepthSnapshot(symbol, node.path("lastUpdateId").asLong(), bids[0], bids[1], asks[0], asks[1]);
+    }
+
+    /** /futures/data/openInterestHist: 5-minute points, oldest first. */
+    List<OpenInterestPoint> openInterestHistory(JsonNode array) {
+        List<OpenInterestPoint> points = new ArrayList<>();
+        for (JsonNode p : array) {
+            points.add(new OpenInterestPoint(p.path("timestamp").asLong(), num(p, "sumOpenInterest")));
+        }
+        return points;
     }
 
     double openInterest(JsonNode node) {

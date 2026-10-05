@@ -2,6 +2,7 @@ package dev.pulse.market;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 import java.util.TreeMap;
@@ -83,8 +84,21 @@ final class SymbolState {
         }
     }
 
+    /**
+     * Keeps points ordered by time: history loads at startup can finish after the first live poll.
+     */
     synchronized void applyOpenInterest(double contracts, long time) {
-        openInterest.addLast(new OpenInterestPoint(time, contracts));
+        OpenInterestPoint point = new OpenInterestPoint(time, contracts);
+        OpenInterestPoint last = openInterest.peekLast();
+        if (last == null || time >= last.time()) {
+            openInterest.addLast(point);
+        } else {
+            List<OpenInterestPoint> ordered = new ArrayList<>(openInterest);
+            ordered.add(point);
+            ordered.sort(Comparator.comparingLong(OpenInterestPoint::time));
+            openInterest.clear();
+            openInterest.addAll(ordered);
+        }
         while (openInterest.size() > MAX_OPEN_INTEREST_POINTS) {
             openInterest.pollFirst();
         }

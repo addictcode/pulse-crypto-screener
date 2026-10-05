@@ -228,6 +228,8 @@ table.grid { width: 100%; border-collapse: separate; border-spacing: 0; }
 .grid tbody tr.is-selected td.sym { color: var(--accent); }
 .grid tbody tr:focus-visible { outline: none; }
 .grid tbody tr:focus-visible td { background: var(--bg-2); }
+.icon { width: 1em; height: 1em; display: block; }
+.field-icon { display: inline-flex; font-size: 13px; }
 .star { color: var(--ink-3); font-size: 14px; display: inline-flex; padding: 4px; margin: -4px; }
 .star:hover { color: var(--ink-2); }
 .star.on { color: var(--accent); }

@@ -86,6 +86,17 @@ class BinanceParserTest {
     }
 
     @Test
+    void parsesOpenInterestHistory() {
+        var points = parser.openInterestHistory(mapper.readTree("""
+                [{"symbol":"WIFUSDT","sumOpenInterest":"73028321.6","sumOpenInterestValue":"18432348.37","timestamp":1791159900000},
+                 {"symbol":"WIFUSDT","sumOpenInterest":"73000862.3","sumOpenInterestValue":"18405782.60","timestamp":1791160200000}]
+                """));
+
+        assertThat(points).extracting(p -> p.time()).containsExactly(1791159900000L, 1791160200000L);
+        assertThat(points.getFirst().contracts()).isEqualTo(73028321.6);
+    }
+
+    @Test
     void ignoresSubscriptionAcks() {
         parser.dispatch("{\"result\":null,\"id\":1}", sink);
 

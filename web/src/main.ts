@@ -6,12 +6,11 @@ import '@fontsource/schibsted-grotesk/600.css';
 import '@fontsource/azeret-mono/400.css';
 import '@fontsource/azeret-mono/500.css';
 import '@fontsource/azeret-mono/600.css';
-import '@phosphor-icons/web/regular/style.css';
-import '@phosphor-icons/web/fill/style.css';
 import './styles.css';
 
 import { PriceChart } from './chart';
 import { Densities } from './densities';
+import { ICONS } from './icons';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
 import { connect, Market } from './market';
@@ -19,6 +18,8 @@ import { Masthead } from './masthead';
 import { Screener } from './screener';
 import { initViews } from './views';
 import { Wire } from './wire';
+
+document.getElementById('search-icon')!.innerHTML = ICONS.search;
 
 const market = new Market();
 const instrument = new InstrumentPanel(market);

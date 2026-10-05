@@ -1,6 +1,7 @@
 import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
 import { sparkline } from './sparkline';
+import { ICONS } from './icons';
 import { load, save } from './storage';
 import type { SymbolMetrics, Wall } from './types';
 import { currentView } from './views';
@@ -70,7 +71,7 @@ const COLUMNS: Column[] = [
   {
     key: 'star', label: '', cls: 'c-star', sortable: false,
     cell: (r, { starred }) =>
-      `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? 'Remove from' : 'Add to'} watchlist"><i class="${starred ? 'ph-fill' : 'ph'} ph-star"></i></button></td>`,
+      `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? 'Remove from' : 'Add to'} watchlist">${starred ? ICONS.starFill : ICONS.star}</button></td>`,
   },
   { key: 'symbol', label: 'Symbol', cls: 'sym', cell: (r) => `<td class="sym">${base(r.symbol)}</td>` },
   {

@@ -9,7 +9,7 @@ import dev.pulse.depth.DensityScanner;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.MarketStore;
 import dev.pulse.market.SymbolMetrics;
-import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Batches market changes into fixed ticks. Pushing every exchange event individually
@@ -17,13 +17,23 @@ import lombok.RequiredArgsConstructor;
  * while sending each changed row at most twice a second.
  */
 @Component
-@RequiredArgsConstructor
 public class MarketBroadcaster {
+
+    /** At the default 500 ms tick, whole rows every 30 seconds. */
+    static final int KEYFRAME_EVERY = 60;
 
     private final MarketStore store;
     private final MarketSocketHandler sockets;
     private final DensityScanner density;
+    private final RowDiffer differ;
     private long lastWallsTs;
+
+    public MarketBroadcaster(MarketStore store, MarketSocketHandler sockets, DensityScanner density, JsonMapper mapper) {
+        this.store = store;
+        this.sockets = sockets;
+        this.density = density;
+        this.differ = new RowDiffer(mapper, KEYFRAME_EVERY);
+    }
 
     @Scheduled(fixedRateString = "${pulse.stream.broadcast-interval-ms}")
     void tick() {
@@ -34,8 +44,9 @@ public class MarketBroadcaster {
         if (!sockets.hasClients()) {
             return;
         }
-        if (!changed.isEmpty()) {
-            sockets.broadcast(new StreamMessage.Delta(now, changed));
+        var partial = differ.diff(changed);
+        if (!partial.isEmpty()) {
+            sockets.broadcast(new StreamMessage.Delta(now, partial));
         }
         if (!liquidations.isEmpty()) {
             sockets.broadcast(new StreamMessage.Liquidations(liquidations));

@@ -39,6 +39,18 @@ class SymbolStateTest {
     }
 
     @Test
+    void openInterestHistoryArrivingAfterALivePollStillCounts() {
+        SymbolState state = new SymbolState("WIFUSDT");
+        state.applyMarkPrice(new MarkPriceUpdate("WIFUSDT", 1.0, 0.0001, 0, 0));
+        long now = 20 * 60_000;
+        state.applyOpenInterest(1_100, now);           // live poll lands first
+        state.applyOpenInterest(1_000, now - 20 * 60_000); // history after it
+        state.applyOpenInterest(1_050, now - 10 * 60_000);
+
+        assertThat(state.toMetrics(now).oiCh15m()).isEqualTo(10.0);
+    }
+
+    @Test
     void liquidationsOlderThanFiveMinutesDropOutOfTheSum() {
         SymbolState state = new SymbolState("WIFUSDT");
         state.applyLiquidation(new Liquidation("WIFUSDT", PositionSide.LONG, 1.0, 1_000, 0));

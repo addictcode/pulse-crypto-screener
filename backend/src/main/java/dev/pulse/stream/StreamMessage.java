@@ -24,8 +24,11 @@ public sealed interface StreamMessage {
         }
     }
 
-    /** Only the rows that changed since the previous tick. */
-    record Delta(long ts, List<SymbolMetrics> rows) implements StreamMessage {
+    /**
+     * Rows that changed since the previous tick, each with the symbol and only its changed fields;
+     * now and then whole rows (a keyframe). Clients merge them into what they have.
+     */
+    record Delta(long ts, List<Map<String, Object>> rows) implements StreamMessage {
         @JsonProperty
         public String type() {
             return "delta";

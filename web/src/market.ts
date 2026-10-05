@@ -57,9 +57,13 @@ export class Market {
         break;
       case 'delta': {
         const changes: Array<[SymbolMetrics | undefined, SymbolMetrics]> = [];
-        for (const row of message.rows) {
-          changes.push([this.rows.get(row.symbol), row]);
-          this.rows.set(row.symbol, row);
+        for (const partial of message.rows) {
+          const prev = this.rows.get(partial.symbol);
+          // a symbol we have never seen needs a whole row; it arrives with the next keyframe
+          if (!prev && partial.price === undefined) continue;
+          const next = { ...prev, ...partial } as SymbolMetrics;
+          changes.push([prev, next]);
+          this.rows.set(next.symbol, next);
         }
         this.lastTick = message.ts;
         this.delta.emit(changes);

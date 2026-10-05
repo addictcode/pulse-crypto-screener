@@ -58,7 +58,8 @@ export interface Signal {
 
 export type StreamMessage =
   | { type: 'snapshot'; ts: number; rows: SymbolMetrics[]; liquidations: Liquidation[] }
-  | { type: 'delta'; ts: number; rows: SymbolMetrics[] }
+  /** Changed fields only (plus the symbol); now and then whole rows. */
+  | { type: 'delta'; ts: number; rows: Array<Partial<SymbolMetrics> & { symbol: string }> }
   | { type: 'liquidations'; items: Liquidation[] }
   | { type: 'sparklines'; series: Record<string, number[]> }
   | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> }
