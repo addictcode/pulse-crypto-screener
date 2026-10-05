@@ -9,6 +9,7 @@ import dev.pulse.depth.Wall;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.SymbolMetrics;
 import dev.pulse.signal.Signal;
+import dev.pulse.signal.TapeItem;
 
 /**
  * Messages pushed to the browser over {@code /ws/market}. Each one carries a {@code type}
@@ -58,6 +59,14 @@ public sealed interface StreamMessage {
         @JsonProperty
         public String type() {
             return "signals";
+        }
+    }
+
+    /** Live tape events, newest first: recent history on connect, then each scan's batch. */
+    record Tape(List<TapeItem> items) implements StreamMessage {
+        @JsonProperty
+        public String type() {
+            return "tape";
         }
     }
 

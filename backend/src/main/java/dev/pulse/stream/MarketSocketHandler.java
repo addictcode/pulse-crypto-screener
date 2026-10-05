@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -14,6 +15,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.market.MarketStore;
 import dev.pulse.signal.SignalHistory;
+import dev.pulse.signal.TapeDetector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.json.JsonMapper;
@@ -33,6 +35,7 @@ public class MarketSocketHandler extends TextWebSocketHandler {
     private final MarketStore store;
     private final DensityScanner density;
     private final SignalHistory signals;
+    private final ObjectProvider<TapeDetector> tape;
     private final JsonMapper mapper;
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
@@ -47,6 +50,10 @@ public class MarketSocketHandler extends TextWebSocketHandler {
         DensityScanner.DensityState walls = density.latest();
         send(safe, new StreamMessage.Walls(walls.ts(), walls.walls(), walls.coverage()));
         send(safe, new StreamMessage.Signals(signals.recent(30)));
+        TapeDetector detector = tape.getIfAvailable();
+        if (detector != null) {
+            send(safe, new StreamMessage.Tape(detector.recent(80)));
+        }
     }
 
     @Override
