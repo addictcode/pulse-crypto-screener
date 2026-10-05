@@ -91,6 +91,20 @@ cd web && npm install && npm run dev
 `/mute 30m|2h|1d|off`, `/watch` / `/unwatch <пара>`, `/watchlist`, `/scope all|watchlist`,
 `/last [n]`, `/status`. Если сигналов много сразу, они приходят одним дайджестом.
 
+## Бесплатно на своём компьютере
+
+Пока нет VPS, Pulse можно держать на своей машине с Docker: прод-стек плюс Cloudflare
+quick tunnel даёт публичный HTTPS-адрес без аккаунта и без открытия портов на роутере.
+
+```bash
+deploy/home.sh          # запустить или обновить и показать адрес
+deploy/home.sh url      # показать текущий адрес
+deploy/home.sh stop     # остановить (данные остаются в volume)
+```
+
+Адрес `*.trycloudflare.com` меняется при перезапуске туннеля. Работает, пока машина не спит;
+Telegram-боту туннель не нужен: впиши токен в `.env` и перезапусти.
+
 ## Деплой
 
 Прод — три контейнера из `compose.prod.yaml`: PostgreSQL (наружу не торчит), бэкенд и Caddy,

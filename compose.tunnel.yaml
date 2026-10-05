@@ -1,0 +1,16 @@
+# Home hosting: adds a Cloudflare quick tunnel in front of the production stack, so Pulse gets a
+# public HTTPS address without opening ports on the router. Use together with compose.prod.yaml:
+#   deploy/home.sh
+# The trycloudflare.com address changes whenever the tunnel container restarts.
+services:
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:80
+    depends_on:
+      - web
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
