@@ -16,7 +16,7 @@ import {
 import { priceDigits, px, usd } from './format';
 import type { Market } from './market';
 import { load, save } from './storage';
-import type { CandleDto, Liquidation } from './types';
+import type { CandleDto, Liquidation, Signal } from './types';
 
 const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
 const HISTORY = 300;
@@ -68,6 +68,10 @@ export class PriceChart {
       if (mine) this.tick(mine[1].price);
     });
     market.wallsUpdated.on(() => this.syncWalls());
+    market.newSignals.on((fresh) => {
+      const mine = fresh.filter((s) => s.symbol === this.symbol);
+      if (mine.length) this.addSignalMarkers(mine);
+    });
     market.newLiquidations.on((items) => {
       const mine = items.filter((l) => l.symbol === this.symbol);
       if (mine.length) this.addLiquidationMarkers(mine);
@@ -165,6 +169,7 @@ export class PriceChart {
     this.wallLines.clear();
     this.syncWalls();
     this.addLiquidationMarkers(this.market.liquidations.filter((l) => l.symbol === this.symbol));
+    this.addSignalMarkers(this.market.signals.filter((s) => s.symbol === this.symbol));
     this.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, bars.length - 110), to: bars.length + 3 });
   }
 
@@ -227,6 +232,25 @@ export class PriceChart {
         l.side === 'LONG'
           ? { time, position: 'belowBar', color: css('--down'), shape: 'circle', size: 0.6 }
           : { time, position: 'aboveBar', color: css('--up'), shape: 'circle', size: 0.6 },
+      );
+    }
+    this.markerList.sort((a, b) => (a.time as number) - (b.time as number));
+    this.markers.setMarkers(this.markerList);
+  }
+
+  /** Where the detector fired on this pair, in the accent colour so they stand apart from liquidations. */
+  private addSignalMarkers(signals: Signal[]) {
+    if (!this.markers || !this.lastBar) return;
+    const step = INTERVALS[this.interval];
+    const accent = css('--accent');
+    for (const s of signals) {
+      const time = (Math.floor(s.time / 1000 / step) * step) as UTCTimestamp;
+      this.markerList.push(
+        s.type === 'PUMP'
+          ? { time, position: 'belowBar', color: accent, shape: 'arrowUp', size: 0.8 }
+          : s.type === 'DUMP'
+            ? { time, position: 'aboveBar', color: accent, shape: 'arrowDown', size: 0.8 }
+            : { time, position: 'aboveBar', color: accent, shape: 'square', size: 0.5 },
       );
     }
     this.markerList.sort((a, b) => (a.time as number) - (b.time as number));

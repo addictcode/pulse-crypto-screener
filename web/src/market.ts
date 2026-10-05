@@ -1,4 +1,4 @@
-import type { Liquidation, StreamMessage, SymbolMetrics, Wall } from './types';
+import type { Liquidation, Signal, StreamMessage, SymbolMetrics, Wall } from './types';
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting';
 
@@ -15,6 +15,7 @@ class Emitter<T> {
 }
 
 const RECENT_LIQUIDATIONS = 60;
+const RECENT_SIGNALS = 60;
 
 /**
  * Client-side copy of the market, fed by the backend stream. Panels subscribe to the
@@ -24,6 +25,8 @@ export class Market {
   readonly rows = new Map<string, SymbolMetrics>();
   readonly sparklines = new Map<string, number[]>();
   liquidations: Liquidation[] = [];
+  /** Newest first. */
+  signals: Signal[] = [];
   /** Every detected wall, nearest to its price first. */
   walls: Wall[] = [];
   /** Symbols with a live order book, and how far from the price that book is fully known. */
@@ -39,6 +42,8 @@ export class Market {
   readonly newLiquidations = new Emitter<Liquidation[]>();
   readonly sparklinesUpdated = new Emitter<void>();
   readonly wallsUpdated = new Emitter<void>();
+  /** Signals that just arrived (empty array after a reconnect replaced the list). */
+  readonly newSignals = new Emitter<Signal[]>();
   readonly connectionChanged = new Emitter<ConnectionState>();
 
   apply(message: StreamMessage) {
@@ -76,6 +81,14 @@ export class Market {
         Object.entries(message.coverage).forEach(([symbol, pct]) => this.coverage.set(symbol, pct));
         this.wallsUpdated.emit();
         break;
+      case 'signals': {
+        // on connect the server sends recent history; afterwards one signal at a time
+        const known = new Set(this.signals.map((s) => s.id));
+        const fresh = message.items.filter((s) => !known.has(s.id));
+        this.signals = [...fresh, ...this.signals].sort((a, b) => b.time - a.time).slice(0, RECENT_SIGNALS);
+        this.newSignals.emit(message.items.length === 1 ? fresh : []);
+        break;
+      }
       case 'sparklines':
         Object.entries(message.series).forEach(([symbol, series]) => this.sparklines.set(symbol, series));
         this.sparklinesUpdated.emit();

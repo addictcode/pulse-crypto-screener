@@ -42,12 +42,27 @@ export interface Wall {
   eatMinutes: number | null;
 }
 
+export type SignalType = 'PUMP' | 'DUMP' | 'VOLUME' | 'OPEN_INTEREST' | 'FUNDING' | 'LIQUIDATIONS' | 'WALL';
+
+/** Mirror of dev.pulse.signal.Signal. value is in the type's unit (%, multiple, USD). */
+export interface Signal {
+  id: number;
+  type: SignalType;
+  symbol: string;
+  time: number;
+  price: number;
+  value: number;
+  title: string;
+  detail: string;
+}
+
 export type StreamMessage =
   | { type: 'snapshot'; ts: number; rows: SymbolMetrics[]; liquidations: Liquidation[] }
   | { type: 'delta'; ts: number; rows: SymbolMetrics[] }
   | { type: 'liquidations'; items: Liquidation[] }
   | { type: 'sparklines'; series: Record<string, number[]> }
-  | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> };
+  | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> }
+  | { type: 'signals'; items: Signal[] };
 
 export interface CandleDto {
   time: number;

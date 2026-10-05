@@ -18,6 +18,7 @@ import { connect, Market } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
 import { initViews } from './views';
+import { Wire } from './wire';
 
 const market = new Market();
 const instrument = new InstrumentPanel(market);
@@ -33,6 +34,7 @@ const screener = new Screener(market, (symbol) => {
   densities?.setSelected(symbol);
 });
 densities = new Densities(market, (symbol) => screener.select(symbol));
+new Wire(market, (symbol) => screener.select(symbol));
 densities.setSelected(screener.selected);
 initViews((view) => densities?.setActive(view === 'densities'));
 
