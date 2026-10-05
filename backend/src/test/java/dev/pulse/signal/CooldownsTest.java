@@ -2,6 +2,8 @@ package dev.pulse.signal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 class CooldownsTest {
@@ -34,6 +36,27 @@ class CooldownsTest {
         assertThat(cooldowns.admit(wall(0, 0.3))).isTrue();
         assertThat(cooldowns.admit(wall(60_000, 0.25))).isFalse();
         assertThat(cooldowns.admit(wall(120_000, 0.15))).as("0.15 <= 0.3 / 1.5").isTrue();
+    }
+
+    @Test
+    void oneSymbolCannotTakeOverTheFeed() {
+        String[] types = {"PUMP", "DUMP", "VOLUME", "OPEN_INTEREST", "FUNDING"};
+        int admitted = 0;
+        for (int i = 0; i < types.length; i++) {
+            if (cooldowns.admit(new Signal(null, SignalType.valueOf(types[i]), "GTCUSDT", i * 60_000L, 1, 10, "", ""))) {
+                admitted++;
+            }
+        }
+        assertThat(admitted).isEqualTo(Cooldowns.PER_SYMBOL_PER_HOUR);
+        assertThat(cooldowns.admit(new Signal(null, SignalType.WALL, "GTCUSDT", Cooldowns.BUDGET_WINDOW.toMillis() + 1, 1, 0.1, "", "")))
+                .as("budget frees up as the first signal leaves the hour window").isTrue();
+    }
+
+    @Test
+    void restoredHistoryKeepsCoolingDownAfterARestart() {
+        cooldowns.restore(List.of(new Signal(1L, SignalType.FUNDING, "AINUSDT", 0, 1, 0.16, "", "")));
+
+        assertThat(cooldowns.admit(new Signal(null, SignalType.FUNDING, "AINUSDT", 60 * 60_000L, 1, 0.17, "", ""))).isFalse();
     }
 
     @Test

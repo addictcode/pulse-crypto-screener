@@ -64,6 +64,12 @@ public class SignalHistory {
                 .toList();
     }
 
+    /** Oldest first, for replaying state such as cooldowns. */
+    @Transactional(readOnly = true)
+    public List<Signal> since(Instant since) {
+        return repository.findByFiredAtAfterOrderByFiredAtAsc(since).stream().map(SignalEntity::toSignal).toList();
+    }
+
     @Transactional(readOnly = true)
     public long countSince(Instant since) {
         return repository.countByFiredAtAfter(since);

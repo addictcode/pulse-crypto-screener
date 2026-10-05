@@ -13,4 +13,6 @@ interface SignalRepository extends JpaRepository<SignalEntity, Long> {
     List<SignalEntity> findBySymbolOrderByFiredAtDesc(String symbol, Pageable page);
 
     long countByFiredAtAfter(Instant since);
+
+    List<SignalEntity> findByFiredAtAfterOrderByFiredAtAsc(Instant since);
 }

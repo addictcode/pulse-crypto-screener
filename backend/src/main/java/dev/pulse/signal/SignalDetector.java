@@ -1,12 +1,17 @@
 package dev.pulse.signal;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -47,6 +52,16 @@ public class SignalDetector {
         this.events = events;
         this.config = properties.signals();
         this.cooldowns = new Cooldowns(config.escalation());
+    }
+
+    /** Cooldowns survive restarts: replay everything that could still be cooling down. */
+    @EventListener(ApplicationReadyEvent.class)
+    synchronized void restoreCooldowns() {
+        Duration longest = Arrays.stream(SignalType.values()).map(SignalType::cooldown).max(Duration::compareTo).orElseThrow();
+        Duration window = longest.compareTo(Cooldowns.BUDGET_WINDOW) > 0 ? longest : Cooldowns.BUDGET_WINDOW;
+        List<Signal> recent = history.since(Instant.now().minus(window));
+        cooldowns.restore(recent);
+        log.info("Signals: cooldowns restored from {} recent signals", recent.size());
     }
 
     @Scheduled(fixedRateString = "${pulse.signals.scan-interval-ms}")

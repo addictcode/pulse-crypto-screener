@@ -29,6 +29,7 @@ public class CandleController {
 
     private final List<ExchangeAdapter> exchanges;
     private final MarketStore store;
+    private final CandleCache cache = new CandleCache();
 
     @GetMapping("/candles")
     public List<CandleDto> candles(@RequestParam String symbol,
@@ -43,6 +44,7 @@ public class CandleController {
         }
         ExchangeAdapter exchange = exchanges.stream().findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "no exchange connected"));
-        return exchange.candles(symbol, interval, limit).stream().map(CandleDto::from).toList();
+        return cache.get(symbol, interval, limit,
+                () -> exchange.candles(symbol, interval, limit).stream().map(CandleDto::from).toList());
     }
 }
