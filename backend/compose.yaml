@@ -1,0 +1,16 @@
+# Local development database. `./gradlew bootRun` starts it automatically
+# (spring-boot-docker-compose) and points the app at it.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pulse
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: pulse
+    ports:
+      - "5433:5432"
+    volumes:
+      - pulse-db:/var/lib/postgresql/data
+
+volumes:
+  pulse-db:

@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-app-user
+      author: pulse
+      comment: >
+        One row per person. Today only the owner exists, reached through Telegram;
+        everything personal hangs off user_id so real accounts can be added later.
+      changes:
+        - createTable:
+            tableName: app_user
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: telegram_chat_id, type: bigint, constraints: { unique: true, uniqueConstraintName: uq_app_user_telegram_chat } }
+              - column: { name: created_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: muted_until, type: timestamp with time zone }
+              - column: { name: watchlist_only, type: boolean, defaultValueBoolean: false, constraints: { nullable: false } }
+
+  - changeSet:
+      id: 002-signal-preference
+      author: pulse
+      comment: Per user and signal type. A missing row means "enabled, default threshold".
+      changes:
+        - createTable:
+            tableName: signal_preference
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: bigint, constraints: { nullable: false, foreignKeyName: fk_signal_preference_user, references: app_user(id), deleteCascade: true } }
+              - column: { name: type, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: enabled, type: boolean, constraints: { nullable: false } }
+              - column: { name: threshold, type: double precision }
+        - addUniqueConstraint:
+            tableName: signal_preference
+            columnNames: user_id, type
+            constraintName: uq_signal_preference_user_type
+
+  - changeSet:
+      id: 002-watchlist-item
+      author: pulse
+      changes:
+        - createTable:
+            tableName: watchlist_item
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: bigint, constraints: { nullable: false, foreignKeyName: fk_watchlist_item_user, references: app_user(id), deleteCascade: true } }
+              - column: { name: symbol, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, constraints: { nullable: false } }
+        - addUniqueConstraint:
+            tableName: watchlist_item
+            columnNames: user_id, symbol
+            constraintName: uq_watchlist_item_user_symbol

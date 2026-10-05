@@ -127,6 +127,23 @@ final class SymbolState {
                 Math.round(liq5m));
     }
 
+    /** USD liquidated in the last 5 minutes: [longs, shorts]. */
+    synchronized double[] liquidationsBySide(long now) {
+        double longs = 0;
+        double shorts = 0;
+        for (Liquidation l : liquidations) {
+            if (l.time() < now - LIQUIDATION_WINDOW_MS) {
+                continue;
+            }
+            if (l.side() == PositionSide.LONG) {
+                longs += l.quoteValue();
+            } else {
+                shorts += l.quoteValue();
+            }
+        }
+        return new double[] {longs, shorts};
+    }
+
     synchronized double quoteVolume24h() {
         return quoteVolume24h;
     }

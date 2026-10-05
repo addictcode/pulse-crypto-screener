@@ -1,9 +1,27 @@
 spring:
   application:
     name: pulse-backend
+  config:
+    # secrets for local runs (Telegram token, owner chat id); gitignored
+    import: optional:file:./config/local.yml
   threads:
     virtual:
       enabled: true
+  datasource:
+    # in development docker compose support overrides these with the compose.yaml database
+    url: ${PULSE_DB_URL:jdbc:postgresql://localhost:5433/pulse}
+    username: ${PULSE_DB_USER:pulse}
+    password: ${PULSE_DB_PASSWORD:pulse}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  docker:
+    compose:
+      # keep the database running between app restarts
+      lifecycle-management: start-only
 
 server:
   port: 8080
@@ -47,3 +65,17 @@ pulse:
     min-notional: 25000
     volume-share: 0.0003
     max-per-side: 3
+  signals:
+    enabled: true
+    scan-interval-ms: 2000
+    # no signals right after startup while metrics settle
+    warmup: 2m
+    # pumps and dumps on tiny markets are noise
+    min-volume24h: 5000000
+    # a repeat inside the cooldown still fires if it is this much stronger
+    escalation: 1.5
+  telegram:
+    enabled: ${PULSE_TELEGRAM_ENABLED:false}
+    token: ${PULSE_TELEGRAM_TOKEN:}
+    owner-chat-id: ${PULSE_TELEGRAM_OWNER_CHAT_ID:}
+    api-url: https://api.telegram.org

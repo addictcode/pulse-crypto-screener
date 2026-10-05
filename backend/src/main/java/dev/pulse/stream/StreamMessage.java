@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.pulse.depth.Wall;
 import dev.pulse.market.Liquidation;
 import dev.pulse.market.SymbolMetrics;
+import dev.pulse.signal.Signal;
 
 /**
  * Messages pushed to the browser over {@code /ws/market}. Each one carries a {@code type}
@@ -46,6 +47,14 @@ public sealed interface StreamMessage {
         @JsonProperty
         public String type() {
             return "walls";
+        }
+    }
+
+    /** Fired signals, newest first; on connect the recent history, afterwards one at a time. */
+    record Signals(List<Signal> items) implements StreamMessage {
+        @JsonProperty
+        public String type() {
+            return "signals";
         }
     }
 

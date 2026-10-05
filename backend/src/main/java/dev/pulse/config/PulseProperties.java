@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("pulse")
-public record PulseProperties(Binance binance, Stream stream, Density density) {
+public record PulseProperties(Binance binance, Stream stream, Density density, Signals signals, Telegram telegram) {
 
     /**
      * @param streamUrl       combined-stream endpoint. Binance moved market data to {@code /market/stream};
@@ -48,5 +48,20 @@ public record PulseProperties(Binance binance, Stream stream, Density density) {
             double minNotional,
             double volumeShare,
             int maxPerSide) {
+    }
+
+    /**
+     * @param warmup        no signals right after startup, while history and open interest fill in
+     * @param minVolume24h  ignore markets thinner than this; their moves are noise
+     * @param escalation    inside the cooldown a repeat fires only if this many times stronger
+     */
+    public record Signals(boolean enabled, long scanIntervalMs, Duration warmup, double minVolume24h, double escalation) {
+    }
+
+    /**
+     * @param ownerChatId the only chat the bot talks to; when empty the bot just tells each
+     *                    sender their chat id so the owner can configure it
+     */
+    public record Telegram(boolean enabled, String token, Long ownerChatId, String apiUrl) {
     }
 }

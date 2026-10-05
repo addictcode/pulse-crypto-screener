@@ -1,0 +1,8 @@
+# Copy to config/local.yml (gitignored) and fill in. Loaded automatically on startup.
+pulse:
+  telegram:
+    enabled: true
+    # from @BotFather -> /newbot
+    token: "123456789:replace-with-your-token"
+    # leave empty at first: message the bot and it replies with your chat id
+    owner-chat-id:

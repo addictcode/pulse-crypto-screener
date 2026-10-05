@@ -82,6 +82,12 @@ public class MarketStore implements MarketSink {
         return state == null ? 0 : state.quoteVolume24h();
     }
 
+    /** USD liquidated in the last 5 minutes as [longs, shorts]. */
+    public double[] liquidationsBySide(String symbol) {
+        SymbolState state = states.get(symbol);
+        return state == null ? new double[2] : state.liquidationsBySide(System.currentTimeMillis());
+    }
+
     public Double volumePerMinute(String symbol, int minutes) {
         SymbolState state = states.get(symbol);
         return state == null ? null : state.volumePerMinute(minutes);

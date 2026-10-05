@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-signal
+      author: pulse
+      comment: Every signal the detector fires, shared by all users.
+      changes:
+        - createTable:
+            tableName: signal
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: type, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: symbol, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: fired_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: price, type: double precision, constraints: { nullable: false } }
+              - column: { name: value, type: double precision, constraints: { nullable: false } }
+              - column: { name: title, type: varchar(200), constraints: { nullable: false } }
+              - column: { name: detail, type: varchar(400), constraints: { nullable: false } }
+        - createIndex:
+            tableName: signal
+            indexName: ix_signal_fired_at
+            columns:
+              - column: { name: fired_at, descending: true }
+        - createIndex:
+            tableName: signal
+            indexName: ix_signal_symbol_fired_at
+            columns:
+              - column: { name: symbol }
+              - column: { name: fired_at, descending: true }

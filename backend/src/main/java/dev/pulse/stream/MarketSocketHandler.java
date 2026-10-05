@@ -13,6 +13,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.market.MarketStore;
+import dev.pulse.signal.SignalHistory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,6 +32,7 @@ public class MarketSocketHandler extends TextWebSocketHandler {
 
     private final MarketStore store;
     private final DensityScanner density;
+    private final SignalHistory signals;
     private final JsonMapper mapper;
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
@@ -44,6 +46,7 @@ public class MarketSocketHandler extends TextWebSocketHandler {
         send(safe, new StreamMessage.Sparklines(store.sparklines(24)));
         DensityScanner.DensityState walls = density.latest();
         send(safe, new StreamMessage.Walls(walls.ts(), walls.walls(), walls.coverage()));
+        send(safe, new StreamMessage.Signals(signals.recent(30)));
     }
 
     @Override
