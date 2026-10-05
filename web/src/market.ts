@@ -1,4 +1,4 @@
-import type { Liquidation, Signal, StreamMessage, SymbolMetrics, Wall } from './types';
+import type { Liquidation, Signal, StreamMessage, SymbolMetrics, TapeItem, Wall } from './types';
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting';
 
@@ -16,6 +16,7 @@ class Emitter<T> {
 
 const RECENT_LIQUIDATIONS = 60;
 export const RECENT_SIGNALS = 60;
+const RECENT_TAPE = 120;
 
 /**
  * Client-side copy of the market, fed by the backend stream. Panels subscribe to the
@@ -27,6 +28,8 @@ export class Market {
   liquidations: Liquidation[] = [];
   /** Newest first. */
   signals: Signal[] = [];
+  /** Live tape, newest first. */
+  tape: TapeItem[] = [];
   /** Every detected wall, nearest to its price first. */
   walls: Wall[] = [];
   /** Symbols with a live order book, and how far from the price that book is fully known. */
@@ -44,6 +47,8 @@ export class Market {
   readonly wallsUpdated = new Emitter<void>();
   /** Signals that just arrived (empty array after a reconnect replaced the list). */
   readonly newSignals = new Emitter<Signal[]>();
+  /** Tape items that just arrived; empty after a reconnect replaced the list. */
+  readonly newTape = new Emitter<TapeItem[]>();
   readonly connectionChanged = new Emitter<ConnectionState>();
 
   apply(message: StreamMessage) {
@@ -91,6 +96,15 @@ export class Market {
         const fresh = message.items.filter((s) => !known.has(s.id));
         this.signals = [...fresh, ...this.signals].sort((a, b) => b.time - a.time).slice(0, RECENT_SIGNALS);
         this.newSignals.emit(message.items.length === 1 ? fresh : []);
+        break;
+      }
+      case 'tape': {
+        // a reconnect sends recent history; afterwards each scan's new items
+        const key = (t: TapeItem) => `${t.time}:${t.symbol}:${t.kind}`;
+        const known = new Set(this.tape.map(key));
+        const fresh = message.items.filter((t) => !known.has(key(t)));
+        this.tape = [...fresh, ...this.tape].sort((a, b) => b.time - a.time).slice(0, RECENT_TAPE);
+        this.newTape.emit(this.tape.length === fresh.length ? [] : fresh);
         break;
       }
       case 'sparklines':

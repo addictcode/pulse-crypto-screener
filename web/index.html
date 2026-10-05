@@ -4,142 +4,111 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Pulse</title>
+<meta name="description" content="Pulse scans every Binance USDT perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.">
+<title>Pulse, a radar for crypto futures</title>
 </head>
-<body>
+<body class="landing">
 
-<header class="mast">
-  <span class="logo">Pulse</span>
-  <nav class="views" aria-label="Views">
-    <a class="view" href="#screener" data-view="screener">Screener</a>
-    <a class="view" href="#densities" data-view="densities">Densities</a>
+<header class="nav">
+  <a class="brand" href="/" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="#3ef0ff" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="#3ef0ff" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="#3ef0ff" fill-opacity=".14"/></svg><b>Pulse</b></a>
+  <nav aria-label="Sections">
+    <a href="#live">Live</a>
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
   </nav>
-  <div class="market">
-    <div class="mk"><span class="mk-label">BTC</span><span class="mk-val"><span id="m-btc">&nbsp;</span><span id="m-btc-c"></span></span></div>
-    <div class="mk"><span class="mk-label">ETH</span><span class="mk-val"><span id="m-eth">&nbsp;</span><span id="m-eth-c"></span></span></div>
-    <div class="mk m-opt"><span class="mk-label">Volume 24h</span><span class="mk-val" id="m-vol">&nbsp;</span></div>
-    <div class="mk" title="Share of pairs up over 24h"><span class="mk-label">Breadth</span><span class="breadth" id="breadth"><i></i><i></i></span><span class="mk-val" id="breadth-v">&nbsp;</span></div>
-    <div class="mk sessions-wrap"><span class="mk-label">Sessions</span><span class="sessions" id="sessions"><span>Asia</span><span>London</span><span>New York</span></span></div>
-  </div>
-  <time class="clock" id="clock">00:00:00<span>UTC</span></time>
+  <a class="cta small" href="/app/">Open terminal</a>
 </header>
 
-<main class="desk">
-  <section class="panel screener" aria-label="Screener">
-    <div class="p-head">
-      <h2 class="p-title">Screener</h2>
-      <div class="presets" role="tablist" aria-label="Presets" id="presets"></div>
-      <div class="filters">
-        <label class="field"><span id="search-icon" class="field-icon"></span><span class="sr">Search symbol</span><input id="q" type="search" placeholder="Symbol" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
-        <label class="field vol-field"><span>Volume</span>
-          <select id="minvol">
-            <option value="0">any</option>
-            <option value="5000000">&ge; $5M</option>
-            <option value="50000000" selected>&ge; $50M</option>
-            <option value="200000000">&ge; $200M</option>
-          </select>
-        </label>
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <h1>The whole futures market<br>on <em>one radar</em>.</h1>
+      <p class="lede">Pulse scans every Binance perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.</p>
+      <div class="actions">
+        <a class="cta" href="/app/">Open terminal</a>
+        <a class="ghost" href="#how">How it works</a>
       </div>
+      <dl class="stats" aria-live="polite">
+        <div><dt>Pairs live</dt><dd id="s-pairs">&nbsp;</dd></div>
+        <div><dt>Order books</dt><dd id="s-books">&nbsp;</dd></div>
+        <div><dt>Tape, last min</dt><dd id="s-tape">&nbsp;</dd></div>
+        <div><dt>Liquidated 5m</dt><dd id="s-liq">&nbsp;</dd></div>
+      </dl>
     </div>
-    <div class="table-wrap" id="table-wrap">
-      <table class="grid">
-        <thead><tr id="head"></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+    <div class="planet-wrap">
+      <canvas id="planet" aria-label="A planet of cubes, one for each of the most traded perpetuals, coloured by their 24 hour move"></canvas>
+      <div class="planet-tip" id="planet-tip" hidden></div>
+      <p class="planet-note"><span class="up">&#9632;</span> up 24h <span class="down">&#9632;</span> down 24h <span class="mute">height: volume and move</span></p>
     </div>
   </section>
 
-  <aside class="panel instrument" id="instrument" aria-label="Selected instrument">
-    <div class="ins-head">
-      <div>
-        <h1 class="ins-sym" id="ins-sym">&nbsp;</h1>
-        <p class="ins-name" id="ins-name">&nbsp;</p>
-      </div>
-      <div class="ins-quote">
-        <span class="ins-price" id="ins-price">&nbsp;</span>
-        <span class="ins-chg" id="ins-chg">&nbsp;</span>
-      </div>
+  <section class="band" id="live">
+    <div class="band-copy">
+      <h2>Everything that moves, as it moves.</h2>
+      <p>The tape lists every pump, dump, volume burst and liquidation wave the moment it happens. Stronger events are promoted to alerts, which also go to Telegram.</p>
     </div>
-    <div class="tags" id="tags" aria-label="Active highlights"></div>
-    <dl class="ins-stats">
-      <div><dt>24h range</dt><dd><span class="range"><span id="rng-lo">&nbsp;</span><span class="range-line"><i id="rng-mark"></i></span><span id="rng-hi">&nbsp;</span></span></dd></div>
-      <div><dt>Funding</dt><dd><span id="ins-fund">&nbsp;</span><span class="sub" id="ins-fund-t">&nbsp;</span></dd></div>
-      <div><dt>Open interest</dt><dd><span id="ins-oi">&nbsp;</span><span class="sub" id="ins-oi15">&nbsp;</span></dd></div>
-      <div><dt>Volume 24h</dt><dd><span id="ins-vol">&nbsp;</span><span class="sub" id="ins-volx">&nbsp;</span></dd></div>
-    </dl>
-    <div class="chart-bar">
-      <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
-      <div class="legend" aria-hidden="true">
-        <span class="dim"><i class="dash"></i><span class="mute">Walls</span></span>
-        <span class="dim"><i class="dot"></i><span class="mute">Liq</span></span>
-        <span class="hot"><i class="dot"></i><span class="mute">Signal</span></span>
-      </div>
-    </div>
-    <div class="chart" id="chart"></div>
-    <section class="book" aria-label="Order book walls">
-      <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta" id="book-meta">walls within 5%</span></div>
-      <div class="ladder" id="ladder"></div>
-    </section>
-  </aside>
-
-  <section class="panel wire" aria-label="Wire">
-    <div class="p-head"><h2 class="p-title">Wire</h2><span class="p-meta" id="wire-meta">signals, newest first</span></div>
-    <div class="stories" id="stories">
-      <p class="empty-note">Waiting for signals.</p>
+    <div class="hud live-tape">
+      <div class="hud-head"><span class="p-title">Signal tape</span><span class="mono mute" id="tape-rate">live</span></div>
+      <ol class="tape-list" id="tape-preview"><li class="empty-note">Connecting to the market.</li></ol>
     </div>
   </section>
 
-  <section class="panel densmap" aria-label="Density map">
-    <div class="p-head">
-      <h2 class="p-title">Densities</h2>
-      <div class="seg" role="group" aria-label="Distance from price" id="dm-dist"></div>
-      <div class="seg" role="group" aria-label="Minimum wall size" id="dm-size"></div>
-      <div class="seg" role="group" aria-label="Side" id="dm-side"></div>
-      <span class="p-meta" id="dm-meta"></span>
+  <section class="band reverse">
+    <div class="band-copy">
+      <h2>See where the size is waiting.</h2>
+      <p>Live order books for the 60 most traded pairs. Pulse finds resting orders many times larger than the book around them, tracks how long they stand and how fast the market would eat through them.</p>
     </div>
-    <div class="map-wrap" id="map-wrap">
-      <svg id="map" role="img" aria-label="Walls by distance from price and size"></svg>
-      <div class="map-tip" id="map-tip" hidden></div>
+    <div class="hud">
+      <div class="hud-head"><span class="p-title">Largest walls near price</span><span class="mono mute">within 1%</span></div>
+      <table class="mini" id="walls-preview"><tbody><tr><td class="empty-note">Order books are syncing.</td></tr></tbody></table>
     </div>
   </section>
 
-  <section class="panel walllist" aria-label="Walls">
-    <div class="p-head"><h2 class="p-title">Walls</h2><span class="p-meta" id="wl-meta">nearest to price first</span></div>
-    <div class="table-wrap">
-      <table class="grid walls-grid">
-        <thead><tr>
-          <th class="sym">Symbol</th><th>Side</th><th>Price</th><th>Size</th><th>Distance</th>
-          <th class="c-sm">&times; avg</th><th class="c-sm">Age</th><th class="c-sm">Eaten in</th>
-        </tr></thead>
-        <tbody id="wl-rows"></tbody>
-      </table>
+  <section class="features" id="features">
+    <h2>One terminal, four instruments.</h2>
+    <div class="bento">
+      <article class="cell wide">
+        <h3>Screener</h3>
+        <p>Every perpetual with 1 to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.</p>
+        <table class="mini" id="movers-preview"><tbody></tbody></table>
+      </article>
+      <article class="cell">
+        <h3>Density map</h3>
+        <p>Walls plotted by distance and size. Fresh ones are dashed, old ones solid: the ones that hold are easy to tell apart.</p>
+        <svg class="strip" id="wall-strip" viewBox="0 0 300 64" preserveAspectRatio="none" aria-label="Walls within 2% of price, bids left, asks right"></svg>
+      </article>
+      <article class="cell">
+        <h3>Signals</h3>
+        <p>Seven detectors with cooldowns and a per-coin budget, so one wild small cap cannot flood your screen.</p>
+        <div class="chips" id="signal-chips"></div>
+      </article>
+      <article class="cell wide accent">
+        <h3>Telegram</h3>
+        <p>Alerts reach your phone with context in one message. Bursts arrive as a digest. Thresholds, mute and watchlist are set by chatting to the bot.</p>
+      </article>
     </div>
   </section>
 
-  <section class="panel liqs" aria-label="Liquidations">
-    <div class="p-head"><h2 class="p-title">Liquidations</h2><span class="p-meta">last 5 min</span></div>
-    <div class="split">
-      <span class="down" id="liq-l">Longs $0</span>
-      <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
-      <span class="up" id="liq-s">Shorts $0</span>
-    </div>
-    <ol class="liq-list" id="liqs"></ol>
+  <section class="how" id="how">
+    <h2>How it works</h2>
+    <ol class="pipeline">
+      <li><b>Binance streams</b><span>Tickers, candles, mark prices, liquidations and order books over WebSockets.</span></li>
+      <li><b>Pulse engine</b><span>Java backend keeps the market in memory, rebuilds books, scores walls and runs the detectors every 2 seconds.</span></li>
+      <li><b>Your screen</b><span>Only changed numbers travel to the browser, twice a second, compressed to a few kilobytes.</span></li>
+    </ol>
+  </section>
+
+  <section class="final">
+    <h2>Watch the market, not tabs.</h2>
+    <a class="cta" href="/app/">Open terminal</a>
   </section>
 </main>
 
-<footer class="statusbar">
-  <span class="conn" id="st-conn">Connecting</span>
-  <span>Binance USDT-M</span>
-  <span id="st-pairs">&nbsp;</span>
-  <span id="st-age">&nbsp;</span>
-  <span class="keys">
-    <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> select</span>
-    <span><kbd>/</kbd> search</span>
-    <span><kbd>W</kbd> watchlist</span>
-    <a href="https://www.tradingview.com/" target="_blank" rel="noopener">Charts by TradingView</a>
-  </span>
+<footer class="foot">
+  <span>Pulse is a personal research tool. Nothing here is investment advice.</span>
+  <a href="https://www.tradingview.com/" target="_blank" rel="noopener">Charts by TradingView</a>
 </footer>
 
-<script type="module" src="/src/main.ts"></script>
+<script type="module" src="/src/landing.ts"></script>
 </body>
 </html>

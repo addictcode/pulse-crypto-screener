@@ -1,0 +1,89 @@
+/* Pulse theme shared by the landing page and the terminal: deep space, cyan instruments,
+   acid green for up, hot pink for down. One accent (cyan) for "look here". */
+
+:root {
+  --bg-0: #03050a;
+  --bg-1: #070c16;
+  --bg-2: #0d1626;
+  --bg-sel: rgba(62, 240, 255, .07);
+  --rule: #14223a;
+  --rule-soft: #0f1a2c;
+  --rule-strong: #23405f;
+
+  --ink: #dff7ff;
+  --ink-2: #93b4c8;
+  --ink-3: #6b8ba3;
+
+  --up: #9dff5c;
+  --down: #ff4f7b;
+  --accent: #3ef0ff;
+  --accent-soft: rgba(62, 240, 255, .45);
+
+  --f-display: "Chakra Petch", system-ui, sans-serif;
+  --f-ui: "Chakra Petch", system-ui, sans-serif;
+  --f-num: "Azeret Mono", ui-monospace, monospace;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+body {
+  color: var(--ink);
+  font: 13px/1.45 var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(1100px 600px at 78% -12%, rgba(62, 240, 255, .07), transparent 62%),
+    radial-gradient(900px 520px at -8% 112%, rgba(157, 255, 92, .045), transparent 60%),
+    var(--bg-0);
+  background-attachment: fixed;
+}
+
+/* starfield: fixed, behind everything, never repaints on scroll */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .55;
+  background-image:
+    radial-gradient(1px 1px at 23px 31px, #fff, transparent 70%),
+    radial-gradient(1px 1px at 141px 87px, #9fefff, transparent 70%),
+    radial-gradient(1px 1px at 77px 163px, #fff, transparent 70%),
+    radial-gradient(1.5px 1.5px at 199px 211px, #d6ffd0, transparent 70%),
+    radial-gradient(1px 1px at 251px 47px, #fff, transparent 70%);
+  background-size: 280px 260px;
+}
+/* scanlines: a faint CRT texture, fixed as well */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(180, 240, 255, .018) 0 1px, transparent 1px 3px);
+}
+
+button, input, select { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--ink-3); }
+.hot { color: var(--accent); }
+.dim { color: var(--ink-2); }
+.mute { color: var(--ink-3); }
+.strong { font-weight: 600; }
+
+/* brand: an isometric cube and the name in wide caps */
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand svg { width: 22px; height: 22px; display: block; }
+.brand b {
+  font: 700 17px/1 var(--f-display);
+  letter-spacing: .32em;
+  text-transform: uppercase;
+}

@@ -56,6 +56,18 @@ export interface Signal {
   detail: string;
 }
 
+export type TapeKind =
+  | 'PUMP_1M' | 'PUMP_5M' | 'DUMP_1M' | 'DUMP_5M' | 'VOLUME' | 'OI_UP' | 'OI_DOWN' | 'LIQ_LONGS' | 'LIQ_SHORTS';
+
+/** Mirror of dev.pulse.signal.TapeItem: the loose live feed. */
+export interface TapeItem {
+  kind: TapeKind;
+  symbol: string;
+  time: number;
+  price: number;
+  value: number;
+}
+
 export type StreamMessage =
   | { type: 'snapshot'; ts: number; rows: SymbolMetrics[]; liquidations: Liquidation[] }
   /** Changed fields only (plus the symbol); now and then whole rows. */
@@ -63,7 +75,8 @@ export type StreamMessage =
   | { type: 'liquidations'; items: Liquidation[] }
   | { type: 'sparklines'; series: Record<string, number[]> }
   | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> }
-  | { type: 'signals'; items: Signal[] };
+  | { type: 'signals'; items: Signal[] }
+  | { type: 'tape'; items: TapeItem[] };
 
 export interface CandleDto {
   time: number;

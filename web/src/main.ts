@@ -1,11 +1,11 @@
-import '@fontsource-variable/newsreader/opsz.css';
-import '@fontsource-variable/newsreader/opsz-italic.css';
-import '@fontsource/schibsted-grotesk/400.css';
-import '@fontsource/schibsted-grotesk/500.css';
-import '@fontsource/schibsted-grotesk/600.css';
+import '@fontsource/chakra-petch/400.css';
+import '@fontsource/chakra-petch/500.css';
+import '@fontsource/chakra-petch/600.css';
+import '@fontsource/chakra-petch/700.css';
 import '@fontsource/azeret-mono/400.css';
 import '@fontsource/azeret-mono/500.css';
 import '@fontsource/azeret-mono/600.css';
+import './theme.css';
 import './styles.css';
 
 import { PriceChart } from './chart';
@@ -16,8 +16,8 @@ import { LiquidationsPanel } from './liquidations';
 import { connect, Market } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
+import { Tape } from './tape';
 import { initViews } from './views';
-import { Wire } from './wire';
 
 document.getElementById('search-icon')!.innerHTML = ICONS.search;
 
@@ -35,7 +35,7 @@ const screener = new Screener(market, (symbol) => {
   densities?.setSelected(symbol);
 });
 densities = new Densities(market, (symbol) => screener.select(symbol));
-new Wire(market, (symbol) => screener.select(symbol));
+new Tape(market, (symbol) => screener.select(symbol));
 densities.setSelected(screener.selected);
 initViews((view) => densities?.setActive(view === 'densities'));
 

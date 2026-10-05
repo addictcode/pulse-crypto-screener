@@ -15,7 +15,8 @@
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
 		# everything else (index.html and SPA routes) must be revalidated, or deploys would not show up
 		header ?Cache-Control "no-cache"
-		try_files {path} /index.html
+		# /app/ is the terminal, anything else unknown falls back to the landing page
+		try_files {path} {path}/index.html /index.html
 		file_server
 	}
 
