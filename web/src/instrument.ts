@@ -56,6 +56,11 @@ export class InstrumentPanel {
     const ladder = $('ladder');
     const meta = $('book-meta');
     const coverage = this.market.coverage.get(this.symbol);
+    if (coverage === undefined && this.market.coverage.size === 0) {
+      meta.textContent = 'syncing';
+      ladder.innerHTML = '<p class="empty-note">Order books are syncing after startup. Walls appear within a minute.</p>';
+      return;
+    }
     if (coverage === undefined) {
       meta.textContent = 'not tracked';
       ladder.innerHTML = '<p class="empty-note">Live order books are kept for the 60 most traded pairs. This one is outside that list right now.</p>';

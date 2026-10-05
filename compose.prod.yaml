@@ -1,0 +1,64 @@
+# Production stack: `docker compose -f compose.prod.yaml up -d --build`
+# Settings come from .env next to this file (see .env.example).
+name: pulse
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pulse
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulse -d pulse"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PULSE_DB_URL: jdbc:postgresql://postgres:5432/pulse
+      PULSE_DB_USER: pulse
+      PULSE_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      PULSE_ALLOWED_ORIGINS: ${PULSE_PUBLIC_ORIGIN:-https://${PULSE_DOMAIN}}
+      PULSE_TELEGRAM_ENABLED: ${PULSE_TELEGRAM_ENABLED:-false}
+      PULSE_TELEGRAM_TOKEN: ${PULSE_TELEGRAM_TOKEN:-}
+      PULSE_TELEGRAM_OWNER_CHAT_ID: ${PULSE_TELEGRAM_OWNER_CHAT_ID:-}
+    mem_limit: 1536m
+    logging: *logging
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      PULSE_SITE_ADDRESS: ${PULSE_SITE_ADDRESS:-${PULSE_DOMAIN}}
+    ports:
+      - "${PULSE_HTTP_PORT:-80}:80"
+      - "${PULSE_HTTPS_PORT:-443}:443"
+      - "${PULSE_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    logging: *logging
+
+volumes:
+  db:
+  caddy-data:
+  caddy-config:

@@ -49,3 +49,12 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// one artifact with a stable name for the Docker build; the plain jar is not used
+tasks.named('jar') {
+	enabled = false
+}
+
+tasks.named('bootJar') {
+	archiveFileName = 'pulse-backend.jar'
+}

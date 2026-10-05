@@ -91,10 +91,41 @@ cd web && npm install && npm run dev
 `/mute 30m|2h|1d|off`, `/watch` / `/unwatch <пара>`, `/watchlist`, `/scope all|watchlist`,
 `/last [n]`, `/status`. Если сигналов много сразу, они приходят одним дайджестом.
 
+## Деплой
+
+Прод — три контейнера из `compose.prod.yaml`: PostgreSQL (наружу не торчит), бэкенд и Caddy,
+который раздаёт фронт, проксирует `/api` и `/ws` и сам получает сертификат Let's Encrypt.
+Сервер нужен в ЕС или Азии: Binance отвечает 451 на запросы с американских IP.
+
+1. Заведи VPS с Ubuntu 24.04 и своим SSH-ключом (например, Hetzner CX22 в Германии или Финляндии).
+2. Направь домен на IP сервера (например, бесплатный поддомен на duckdns.org).
+3. Подготовь сервер, один раз:
+   ```bash
+   ssh root@HOST 'bash -s' < deploy/server-setup.sh
+   ```
+   Скрипт ставит Docker, включает файрвол (22, 80, 443), отключает вход по паролю, добавляет
+   своп, создаёт пользователя `pulse`, клонирует репозиторий в `/opt/pulse` и генерирует пароль
+   базы в `.env`.
+4. Впиши в `/opt/pulse/.env` домен (`PULSE_DOMAIN`) и, если нужен бот, настройки Telegram.
+5. Разверни:
+   ```bash
+   deploy/deploy.sh pulse@HOST
+   ```
+
+Автодеплой: после зелёных тестов на каждый push в `main` GitHub Actions разворачивает сам,
+если заданы секреты `VPS_HOST`, `VPS_SSH_KEY` (приватный ключ для пользователя `pulse`) и
+`VPS_KNOWN_HOSTS` (вывод `ssh-keyscan HOST`).
+
+Проверить прод-сборку локально, по HTTP на :8088:
+
+```bash
+docker compose -p pulse-local -f compose.prod.yaml --env-file deploy/local-test.env up -d --build
+```
+
 ## Дальше
 
-1. Деплой: Docker Compose, Caddy, VPS в ЕС.
-2. Вторая биржа (Bybit) через тот же интерфейс адаптера.
+1. Вторая биржа (Bybit) через тот же интерфейс адаптера.
+2. Аккаунты для веб-интерфейса поверх уже готовой модели пользователя.
 
 ## Ограничения данных
 

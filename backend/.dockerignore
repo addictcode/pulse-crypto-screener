@@ -1,0 +1,6 @@
+build
+.gradle
+config/local.yml
+compose.yaml
+*.iml
+.idea

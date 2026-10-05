@@ -25,6 +25,9 @@ spring:
 
 server:
   port: 8080
+  # behind Caddy: trust X-Forwarded-* for scheme and client address
+  forward-headers-strategy: framework
+  shutdown: graceful
 
 management:
   endpoints:
@@ -50,9 +53,8 @@ pulse:
     stale-after: 30s
   stream:
     broadcast-interval-ms: 500
-    allowed-origins:
-      - http://localhost:5173
-      - http://127.0.0.1:5173
+    # comma separated; in production the public https origin
+    allowed-origins: ${PULSE_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   density:
     enabled: true
     books: 60
