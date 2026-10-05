@@ -60,6 +60,17 @@ class CooldownsTest {
     }
 
     @Test
+    void rememberedBaselineCoolsDownButLeavesTheBudgetAlone() {
+        cooldowns.remember(new Signal(null, SignalType.FUNDING, "AINUSDT", 0, 1, 0.16, "", ""));
+
+        assertThat(cooldowns.admit(new Signal(null, SignalType.FUNDING, "AINUSDT", 60_000, 1, 0.17, "", ""))).isFalse();
+        for (int i = 0; i < Cooldowns.PER_SYMBOL_PER_HOUR; i++) {
+            SignalType type = SignalType.values()[i];
+            assertThat(cooldowns.admit(new Signal(null, type, "AINUSDT", 120_000, 1, 10, "", ""))).as(type.name()).isTrue();
+        }
+    }
+
+    @Test
     void symbolsAndTypesHaveSeparateCooldowns() {
         cooldowns.admit(pump(0, 2.1));
 

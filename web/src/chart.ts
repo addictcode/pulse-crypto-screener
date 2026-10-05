@@ -93,6 +93,8 @@ export class PriceChart {
   private async load() {
     const request = ++this.request;
     const symbol = this.symbol;
+    // dim the old chart right away: the previous pair must not pass for the new one
+    this.el.classList.add('loading');
     let data: CandleDto[];
     try {
       const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&interval=${this.interval}&limit=${HISTORY}`);
@@ -104,6 +106,7 @@ export class PriceChart {
     }
     if (request !== this.request) return; // the user already switched to another pair or timeframe
     this.build(data);
+    this.el.classList.remove('loading');
   }
 
   private build(data: CandleDto[]) {
@@ -258,6 +261,7 @@ export class PriceChart {
   }
 
   private showError(message: string) {
+    this.el.classList.remove('loading');
     this.chart?.remove();
     this.chart = null;
     this.candles = null;

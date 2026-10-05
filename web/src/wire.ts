@@ -1,5 +1,5 @@
 import { base, hms } from './format';
-import type { Market } from './market';
+import { RECENT_SIGNALS, type Market } from './market';
 import type { Signal, SignalType } from './types';
 
 const LABELS: Record<SignalType, [string, string]> = {
@@ -57,7 +57,11 @@ export class Wire {
   private renderMeta() {
     const since = Date.now() - HOUR;
     const count = this.market.signals.filter((s) => s.time >= since).length;
-    $('wire-meta').textContent = count ? `${count} signal${count === 1 ? '' : 's'} in the last hour` : 'signals, newest first';
+    // the client keeps a limited list; if all of it is from the last hour, there were more
+    const capped = count > 0 && count === this.market.signals.length && count >= RECENT_SIGNALS;
+    $('wire-meta').textContent = count
+      ? `${count}${capped ? '+' : ''} signal${count === 1 ? '' : 's'} in the last hour`
+      : 'signals, newest first';
   }
 }
 

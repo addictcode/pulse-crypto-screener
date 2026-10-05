@@ -513,3 +513,8 @@ body[data-view="densities"] .walllist { display: flex; }
   body[data-view="densities"] .instrument { order: 3; }
   .walllist .table-wrap { max-height: 60dvh; }
 }
+
+/* chart while the next pair's history loads */
+.chart { transition: opacity .15s; }
+.chart.loading { opacity: .35; }
+@media (prefers-reduced-motion: reduce) { .chart { transition: none; } }

@@ -15,7 +15,7 @@ class Emitter<T> {
 }
 
 const RECENT_LIQUIDATIONS = 60;
-const RECENT_SIGNALS = 60;
+export const RECENT_SIGNALS = 60;
 
 /**
  * Client-side copy of the market, fed by the backend stream. Panels subscribe to the

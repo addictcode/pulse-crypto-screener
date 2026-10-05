@@ -43,6 +43,7 @@ public class SignalDetector {
     private final Cooldowns cooldowns;
 
     private long firstDataAt;
+    private boolean baselineTaken;
 
     public SignalDetector(MarketStore market, DensityScanner density, SignalHistory history,
                           ApplicationEventPublisher events, PulseProperties properties) {
@@ -90,6 +91,15 @@ public class SignalDetector {
                     config.minVolume24h(), now));
         }
         candidates.sort(Comparator.comparingDouble(SignalDetector::strength).reversed());
+
+        if (!baselineTaken) {
+            // conditions already true at startup become the baseline instead of a burst of alerts
+            baselineTaken = true;
+            List<Signal> standing = candidates.stream().filter(c -> c.type().isState()).toList();
+            standing.forEach(cooldowns::remember);
+            candidates.removeAll(standing);
+            log.info("Signals: {} standing conditions taken as the baseline", standing.size());
+        }
 
         int fired = 0;
         for (Signal candidate : candidates) {

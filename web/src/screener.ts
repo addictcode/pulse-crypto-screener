@@ -114,6 +114,7 @@ const COLUMNS: Column[] = [
 ];
 
 const RESORT_EVERY_MS = 5_000;
+const VIEW_MARGIN_ROWS = 8;
 
 interface ScreenerState {
   preset: string;
@@ -135,6 +136,7 @@ export class Screener {
   private readonly state: ScreenerState;
   private readonly starred = new Set<string>(load<string[]>('watchlist', ['BTCUSDT', 'ETHUSDT']));
   private pointerInside = false;
+  private scrollFrame = 0;
 
   private readonly market: Market;
   private readonly onSelect: (symbol: string) => void;
@@ -156,7 +158,13 @@ export class Screener {
       this.render();
       this.onSelect(this.state.selected);
     });
-    market.delta.on((changes) => changes.forEach(([prev, next]) => this.refreshRow(prev, next)));
+    market.delta.on((changes) => {
+      // only rows on screen (plus a margin) are touched; the rest catch up when scrolled into view
+      const visible = this.visibleSymbols();
+      changes.forEach(([prev, next]) => {
+        if (visible.has(next.symbol)) this.refreshRow(prev, next);
+      });
+    });
     market.sparklinesUpdated.on(() => this.refreshSparklines());
     market.wallsUpdated.on(() => this.refreshWalls());
     setInterval(() => this.periodic(), RESORT_EVERY_MS);
@@ -243,7 +251,9 @@ export class Screener {
   private refreshWalls() {
     const index = COLUMNS.findIndex((c) => c.key === 'wall');
     const column = COLUMNS[index];
+    const visible = this.visibleSymbols();
     this.body.querySelectorAll<HTMLTableRowElement>('tr[data-sym]').forEach((tr) => {
+      if (!visible.has(tr.dataset.sym!)) return;
       const row = this.market.rows.get(tr.dataset.sym!);
       if (!row) return;
       const html = column.cell(row, this.context(row));
@@ -252,6 +262,30 @@ export class Screener {
   }
 
   /** Swaps cells in place: cheaper than re-rendering and keeps hover and focus intact. */
+  /** Symbols of the rows inside the scrolled viewport, with a margin above and below. */
+  private visibleSymbols(): Set<string> {
+    const rows = this.body.children;
+    const visible = new Set<string>();
+    if (!rows.length) return visible;
+    const rowHeight = (rows[0] as HTMLElement).offsetHeight || 31;
+    const first = Math.max(0, Math.floor(this.wrap.scrollTop / rowHeight) - VIEW_MARGIN_ROWS);
+    const last = Math.min(rows.length - 1, Math.ceil((this.wrap.scrollTop + this.wrap.clientHeight) / rowHeight) + VIEW_MARGIN_ROWS);
+    for (let i = first; i <= last; i++) {
+      const sym = (rows[i] as HTMLElement).dataset.sym;
+      if (sym) visible.add(sym);
+    }
+    return visible;
+  }
+
+  /** Rows that scrolled into view may hold values from before they left it. */
+  private refreshVisible() {
+    this.scrollFrame = 0;
+    for (const symbol of this.visibleSymbols()) {
+      const row = this.market.rows.get(symbol);
+      if (row) this.refreshRow(undefined, row);
+    }
+  }
+
   private refreshRow(prev: SymbolMetrics | undefined, next: SymbolMetrics) {
     const tr = this.body.querySelector<HTMLTableRowElement>(`tr[data-sym="${CSS.escape(next.symbol)}"]`);
     if (!tr) return;
@@ -325,6 +359,13 @@ export class Screener {
       if (tr) this.select(tr.dataset.sym!);
     });
     this.wrap.addEventListener('pointerenter', () => (this.pointerInside = true));
+    this.wrap.addEventListener(
+      'scroll',
+      () => {
+        if (!this.scrollFrame) this.scrollFrame = requestAnimationFrame(() => this.refreshVisible());
+      },
+      { passive: true },
+    );
     this.wrap.addEventListener('pointerleave', () => (this.pointerInside = false));
     this.searchInput.addEventListener('input', () => {
       this.state.query = this.searchInput.value;

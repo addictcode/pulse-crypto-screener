@@ -64,6 +64,14 @@ public enum SignalType {
         return cooldown;
     }
 
+    /**
+     * Funding extremes and walls are conditions that can hold for hours, unlike a pump or a
+     * liquidation burst. One that is already true when the detector starts is not news.
+     */
+    public boolean isState() {
+        return this == FUNDING || this == WALL;
+    }
+
     /** False for types where a smaller value is stronger (distance to a wall). */
     public boolean higherIsStronger() {
         return higherIsStronger;

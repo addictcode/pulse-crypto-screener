@@ -39,6 +39,14 @@ final class Cooldowns {
         history.forEach(this::record);
     }
 
+    /**
+     * Starts the cooldown without firing and without using the symbol's budget: for conditions
+     * that were already true when the detector started.
+     */
+    void remember(Signal signal) {
+        last.putIfAbsent(key(signal), new Last(signal.time(), signal.value()));
+    }
+
     /** Records the signal and returns true if it should fire. */
     boolean admit(Signal signal) {
         Last previous = last.get(key(signal));
