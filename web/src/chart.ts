@@ -14,22 +14,36 @@ import {
 } from 'lightweight-charts';
 
 import { priceDigits, px, usd } from './format';
+import { IndicatorMenu, renderBacktest } from './indicator-menu';
 import type { Market } from './market';
 import { load, save } from './storage';
+import { Studies } from './studies';
 import type { CandleDto, Liquidation, Signal } from './types';
 
-const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
+export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
 const HISTORY = 300;
 const MIN_MARKER_USD = 5_000;
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-interface Bar {
+export interface Bar {
   time: UTCTimestamp;
   open: number;
   high: number;
   low: number;
   close: number;
+}
+
+/**
+ * The forming candle after a new price. Once its interval is over a new one opens at the last
+ * close, so there is no visual gap before the next history load.
+ */
+export function liveBar(last: Bar, price: number, step: number, nowSec: number): Bar {
+  if (nowSec >= last.time + step) {
+    const time = (Math.floor(nowSec / step) * step) as UTCTimestamp;
+    return { time, open: last.close, high: price, low: price, close: price };
+  }
+  return { ...last, close: price, high: Math.max(last.high, price), low: Math.min(last.low, price) };
 }
 
 /**
@@ -40,6 +54,11 @@ interface Bar {
 export class PriceChart {
   private readonly el = document.getElementById('chart')!;
   private readonly tfEl = document.getElementById('tf')!;
+  private readonly backtestEl = document.getElementById('bt')!;
+  private readonly menu: IndicatorMenu;
+  private studies: Studies | null = null;
+  /** The candles on screen with volume, which the indicators read; the last one is live. */
+  private history: CandleDto[] = [];
   private chart: IChartApi | null = null;
   private candles: ISeriesApi<'Candlestick'> | null = null;
   private markers: ISeriesMarkersPluginApi<Time> | null = null;
@@ -54,6 +73,7 @@ export class PriceChart {
 
   constructor(market: Market) {
     this.market = market;
+    this.menu = new IndicatorMenu((ids) => this.studies?.setEnabled(ids));
     this.renderTimeframes();
     this.tfEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-tf]');
@@ -110,6 +130,8 @@ export class PriceChart {
   }
 
   private build(data: CandleDto[]) {
+    this.studies?.dispose();
+    this.studies = null;
     this.chart?.remove();
     this.el.innerHTML = '';
     const up = css('--up');
@@ -167,6 +189,11 @@ export class PriceChart {
       })),
     );
 
+    this.history = data.map((c) => ({ ...c }));
+    this.studies = new Studies(this.chart, this.candles, (lines) => renderBacktest(this.backtestEl, lines));
+    this.studies.setEnabled(this.menu.enabled);
+    this.studies.setBars(this.history);
+
     this.markerList = [];
     this.markers = createSeriesMarkers(this.candles, []);
     this.wallLines.clear();
@@ -178,21 +205,13 @@ export class PriceChart {
 
   private tick(price: number) {
     if (!this.candles || !this.lastBar) return;
-    const step = INTERVALS[this.interval];
-    const now = Math.floor(Date.now() / 1000);
-    if (now >= this.lastBar.time + step) {
-      // a new candle started; open it at the last close so there is no visual gap
-      const time = (Math.floor(now / step) * step) as UTCTimestamp;
-      this.lastBar = { time, open: this.lastBar.close, high: price, low: price, close: price };
-    } else {
-      this.lastBar = {
-        ...this.lastBar,
-        close: price,
-        high: Math.max(this.lastBar.high, price),
-        low: Math.min(this.lastBar.low, price),
-      };
-    }
+    this.lastBar = liveBar(this.lastBar, price, INTERVALS[this.interval], Math.floor(Date.now() / 1000));
     this.candles.update(this.lastBar);
+
+    const last = this.history.at(-1);
+    if (last && last.time === this.lastBar.time) Object.assign(last, this.lastBar);
+    else this.history.push({ ...this.lastBar, volume: 0 });
+    this.studies?.live(this.history);
   }
 
   /** Walls of this pair as dashed price lines, updated in place so they do not flicker. */
@@ -262,6 +281,9 @@ export class PriceChart {
 
   private showError(message: string) {
     this.el.classList.remove('loading');
+    this.studies?.dispose();
+    this.studies = null;
+    renderBacktest(this.backtestEl, []);
     this.chart?.remove();
     this.chart = null;
     this.candles = null;

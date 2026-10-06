@@ -10,6 +10,7 @@ import './styles.css';
 
 import { PriceChart } from './chart';
 import { Densities } from './densities';
+import { ChartGrid } from './grid';
 import { ICONS } from './icons';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
@@ -37,7 +38,18 @@ const screener = new Screener(market, (symbol) => {
 densities = new Densities(market, (symbol) => screener.select(symbol));
 new Tape(market, (symbol) => screener.select(symbol));
 densities.setSelected(screener.selected);
-initViews((view) => densities?.setActive(view === 'densities'));
+const grid = new ChartGrid(
+  market,
+  () => ({ rows: screener.list(), label: screener.presetLabel }),
+  (symbol) => {
+    screener.select(symbol);
+    location.hash = '#screener';
+  },
+);
+initViews((view) => {
+  densities?.setActive(view === 'densities');
+  grid.setActive(view === 'grid');
+});
 
 const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
 connect(market, `${scheme}://${location.host}/ws/market`);

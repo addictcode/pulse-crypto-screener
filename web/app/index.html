@@ -12,6 +12,7 @@
   <a class="brand" href="/" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="#3ef0ff" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="#3ef0ff" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="#3ef0ff" fill-opacity=".14"/></svg><b>Pulse</b></a>
   <nav class="views" aria-label="Views">
     <a class="view" href="#screener" data-view="screener">Terminal</a>
+    <a class="view" href="#grid" data-view="grid">Grid</a>
     <a class="view" href="#densities" data-view="densities">Densities</a>
   </nav>
   <div class="market">
@@ -69,12 +70,12 @@
     </dl>
     <div class="chart-bar">
       <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
-      <div class="legend" aria-hidden="true">
-        <span class="dim"><i class="dash"></i><span class="mute">Walls</span></span>
-        <span class="dim"><i class="dot"></i><span class="mute">Liq</span></span>
-        <span class="hot"><i class="dot"></i><span class="mute">Signal</span></span>
+      <div class="ind">
+        <button type="button" class="ind-btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu">Indicators<span class="count"></span></button>
+        <div class="ind-menu" id="ind-menu" hidden></div>
       </div>
     </div>
+    <div class="bt" id="bt" hidden></div>
     <div class="chart" id="chart"></div>
     <section class="book" aria-label="Order book walls">
       <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta" id="book-meta">walls within 5%</span></div>
@@ -103,6 +104,20 @@
       <svg id="map" role="img" aria-label="Walls by distance from price and size"></svg>
       <div class="map-tip" id="map-tip" hidden></div>
     </div>
+  </section>
+
+  <section class="panel charts" aria-label="Chart grid">
+    <div class="p-head">
+      <h2 class="p-title">Grid</h2>
+      <div class="tf" role="tablist" aria-label="Timeframe" id="g-tf"></div>
+      <span class="p-meta" id="g-meta"></span>
+      <div class="pager">
+        <button type="button" id="g-prev" aria-label="Previous page">&lsaquo;</button>
+        <span id="g-page">1 / 1</span>
+        <button type="button" id="g-next" aria-label="Next page">&rsaquo;</button>
+      </div>
+    </div>
+    <div class="cells" id="cells"></div>
   </section>
 
   <section class="panel walllist" aria-label="Walls">

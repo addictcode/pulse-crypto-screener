@@ -18,6 +18,10 @@
   --down: #ff4f7b;
   --accent: #3ef0ff;
   --accent-soft: rgba(62, 240, 255, .45);
+  /* indicator lines; hex, the chart code derives translucent variants from them */
+  --ind-amber: #ffc94d;
+  --ind-violet: #b48cff;
+  --ind-orange: #ff9a3c;
 
   --f-display: "Chakra Petch", system-ui, sans-serif;
   --f-ui: "Chakra Petch", system-ui, sans-serif;

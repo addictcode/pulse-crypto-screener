@@ -174,6 +174,15 @@ export class Screener {
     return this.state.selected;
   }
 
+  /** The rows the table shows right now, in its order; the chart grid pages through them. */
+  list(): SymbolMetrics[] {
+    return this.visibleRows();
+  }
+
+  get presetLabel() {
+    return PRESETS.find((p) => p.id === this.state.preset)!.label;
+  }
+
   render() {
     this.renderPresets();
     this.renderHead();
