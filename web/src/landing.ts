@@ -70,6 +70,7 @@ function renderStats() {
   $('s-liq').textContent = usd(liquidated);
 }
 setInterval(renderStats, 1_000);
+market.snapshot.on(renderStats);
 
 /** As many rows as the frame is tall (see .live-tape in landing.css). */
 const TAPE_ROWS = 11;

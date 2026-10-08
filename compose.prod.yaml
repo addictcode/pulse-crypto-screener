@@ -40,6 +40,14 @@ services:
       PULSE_TELEGRAM_TOKEN: ${PULSE_TELEGRAM_TOKEN:-}
       PULSE_TELEGRAM_OWNER_CHAT_ID: ${PULSE_TELEGRAM_OWNER_CHAT_ID:-}
     mem_limit: 1536m
+    # the image has neither curl nor wget, so bash speaks HTTP itself. "Healthy" means the market
+    # feed is alive, not merely that the JVM runs (see MarketHealthIndicator).
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q ' 200'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
     logging: *logging
 
   web:

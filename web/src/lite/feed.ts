@@ -234,7 +234,13 @@ export class BrowserFeed {
         }, n * 350);
       }
     };
-    ws.onmessage = (event) => this.onFrame(JSON.parse(event.data as string));
+    ws.onmessage = (event) => {
+      try {
+        this.onFrame(JSON.parse(event.data as string));
+      } catch {
+        // one frame the page cannot read is not worth dropping the stream for
+      }
+    };
     ws.onclose = () => {
       if (this.stopped) return;
       this.market.setConnection('reconnecting');
