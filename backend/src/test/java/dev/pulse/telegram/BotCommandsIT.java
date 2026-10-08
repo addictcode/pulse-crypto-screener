@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Import;
 import dev.pulse.TestcontainersConfiguration;
 import dev.pulse.account.AccountService;
 import dev.pulse.account.DeliverySettings;
+import dev.pulse.alert.AlertService;
+import dev.pulse.market.Candle;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.Instrument;
@@ -43,13 +45,15 @@ class BotCommandsIT {
     @Autowired
     private DensityScanner density;
 
+    @Autowired
+    private AlertService alerts;
     private BotCommands commands;
     private long userId;
 
     @BeforeEach
     void setUp() {
         market.onInstruments(List.of(new Instrument("WIFUSDT", "WIF", "USDT"), new Instrument("SOLUSDT", "SOL", "USDT")));
-        commands = new BotCommands(accounts, history, market, books, density);
+        commands = new BotCommands(accounts, history, market, books, density, alerts);
         userId = accounts.telegramUser(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)).getId();
     }
 
@@ -107,6 +111,23 @@ class BotCommandsIT {
         history.record(new Signal(null, SignalType.PUMP, "WIFUSDT", System.currentTimeMillis(), 1, 2.5, "WIF jumps 2.5% in five minutes", "d"));
 
         assertThat(commands.handle(userId, "/last 3")).contains("Latest signals", "WIF jumps 2.5% in five minutes");
+    }
+
+    @Test
+    void priceAlertsAreSetListedAndRemoved() {
+        market.onCandle("WIFUSDT", new Candle(System.currentTimeMillis(), 2, 2, 2, 2, 1, false));
+
+        assertThat(commands.handle(userId, "/alert wif 2.5")).startsWith("Alert set: WIF above 2.5000.").contains("+25.00% away");
+        assertThat(commands.handle(userId, "/alert wif 1.5")).startsWith("Alert set: WIF below 1.5000.");
+        assertThat(commands.handle(userId, "/alert wif 2.5")).isEqualTo("There is already an alert at that price.");
+        assertThat(commands.handle(userId, "/alert wif nope")).isEqualTo("\"nope\" is not a price.");
+        assertThat(commands.handle(userId, "/alert sol 10")).contains("No live price for SOL");
+        assertThat(commands.handle(userId, "/alerts")).contains("WIF", "above", "below", "2.5000", "1.5000");
+
+        long first = alerts.waitingFor(userId).getFirst().id();
+        assertThat(commands.handle(userId, "/unalert " + first)).isEqualTo("Alert " + first + " removed.");
+        assertThat(commands.handle(userId, "/unalert wif")).isEqualTo("1 alert on WIF removed.");
+        assertThat(commands.handle(userId, "/alerts")).startsWith("No price alerts.");
     }
 
     @Test

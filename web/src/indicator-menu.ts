@@ -65,7 +65,7 @@ export class IndicatorMenu {
             .join('')}</fieldset>`,
         )
         .join('') +
-      `<p class="ind-legend"><span class="dim"><i class="dash"></i>walls</span><span class="dim"><i class="dot"></i>liquidations</span><span class="hot"><i class="dot"></i>signals</span></p>`;
+      `<p class="ind-legend"><span class="dim"><i class="dash"></i>walls</span><span class="dim"><i class="dot"></i>liquidations</span><span class="hot"><i class="dot"></i>signals</span><span class="amber"><i class="line"></i>alerts</span></p>`;
     this.renderCount();
   }
 }

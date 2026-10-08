@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/002-accounts.yaml
   - include:
       file: db/changelog/changes/003-signal-outcomes.yaml
+  - include:
+      file: db/changelog/changes/004-price-alerts.yaml

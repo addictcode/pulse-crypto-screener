@@ -13,6 +13,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 
+import type { Alerts } from './alerts';
 import { priceDigits, px, usd } from './format';
 import { IndicatorMenu, renderBacktest } from './indicator-menu';
 import type { Market } from './market';
@@ -65,14 +66,18 @@ export class PriceChart {
   private markerList: SeriesMarker<Time>[] = [];
   private lastBar: Bar | null = null;
   private wallLines = new Map<string, IPriceLine>();
+  private alertLines = new Map<number, IPriceLine>();
   private symbol = '';
   private interval = load('interval', '5m');
   private request = 0;
 
   private readonly market: Market;
+  private readonly alerts: Alerts;
 
-  constructor(market: Market) {
+  constructor(market: Market, alerts: Alerts) {
     this.market = market;
+    this.alerts = alerts;
+    alerts.changed.on(() => this.syncAlerts());
     this.menu = new IndicatorMenu((ids) => this.studies?.setEnabled(ids));
     this.renderTimeframes();
     this.tfEl.addEventListener('click', (e) => {
@@ -198,6 +203,15 @@ export class PriceChart {
     this.markers = createSeriesMarkers(this.candles, []);
     this.wallLines.clear();
     this.syncWalls();
+    this.alertLines.clear();
+    this.syncAlerts();
+    // Alt + click: an alert at the price under the cursor
+    this.chart.subscribeClick((param) => {
+      const event = param.sourceEvent;
+      if (!event?.altKey || !param.point || !this.candles) return;
+      const price = this.candles.coordinateToPrice(param.point.y);
+      if (price !== null && price > 0) this.alerts.add(this.symbol, price);
+    });
     this.addLiquidationMarkers(this.market.liquidations.filter((l) => l.symbol === this.symbol));
     this.addSignalMarkers(this.market.signals.filter((s) => s.symbol === this.symbol));
     this.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, bars.length - 110), to: bars.length + 3 });
@@ -239,6 +253,32 @@ export class PriceChart {
           lineStyle: LineStyle.Dashed,
           axisLabelVisible: true,
           title: usd(wall.size),
+        }),
+      );
+    }
+  }
+
+  /** This pair's price alerts as solid amber lines, so they read differently from walls. */
+  private syncAlerts() {
+    if (!this.candles) return;
+    const wanted = new Map(this.alerts.for(this.symbol).map((a) => [a.id, a]));
+    for (const [id, line] of this.alertLines) {
+      if (!wanted.has(id)) {
+        this.candles.removePriceLine(line);
+        this.alertLines.delete(id);
+      }
+    }
+    for (const [id, alert] of wanted) {
+      if (this.alertLines.has(id)) continue;
+      this.alertLines.set(
+        id,
+        this.candles.createPriceLine({
+          price: alert.level,
+          color: css('--ind-amber'),
+          lineWidth: 1,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+          title: 'alert',
         }),
       );
     }

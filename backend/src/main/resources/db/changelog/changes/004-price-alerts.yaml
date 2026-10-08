@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-price-alert
+      author: pulse
+      comment: >
+        A price level one user wants to hear about, once. Fired alerts keep their row with
+        fired_at set, so the bot can show what went off recently.
+      changes:
+        - createTable:
+            tableName: price_alert
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: user_id, type: bigint, constraints: { nullable: false, foreignKeyName: fk_price_alert_user, references: app_user(id), deleteCascade: true } }
+              - column: { name: symbol, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: price_level, type: double precision, constraints: { nullable: false } }
+              - column: { name: above, type: boolean, constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: fired_at, type: timestamp with time zone }
+        - createIndex:
+            tableName: price_alert
+            indexName: ix_price_alert_user_active
+            columns:
+              - column: { name: user_id }
+              - column: { name: fired_at }

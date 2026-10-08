@@ -5,7 +5,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import dev.pulse.alert.AlertFired;
+import dev.pulse.alert.PriceAlert;
 import dev.pulse.signal.Signal;
+import dev.pulse.signal.Text;
 
 /**
  * Telegram HTML for signals. Titles carry the news, the second line the context,
@@ -31,6 +34,13 @@ final class TelegramFormat {
             text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
         }
         return text.toString();
+    }
+
+    static String alert(AlertFired fired) {
+        PriceAlert a = fired.alert();
+        return "<b>" + Text.base(a.symbol()) + (a.above() ? " rose to " : " fell to ") + Text.price(a.level()) + "</b>\n"
+                + "Now " + Text.price(fired.price()) + ".\n"
+                + "<i>Price alert, " + CLOCK.format(Instant.now()) + " UTC</i>";
     }
 
     static String escape(String text) {

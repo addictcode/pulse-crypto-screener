@@ -4,7 +4,7 @@ export type ConnectionState = 'connecting' | 'live' | 'reconnecting';
 
 type Listener<T> = (payload: T) => void;
 
-class Emitter<T> {
+export class Emitter<T> {
   private listeners: Listener<T>[] = [];
   on(listener: Listener<T>) {
     this.listeners.push(listener);

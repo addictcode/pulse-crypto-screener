@@ -8,6 +8,7 @@ import '@fontsource/azeret-mono/600.css';
 import './theme.css';
 import './styles.css';
 
+import { Alerts } from './alerts';
 import { PriceChart } from './chart';
 import { Densities } from './densities';
 import { ChartGrid } from './grid';
@@ -25,7 +26,10 @@ document.getElementById('search-icon')!.innerHTML = ICONS.search;
 
 const market = new Market();
 const instrument = new InstrumentPanel(market);
-const chart = new PriceChart(market);
+// set later: the screener (which owns the selection) is built after the panels it drives
+let selectSymbol: (symbol: string) => void = () => {};
+const alerts = new Alerts(market, (symbol) => selectSymbol(symbol));
+const chart = new PriceChart(market, alerts);
 new Masthead(market);
 new LiquidationsPanel(market);
 
@@ -35,9 +39,11 @@ let record: SignalRecord | null = null;
 const screener = new Screener(market, (symbol) => {
   instrument.show(symbol);
   chart.show(symbol);
+  alerts.show(symbol);
   densities?.setSelected(symbol);
   record?.setSelected(symbol);
 });
+selectSymbol = (symbol) => screener.select(symbol);
 densities = new Densities(market, (symbol) => screener.select(symbol));
 new Tape(market, (symbol) => screener.select(symbol));
 densities.setSelected(screener.selected);

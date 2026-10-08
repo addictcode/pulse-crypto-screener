@@ -71,6 +71,10 @@
     </dl>
     <div class="chart-bar">
       <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
+      <div class="al-box">
+        <button type="button" class="ind-btn" id="al-btn" aria-expanded="false" aria-controls="al-menu">Alert<span class="count"></span></button>
+        <div class="ind-menu al-menu" id="al-menu" hidden></div>
+      </div>
       <div class="ind">
         <button type="button" class="ind-btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu">Indicators<span class="count"></span></button>
         <div class="ind-menu" id="ind-menu" hidden></div>
@@ -176,6 +180,8 @@
     <ol class="liq-list" id="liqs"></ol>
   </section>
 </main>
+
+<div class="toasts" id="toasts" aria-live="assertive"></div>
 
 <footer class="statusbar">
   <span class="conn" id="st-conn">Connecting</span>

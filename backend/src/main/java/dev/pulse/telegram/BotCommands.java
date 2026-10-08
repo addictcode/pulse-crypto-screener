@@ -11,6 +11,8 @@ import java.util.regex.Pattern;
 
 import dev.pulse.account.AccountService;
 import dev.pulse.account.DeliverySettings;
+import dev.pulse.alert.AlertService;
+import dev.pulse.alert.PriceAlert;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.MarketStore;
@@ -34,6 +36,7 @@ final class BotCommands {
             new TelegramApi.Command("last", "Latest signals"),
             new TelegramApi.Command("stats", "What the price did after each kind of signal"),
             new TelegramApi.Command("status", "What the screener sees right now"),
+            new TelegramApi.Command("alerts", "Your price alerts; set one with /alert BTC 85000"),
             new TelegramApi.Command("mute", "Pause signals: /mute 1h, /mute off"),
             new TelegramApi.Command("watchlist", "Your watchlist"),
             new TelegramApi.Command("help", "All commands"));
@@ -49,8 +52,11 @@ final class BotCommands {
     private final MarketStore market;
     private final OrderBookStore books;
     private final DensityScanner density;
+    private final AlertService alerts;
 
-    BotCommands(AccountService accounts, SignalHistory history, MarketStore market, OrderBookStore books, DensityScanner density) {
+    BotCommands(AccountService accounts, SignalHistory history, MarketStore market, OrderBookStore books, DensityScanner density,
+                AlertService alerts) {
+        this.alerts = alerts;
         this.accounts = accounts;
         this.history = history;
         this.market = market;
@@ -79,6 +85,9 @@ final class BotCommands {
                 case "/scope" -> scope(userId, arg1);
                 case "/last" -> last(arg1);
                 case "/stats" -> stats(arg1);
+                case "/alert" -> alert(userId, arg1, arg2);
+                case "/alerts" -> alerts(userId);
+                case "/unalert" -> unalert(userId, arg1);
                 default -> "Unknown command. /help lists what I understand.";
             };
         } catch (IllegalArgumentException e) {
@@ -96,6 +105,8 @@ final class BotCommands {
                 /mute <i>30m | 2h | 1d | off</i> - pause delivery
                 /watch <i>symbol</i>, /unwatch <i>symbol</i>, /watchlist
                 /scope <i>all | watchlist</i> - which symbols you get signals for
+                /alert <i>symbol price</i> - tell me once when the price gets there, e.g. /alert BTC 85000
+                /alerts, /unalert <i>number | symbol</i> - your price alerts
                 /last <i>[n]</i> - latest signals
                 /stats <i>[days]</i> - what the price did after each kind of signal
                 /status - what the screener sees right now""";
@@ -248,6 +259,59 @@ final class BotCommands {
             text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
         }
         return text.toString();
+    }
+
+    private String alert(long userId, String symbolArg, String levelArg) {
+        if (symbolArg == null || levelArg == null) {
+            throw new IllegalArgumentException("Usage: /alert BTC 85000.");
+        }
+        String symbol = symbol(symbolArg);
+        Double price = market.price(symbol);
+        if (price == null) {
+            throw new IllegalArgumentException("No live price for " + Text.base(symbol) + " yet, try again in a moment.");
+        }
+        PriceAlert created = alerts.create(userId, symbol, number(levelArg), price);
+        double away = (created.level() / price - 1) * 100;
+        return "Alert set: " + describe(created) + ".\nNow " + Text.price(price) + ", " + Text.pct(away, 2) + " away.";
+    }
+
+    private String alerts(long userId) {
+        List<PriceAlert> waiting = alerts.waitingFor(userId);
+        if (waiting.isEmpty()) {
+            return "No price alerts. /alert BTC 85000 sets one.";
+        }
+        StringBuilder text = new StringBuilder("<b>Price alerts</b>\n<pre>");
+        for (PriceAlert a : waiting) {
+            Double price = market.price(a.symbol());
+            String away = price == null ? "" : Text.pct((a.level() / price - 1) * 100, 2);
+            text.append(String.format(Locale.US, "%-4d %-9s %-5s %12s %8s%n",
+                    a.id(), Text.base(a.symbol()), a.above() ? "above" : "below", Text.price(a.level()), away));
+        }
+        return text.append("</pre>/unalert <i>number</i> removes one, /unalert <i>symbol</i> all for a pair.").toString();
+    }
+
+    private String unalert(long userId, String arg) {
+        if (arg == null) {
+            throw new IllegalArgumentException("Which one? /unalert 12 by number, or /unalert BTC for a whole pair. /alerts lists them.");
+        }
+        if (arg.chars().allMatch(Character::isDigit)) {
+            return alerts.remove(userId, Long.parseLong(arg)) ? "Alert " + arg + " removed." : "No alert number " + arg + ". /alerts lists them.";
+        }
+        String symbol = symbol(arg);
+        int removed = alerts.removeFor(userId, symbol);
+        return removed == 0 ? "No alerts on " + Text.base(symbol) + "." : removed + (removed == 1 ? " alert" : " alerts") + " on " + Text.base(symbol) + " removed.";
+    }
+
+    static String describe(PriceAlert alert) {
+        return Text.base(alert.symbol()) + (alert.above() ? " above " : " below ") + Text.price(alert.level());
+    }
+
+    private static double number(String arg) {
+        try {
+            return Double.parseDouble(arg.replace(",", "").replace("$", "").replace("_", ""));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("\"" + arg + "\" is not a price.");
+        }
     }
 
     private String stats(String arg) {

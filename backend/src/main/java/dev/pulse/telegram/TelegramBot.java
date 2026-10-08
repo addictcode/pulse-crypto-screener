@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import dev.pulse.account.AccountService;
 import dev.pulse.account.DeliverySettings;
+import dev.pulse.alert.AlertFired;
+import dev.pulse.alert.AlertService;
 import dev.pulse.config.PulseProperties;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
@@ -43,10 +45,10 @@ class TelegramBot {
     private volatile boolean running;
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
-                OrderBookStore books, DensityScanner density) {
+                OrderBookStore books, DensityScanner density, AlertService alerts) {
         this.config = properties.telegram();
         this.accounts = accounts;
-        this.commands = new BotCommands(accounts, history, market, books, density);
+        this.commands = new BotCommands(accounts, history, market, books, density, alerts);
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -85,6 +87,18 @@ class TelegramBot {
             if (config.ownerChatId().equals(recipient.telegramChatId()) && recipient.wants(event.signal(), now)) {
                 sender.enqueue(recipient.telegramChatId(), event.signal());
             }
+        }
+    }
+
+    /** A price alert goes out at once, on its own thread: it is rare and must not wait behind a digest. */
+    @EventListener
+    void onAlert(AlertFired event) {
+        Long owner = config.ownerChatId();
+        if (!running || owner == null) {
+            return;
+        }
+        if (owner.equals(accounts.settings(event.alert().userId()).telegramChatId())) {
+            Thread.ofVirtual().name("telegram-alert").start(() -> reply(owner, TelegramFormat.alert(event)));
         }
     }
 
