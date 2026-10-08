@@ -1,6 +1,7 @@
 import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
 import { sparkline } from './sparkline';
+import { t } from './i18n';
 import { ICONS } from './icons';
 import { load, save } from './storage';
 import type { SymbolMetrics, VenueGap, Wall } from './types';
@@ -20,6 +21,8 @@ interface Column {
   key: Key;
   label: string;
   cls?: string;
+  /** Shown in the narrow list beside the chart; the rest appear with "All columns". */
+  core?: boolean;
   sortable?: boolean;
   /** Sort value for keys that are not SymbolMetrics fields. */
   value?: (r: SymbolMetrics, ctx: RowContext) => number | null;
@@ -51,14 +54,14 @@ export const RULES = {
 };
 
 const PRESETS: Preset[] = [
-  { id: 'all', label: 'All', test: () => true },
-  { id: 'movers', label: 'Movers', test: (r) => abs(r.ch5m) >= RULES.move5m || abs(r.ch1h) >= RULES.move1h },
-  { id: 'surge', label: 'Surge', test: (r) => (r.surge ?? 0) >= RULES.surge },
-  { id: 'funding', label: 'Funding', test: (r) => abs(r.funding) >= RULES.funding },
-  { id: 'fgap', label: 'Arb', test: (_r, ctx) => abs(ctx.gap?.spread8h ?? null) >= RULES.fundingGap },
-  { id: 'oi', label: 'OI rising', test: (r) => (r.oiCh15m ?? 0) >= RULES.oiRise },
-  { id: 'walls', label: 'Near walls', test: (_r, ctx) => ctx.wall !== null && Math.abs(ctx.wall.distance) <= RULES.nearWall },
-  { id: 'watch', label: 'Watchlist', test: (_r, ctx) => ctx.starred },
+  { id: 'all', label: t('All'), test: () => true },
+  { id: 'movers', label: t('Movers'), test: (r) => abs(r.ch5m) >= RULES.move5m || abs(r.ch1h) >= RULES.move1h },
+  { id: 'surge', label: t('Surge'), test: (r) => (r.surge ?? 0) >= RULES.surge },
+  { id: 'funding', label: t('Funding'), test: (r) => abs(r.funding) >= RULES.funding },
+  { id: 'fgap', label: t('Arb'), test: (_r, ctx) => abs(ctx.gap?.spread8h ?? null) >= RULES.fundingGap },
+  { id: 'oi', label: t('OI rising'), test: (r) => (r.oiCh15m ?? 0) >= RULES.oiRise },
+  { id: 'walls', label: t('Near walls'), test: (_r, ctx) => ctx.wall !== null && Math.abs(ctx.wall.distance) <= RULES.nearWall },
+  { id: 'watch', label: t('Watchlist'), test: (_r, ctx) => ctx.starred },
 ];
 
 const meter = (v: number | null) => {
@@ -73,59 +76,67 @@ const pctCell = (v: number | null, extra = '') =>
 
 const COLUMNS: Column[] = [
   {
-    key: 'star', label: '', cls: 'c-star', sortable: false,
+    key: 'star', label: '', cls: 'c-star', core: true, sortable: false,
     cell: (r, { starred }) =>
-      `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? 'Remove from' : 'Add to'} watchlist">${starred ? ICONS.starFill : ICONS.star}</button></td>`,
+      `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? t('Remove from watchlist') : t('Add to watchlist')}">${starred ? ICONS.starFill : ICONS.star}</button></td>`,
   },
-  { key: 'symbol', label: 'Symbol', cls: 'sym', cell: (r) => `<td class="sym">${base(r.symbol)}</td>` },
+  { key: 'symbol', label: t('Symbol'), cls: 'sym', core: true, cell: (r) => `<td class="sym">${base(r.symbol)}</td>` },
   {
-    key: 'spark', label: '2h', cls: 'spark c-md', sortable: false,
+    key: 'spark', label: t('2h'), cls: 'spark c-md', sortable: false,
     cell: (_r, { spark }) => `<td class="spark c-md">${spark ? sparkline(spark) : ''}</td>`,
   },
-  { key: 'price', label: 'Price', cell: (r) => `<td>${px(r.price)}</td>` },
-  { key: 'ch5m', label: '5m', cell: (r) => pctCell(r.ch5m) },
-  { key: 'ch15m', label: '15m', cls: 'c-lg', cell: (r) => pctCell(r.ch15m, ' c-lg') },
-  { key: 'ch1h', label: '1h', cls: 'c-sm', cell: (r) => pctCell(r.ch1h, ' c-sm') },
-  { key: 'ch24h', label: '24h', cell: (r) => pctCell(r.ch24h) },
-  { key: 'vol24h', label: 'Volume', cls: 'c-sm', cell: (r) => `<td class="dim c-sm">${usd(r.vol24h)}</td>` },
+  { key: 'price', label: t('Price'), core: true, cell: (r) => `<td>${px(r.price)}</td>` },
+  { key: 'ch5m', label: t('5m'), cls: 'c-opt', core: true, cell: (r) => pctCell(r.ch5m, ' c-opt') },
+  { key: 'ch15m', label: t('15m'), cls: 'c-lg', cell: (r) => pctCell(r.ch15m, ' c-lg') },
+  { key: 'ch1h', label: t('1h'), cls: 'c-sm', cell: (r) => pctCell(r.ch1h, ' c-sm') },
+  { key: 'ch24h', label: t('24h'), core: true, cell: (r) => pctCell(r.ch24h) },
+  { key: 'vol24h', label: t('Volume'), core: true, cell: (r) => `<td class="dim">${usd(r.vol24h)}</td>` },
   {
-    key: 'surge', label: 'Surge', cls: 'c-sm',
+    key: 'surge', label: t('Surge'), cls: 'c-sm',
     cell: (r) =>
       `<td class="c-sm ${(r.surge ?? 0) >= RULES.surge ? 'hot strong' : 'dim'}">${meter(r.surge)}${r.surge === null ? '–' : `${r.surge.toFixed(1)}×`}</td>`,
   },
   { key: 'natr', label: 'NATR', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${r.natr === null ? '–' : `${r.natr.toFixed(2)}%`}</td>` },
   {
-    key: 'funding', label: 'Funding', cls: 'c-sm',
+    key: 'funding', label: t('Funding'), cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${abs(r.funding) >= RULES.funding ? 'hot' : 'dim'}">${pct(r.funding, 4)}</td>`,
   },
   {
-    key: 'fgap', label: 'vs Bybit', cls: 'c-md',
+    key: 'fgap', label: t('vs Bybit'), cls: 'c-md',
     value: (_r, { gap }) => (gap?.spread8h === null || gap?.spread8h === undefined ? null : Math.abs(gap.spread8h)),
     cell: (_r, { gap }) => {
       const spread = gap?.spread8h ?? null;
       if (!gap || spread === null) return '<td class="c-md flat">\u2013</td>';
-      const title = `Funding per 8h: Binance ${spread > 0 ? 'higher' : 'lower'} than Bybit by ${Math.abs(spread).toFixed(4)}%, about ${Math.abs(gap.spreadApr ?? 0).toFixed(0)}% a year`;
+      const vars = { v: Math.abs(spread).toFixed(4), apr: Math.abs(gap.spreadApr ?? 0).toFixed(0) };
+      const title =
+        spread > 0
+          ? t('Funding per 8h: Binance higher than Bybit by {v}%, about {apr}% a year', vars)
+          : t('Funding per 8h: Binance lower than Bybit by {v}%, about {apr}% a year', vars);
       return `<td class="c-md ${Math.abs(spread) >= RULES.fundingGap ? 'hot strong' : 'dim'}" title="${title}">${pct(spread, 4)}</td>`;
     },
   },
   {
-    key: 'wall', label: 'Wall', cls: 'c-sm', ascendingFirst: true,
+    key: 'wall', label: t('Wall'), cls: 'c-sm', ascendingFirst: true,
     value: (_r, { wall }) => (wall ? Math.abs(wall.distance) : null),
     cell: (_r, { wall }) =>
       wall
-        ? `<td class="c-sm ${Math.abs(wall.distance) <= RULES.hotWall ? 'hot strong' : wall.side === 'BID' ? 'up' : 'down'}" title="${wall.side === 'BID' ? 'Bid' : 'Ask'} wall ${usd(wall.size)}">${pct(wall.distance, 2)}</td>`
+        ? `<td class="c-sm ${Math.abs(wall.distance) <= RULES.hotWall ? 'hot strong' : wall.side === 'BID' ? 'up' : 'down'}" title="${wall.side === 'BID' ? t('Bid wall') : t('Ask wall')} ${usd(wall.size)}">${pct(wall.distance, 2)}</td>`
         : '<td class="c-sm flat">\u2013</td>',
   },
   { key: 'oi', label: 'OI', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${usd(r.oi)}</td>` },
   {
-    key: 'oiCh15m', label: 'OI 15m', cls: 'c-sm',
+    key: 'oiCh15m', label: t('OI 15m'), cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${tone(r.oiCh15m, 0.1)}${(r.oiCh15m ?? 0) >= RULES.oiRise ? ' strong' : ''}">${pct(r.oiCh15m, 1)}</td>`,
   },
   {
-    key: 'liq5m', label: 'Liq 5m', cls: 'c-lg',
+    key: 'liq5m', label: t('Liq 5m'), cls: 'c-lg',
     cell: (r) => `<td class="c-lg ${r.liq5m >= RULES.bigLiquidations ? 'strong' : 'dim'}">${r.liq5m > 0 ? usd(r.liq5m) : '–'}</td>`,
   },
 ];
+
+/** Cells of the columns hidden in the narrow list carry the class `x`. */
+const cellHtml = (c: Column, r: SymbolMetrics, ctx: RowContext) =>
+  c.core ? c.cell(r, ctx) : c.cell(r, ctx).replace('<td class="', '<td class="x ');
 
 const RESORT_EVERY_MS = 5_000;
 const VIEW_MARGIN_ROWS = 8;
@@ -204,8 +215,8 @@ export class Screener {
     const rows = this.visibleRows();
     this.body.innerHTML = rows.length
       ? rows.map((r) => this.rowHtml(r)).join('')
-      : `<tr class="empty"><td colspan="${COLUMNS.length}">${this.market.rows.size ? 'Nothing matches this preset right now. Lower the volume filter or clear the search.' : 'Waiting for market data.'}</td></tr>`;
-    document.getElementById('st-pairs')!.textContent = `${rows.length} of ${this.market.rows.size} pairs`;
+      : `<tr class="empty"><td colspan="${COLUMNS.length}">${this.market.rows.size ? t('Nothing matches this preset right now. Lower the volume filter or clear the search.') : t('Waiting for market data.')}</td></tr>`;
+    document.getElementById('st-pairs')!.textContent = t('{n} of {total} pairs', { n: rows.length, total: this.market.rows.size });
   }
 
   select(symbol: string, focus = false) {
@@ -269,7 +280,7 @@ export class Screener {
   private rowHtml(r: SymbolMetrics) {
     const selected = r.symbol === this.state.selected;
     const ctx = this.context(r);
-    return `<tr data-sym="${r.symbol}" tabindex="${selected ? 0 : -1}"${selected ? ' class="is-selected"' : ''}>${COLUMNS.map((c) => c.cell(r, ctx)).join('')}</tr>`;
+    return `<tr data-sym="${r.symbol}" tabindex="${selected ? 0 : -1}"${selected ? ' class="is-selected"' : ''}>${COLUMNS.map((c) => cellHtml(c, r, ctx)).join('')}</tr>`;
   }
 
   /** Walls and the Bybit comparison arrive on their own clock; only their cells change. */
@@ -281,7 +292,7 @@ export class Screener {
       if (!visible.has(tr.dataset.sym!)) return;
       const row = this.market.rows.get(tr.dataset.sym!);
       if (!row) return;
-      const html = column.cell(row, this.context(row));
+      const html = cellHtml(column, row, this.context(row));
       if (tr.children[index].outerHTML !== html) tr.children[index].outerHTML = html;
     });
   }
@@ -348,7 +359,7 @@ export class Screener {
       const on = c.key === this.state.sortKey;
       const sorted = on ? ` sorted${this.state.ascending ? ' asc' : ''}` : '';
       const aria = on ? ` aria-sort="${this.state.ascending ? 'ascending' : 'descending'}"` : '';
-      return `<th class="${c.cls ?? ''}${sorted}" data-sort="${c.key}"${aria}>${c.label}</th>`;
+      return `<th class="${c.cls ?? ''}${c.core ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${c.label}</th>`;
     }).join('');
   }
 
@@ -359,7 +370,21 @@ export class Screener {
     this.render();
   }
 
+  /** "All columns": the list takes most of the width and shows every column. */
+  setWide(wide: boolean) {
+    if (wide) document.body.dataset.list = 'wide';
+    else delete document.body.dataset.list;
+    document.getElementById('list-wide')!.setAttribute('aria-pressed', String(wide));
+    save('listWide', wide);
+  }
+
+  get wide() {
+    return document.body.dataset.list === 'wide';
+  }
+
   private bindEvents() {
+    document.getElementById('list-wide')!.addEventListener('click', () => this.setWide(!this.wide));
+    this.setWide(load('listWide', false));
     this.presetsEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-preset]');
       if (!button) return;

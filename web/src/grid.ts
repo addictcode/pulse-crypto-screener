@@ -8,8 +8,9 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 
-import { INTERVALS, liveBar, type Bar } from './chart';
+import { CHART_FONT, INTERVALS, liveBar, type Bar } from './chart';
 import { base, pct, priceDigits, px, tone, usd } from './format';
+import { t } from './i18n';
 import type { Market } from './market';
 import { load, save } from './storage';
 import type { CandleDto, SymbolMetrics } from './types';
@@ -117,7 +118,7 @@ export class ChartGrid {
     this.pages = Math.max(1, Math.ceil(rows.length / CELLS));
     this.page = Math.min(this.page, this.pages - 1);
     this.pageEl.textContent = `${this.page + 1} / ${this.pages}`;
-    this.metaEl.textContent = `${label}, ${rows.length} pairs, in screener order`;
+    this.metaEl.textContent = t('{label}, {n} pairs, in screener order', { label, n: rows.length });
     if (!force && Date.now() - this.orderedAt < REORDER_MS) return;
     const next = rows.slice(this.page * CELLS, this.page * CELLS + CELLS).map((r) => r.symbol);
     this.orderedAt = Date.now();
@@ -139,13 +140,13 @@ export class ChartGrid {
     for (let i = 0; i < CELLS; i++) {
       const box = document.createElement('article');
       box.className = 'cell';
-      box.innerHTML = '<button type="button" class="cell-head"></button><div class="cell-chart"></div>';
+      box.innerHTML = `<button type="button" class="cell-head"></button><div class="cell-chart" data-failed="${t('History unavailable')}"></div>`;
       this.root.append(box);
       const head = box.querySelector<HTMLButtonElement>('.cell-head')!;
       const chartEl = box.querySelector<HTMLElement>('.cell-chart')!;
       const chart = createChart(chartEl, {
         autoSize: true,
-        layout: { background: { color: 'transparent' }, textColor: ink3, fontFamily: 'Azeret Mono, monospace', fontSize: 10, attributionLogo: false },
+        layout: { background: { color: 'transparent' }, textColor: ink3, fontFamily: CHART_FONT, fontSize: 10, attributionLogo: false },
         grid: { vertLines: { visible: false }, horzLines: { color: css('--rule-soft') } },
         rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.08 } },
         timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 3 },
@@ -246,7 +247,7 @@ export class ChartGrid {
     cell.head.innerHTML = `<b>${base(r.symbol)}</b><span class="num">${px(r.price)}</span><span class="num ${tone(r.ch24h)}">${pct(r.ch24h)}</span>${
       wall && Math.abs(wall.distance) <= 1 ? `<span class="num wall ${wall.side === 'BID' ? 'up' : 'down'}">${usd(wall.size)} ${pct(wall.distance, 2)}</span>` : ''
     }<span class="num vol">${usd(r.vol24h)}</span>`;
-    cell.head.title = `Open ${base(r.symbol)} in the terminal`;
+    cell.head.title = t('Open {sym} in the terminal', { sym: base(r.symbol) });
   }
 
   /** Walls of the pair as dashed lines, diffed so the lines do not blink on every rescan. */

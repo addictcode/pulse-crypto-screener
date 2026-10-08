@@ -139,7 +139,7 @@ class ShapesPrimitive implements ISeriesPrimitive<Time> {
     const x = (i: number) => time.logicalToCoordinate(i as Logical);
     const y = (p: number) => series.priceToCoordinate(p);
     target.useMediaCoordinateSpace(({ context: ctx, mediaSize }) => {
-      ctx.font = '10px "Azeret Mono", monospace';
+      ctx.font = '500 10px "Inter Variable", sans-serif';
       ctx.lineWidth = 1;
       for (const s of this.shapes) {
         if (s.kind === 'zone') {

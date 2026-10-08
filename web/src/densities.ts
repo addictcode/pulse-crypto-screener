@@ -1,4 +1,5 @@
 import { age, base, eatTime, pct, px, usd } from './format';
+import { t } from './i18n';
 import type { Market } from './market';
 import { load, save } from './storage';
 import type { Wall } from './types';
@@ -10,8 +11,8 @@ interface Filters {
 }
 
 const DISTANCES = [1, 2, 5];
-const SIZES: Array<[number, string]> = [[0, 'any'], [250_000, '$250K'], [1_000_000, '$1M'], [5_000_000, '$5M']];
-const SIDES: Array<[Filters['side'], string]> = [['both', 'both'], ['BID', 'bids'], ['ASK', 'asks']];
+const SIZES: Array<[number, string]> = [[0, t('any size')], [250_000, '$250K'], [1_000_000, '$1M'], [5_000_000, '$5M']];
+const SIDES: Array<[Filters['side'], string]> = [['both', t('both sides')], ['BID', t('bids')], ['ASK', t('asks')]];
 
 const DISTANCE_TICKS = [0.25, 0.5, 1, 2, 3, 5];
 const DISTANCE_EXPONENT = 0.7;
@@ -64,7 +65,7 @@ export class Densities {
     this.visible = this.market.walls.filter(
       (w) => Math.abs(w.distance) <= distance && w.size >= minSize && (side === 'both' || w.side === side),
     );
-    $('dm-meta').textContent = `${this.visible.length} walls in ${this.market.coverage.size} live books`;
+    $('dm-meta').textContent = t('{n} walls in {books} live books', { n: this.visible.length, books: this.market.coverage.size });
     this.renderMap();
     this.renderList();
   }
@@ -79,8 +80,8 @@ export class Densities {
       this.svg.innerHTML = '';
       this.showEmpty(
         this.market.coverage.size
-          ? 'No walls match these filters. Widen the distance or lower the minimum size.'
-          : 'Order books are syncing. Walls appear within a minute of startup.',
+          ? t('No walls match these filters. Widen the distance or lower the minimum size.')
+          : t('Order books are syncing. Walls appear within a minute of startup.'),
       );
       return;
     }
@@ -116,9 +117,9 @@ export class Densities {
       parts.push(`<text class="m-tick" x="${PAD.left - 8}" y="${gy}" dy="4" text-anchor="end">${usd(s).replace('.0', '')}</text>`);
     }
     parts.push(`<line class="m-price" x1="${cx}" x2="${cx}" y1="${PAD.top - 6}" y2="${PAD.top + plotH}"/>`);
-    parts.push(`<text class="m-tick" x="${cx}" y="${PAD.top - 8}" text-anchor="middle" fill="var(--accent)">price</text>`);
-    parts.push(`<text class="m-side" x="${PAD.left + 10}" y="${PAD.top + 18}">Bids</text>`);
-    parts.push(`<text class="m-side" x="${PAD.left + plotW - 10}" y="${PAD.top + 18}" text-anchor="end">Asks</text>`);
+    parts.push(`<text class="m-tick" x="${cx}" y="${PAD.top - 8}" text-anchor="middle">${t('price')}</text>`);
+    parts.push(`<text class="m-side" x="${PAD.left + 10}" y="${PAD.top + 18}">${t('Bids')}</text>`);
+    parts.push(`<text class="m-side" x="${PAD.left + plotW - 10}" y="${PAD.top + 18}" text-anchor="end">${t('Asks')}</text>`);
 
     // biggest first so small bubbles stay clickable on top
     const order = this.visible.map((_w, i) => i).sort((a, b) => this.visible[b].size - this.visible[a].size);
@@ -157,13 +158,13 @@ export class Densities {
 
   private renderList() {
     const rows = this.visible.slice(0, MAX_LIST_ROWS);
-    $('wl-meta').textContent = this.visible.length > rows.length ? `nearest ${rows.length} of ${this.visible.length}` : 'nearest to price first';
+    $('wl-meta').textContent = this.visible.length > rows.length ? t('nearest {n} of {total}', { n: rows.length, total: this.visible.length }) : t('nearest to price first');
     $('wl-rows').innerHTML = rows.length
       ? rows
           .map(
             (w) => `<tr data-sym="${w.symbol}"${w.symbol === this.selected ? ' class="is-selected"' : ''}>
               <td class="sym">${base(w.symbol)}</td>
-              <td class="${w.side === 'BID' ? 'up' : 'down'}">${w.side === 'BID' ? 'Bid' : 'Ask'}</td>
+              <td class="${w.side === 'BID' ? 'up' : 'down'}">${w.side === 'BID' ? t('Bid') : t('Ask')}</td>
               <td>${px(w.price)}</td>
               <td class="${w.size >= 1e6 ? 'strong' : ''}">${usd(w.size)}</td>
               <td class="${Math.abs(w.distance) <= HOT_ZONE ? 'hot strong' : 'dim'}">${pct(w.distance, 2)}</td>
@@ -173,7 +174,7 @@ export class Densities {
             </tr>`,
           )
           .join('')
-      : `<tr class="empty"><td colspan="8">No walls to list.</td></tr>`;
+      : `<tr class="empty"><td colspan="8">${t('No walls to list.')}</td></tr>`;
   }
 
   private renderFilters() {
@@ -203,14 +204,14 @@ export class Densities {
   private showTip(wall: Wall, clientX: number, clientY: number) {
     const coverage = this.market.coverage.get(wall.symbol);
     this.tip.innerHTML =
-      `<div><b>${base(wall.symbol)}</b><span class="${wall.side === 'BID' ? 'up' : 'down'}">${wall.side === 'BID' ? 'Bid wall' : 'Ask wall'}</span></div>` +
-      `<div><span class="k">Price</span>${px(wall.price)}</div>` +
-      `<div><span class="k">Size</span>${usd(wall.size)} <span class="mute">${wall.multiple.toFixed(1)}× avg</span></div>` +
-      `<div><span class="k">Distance</span>${pct(wall.distance, 2)}</div>` +
-      `<div><span class="k">Standing</span>${age(wall.age)}</div>` +
-      `<div><span class="k">Eaten in</span>${eatTime(wall.eatMinutes)}</div>` +
+      `<div><b>${base(wall.symbol)}</b><span class="${wall.side === 'BID' ? 'up' : 'down'}">${wall.side === 'BID' ? t('Bid wall') : t('Ask wall')}</span></div>` +
+      `<div><span class="k">${t('Price')}</span>${px(wall.price)}</div>` +
+      `<div><span class="k">${t('Size')}</span>${usd(wall.size)} <span class="mute">${wall.multiple.toFixed(1)}× ${t('avg')}</span></div>` +
+      `<div><span class="k">${t('Distance')}</span>${pct(wall.distance, 2)}</div>` +
+      `<div><span class="k">${t('Standing')}</span>${age(wall.age)}</div>` +
+      `<div><span class="k">${t('Eaten in')}</span>${eatTime(wall.eatMinutes)}</div>` +
       (coverage !== undefined && Math.abs(wall.distance) > coverage
-        ? `<div class="mute">beyond the snapshot range (±${coverage}%)</div>`
+        ? `<div class="mute">${t('beyond the snapshot range (±{n}%)', { n: coverage })}</div>`
         : '');
     this.tip.hidden = false;
     const box = this.wrap.getBoundingClientRect();

@@ -1,28 +1,30 @@
-import '@fontsource/chakra-petch/400.css';
-import '@fontsource/chakra-petch/500.css';
-import '@fontsource/chakra-petch/600.css';
+import '@fontsource-variable/inter';
 import '@fontsource/chakra-petch/700.css';
-import '@fontsource/azeret-mono/400.css';
-import '@fontsource/azeret-mono/500.css';
-import '@fontsource/azeret-mono/600.css';
-import './theme.css';
 import './styles.css';
 
 import { Alerts } from './alerts';
-import { PriceChart } from './chart';
+import { INTERVALS, PriceChart } from './chart';
 import { Densities } from './densities';
 import { ChartGrid } from './grid';
-import { ICONS } from './icons';
+import { localize, mountLangSwitch } from './i18n';
+import { ICONS, mountIcons } from './icons';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
 import { connect, Market, watchVenues } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
 import { SignalRecord } from './signals';
+import { save } from './storage';
 import { Tape } from './tape';
-import { initViews } from './views';
+import { currentView, initViews, parseHash, rememberSymbol } from './views';
 
-document.getElementById('search-icon')!.innerHTML = ICONS.search;
+localize();
+mountIcons();
+mountLangSwitch(document.getElementById('lang')!);
+
+// a shared link names its pair; it wins over the one remembered in this browser
+const linked = parseHash(location.hash).symbol;
+if (linked) save('selected', linked);
 
 const market = new Market();
 const instrument = new InstrumentPanel(market);
@@ -33,7 +35,7 @@ const chart = new PriceChart(market, alerts);
 new Masthead(market);
 new LiquidationsPanel(market);
 
-// the screener owns the selection; the density view selects through it so both stay in step
+// the screener owns the selection; every other view selects through it so they stay in step
 let densities: Densities | null = null;
 let record: SignalRecord | null = null;
 const screener = new Screener(market, (symbol) => {
@@ -42,25 +44,58 @@ const screener = new Screener(market, (symbol) => {
   alerts.show(symbol);
   densities?.setSelected(symbol);
   record?.setSelected(symbol);
+  rememberSymbol(symbol);
 });
-selectSymbol = (symbol) => screener.select(symbol);
-densities = new Densities(market, (symbol) => screener.select(symbol));
-new Tape(market, (symbol) => screener.select(symbol));
+selectSymbol = (symbol) => {
+  if (market.rows.has(symbol)) screener.select(symbol);
+};
+densities = new Densities(market, selectSymbol);
+new Tape(market, selectSymbol);
 densities.setSelected(screener.selected);
-record = new SignalRecord(market, (symbol) => screener.select(symbol));
+record = new SignalRecord(market, selectSymbol);
 record.setSelected(screener.selected);
 const grid = new ChartGrid(
   market,
   () => ({ rows: screener.list(), label: screener.presetLabel }),
   (symbol) => {
-    screener.select(symbol);
-    location.hash = '#screener';
+    selectSymbol(symbol);
+    location.hash = `#screener:${symbol}`;
   },
 );
-initViews((view) => {
-  densities?.setActive(view === 'densities');
-  grid.setActive(view === 'grid');
-  record?.setActive(view === 'signals');
+initViews(
+  (view) => {
+    densities?.setActive(view === 'densities');
+    grid.setActive(view === 'grid');
+    record?.setActive(view === 'signals');
+  },
+  (symbol) => {
+    if (symbol !== screener.selected) selectSymbol(symbol);
+  },
+);
+
+// chart only: the list and the dock step aside
+const focusButton = document.getElementById('focus-btn')!;
+function setFocus(on: boolean) {
+  if (on) document.body.dataset.focus = '';
+  else delete document.body.dataset.focus;
+  focusButton.setAttribute('aria-pressed', String(on));
+  focusButton.querySelector('.i')!.innerHTML = on ? ICONS.collapse : ICONS.expand;
+}
+const toggleFocus = () => {
+  if (currentView() !== 'screener') location.hash = `#screener:${screener.selected}`;
+  setFocus(!('focus' in document.body.dataset));
+};
+focusButton.addEventListener('click', toggleFocus);
+
+document.addEventListener('keydown', (e) => {
+  const target = e.target instanceof HTMLElement ? e.target : null;
+  if (target?.matches('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.toLowerCase() === 'f') {
+    toggleFocus();
+    return;
+  }
+  const timeframe = Object.keys(INTERVALS)[Number(e.key) - 1];
+  if (timeframe && e.key.length === 1) chart.setTimeframe(timeframe);
 });
 
 const scheme = location.protocol === 'https:' ? 'wss' : 'ws';

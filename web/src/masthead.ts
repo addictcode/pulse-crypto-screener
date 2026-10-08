@@ -1,12 +1,13 @@
 import { hms, pct, px, tone, usd } from './format';
+import { t } from './i18n';
 import type { ConnectionState, Market } from './market';
 
 const $ = (id: string) => document.getElementById(id)!;
 
 const CONNECTION_LABEL: Record<ConnectionState, string> = {
-  connecting: 'Connecting',
-  live: 'Connected',
-  reconnecting: 'Reconnecting',
+  connecting: t('Connecting'),
+  live: t('Connected'),
+  reconnecting: t('Reconnecting'),
 };
 
 /** Masthead market summary, UTC clock and the status bar along the bottom. */
@@ -26,7 +27,7 @@ export class Masthead {
     ($('clock').firstChild as Text).textContent = hms(Date.now());
     this.renderMarket();
     const age = this.market.lastTick ? Math.max(0, Date.now() - this.market.lastTick) : null;
-    $('st-age').textContent = age === null ? '' : `data age ${age < 1000 ? `${age} ms` : `${(age / 1000).toFixed(1)} s`}`;
+    $('st-age').textContent = age === null ? '' : t('data age {v}', { v: age < 1000 ? `${age} ms` : `${(age / 1000).toFixed(1)} s` });
   }
 
   private renderMarket() {
@@ -38,7 +39,7 @@ export class Masthead {
       $(id).textContent = px(row.price);
       const change = $(`${id}-c`);
       change.textContent = pct(row.ch24h);
-      change.className = tone(row.ch24h);
+      change.className = `mk-chg ${tone(row.ch24h)}`;
     }
     $('m-vol').textContent = usd(rows.reduce((sum, r) => sum + r.vol24h, 0));
 

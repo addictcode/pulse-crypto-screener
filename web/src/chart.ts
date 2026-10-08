@@ -15,6 +15,7 @@ import {
 
 import type { Alerts } from './alerts';
 import { priceDigits, px, usd } from './format';
+import { t } from './i18n';
 import { IndicatorMenu, renderBacktest } from './indicator-menu';
 import type { Market } from './market';
 import { load, save } from './storage';
@@ -23,6 +24,7 @@ import type { CandleDto, Liquidation, Signal } from './types';
 
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
 const HISTORY = 300;
+export const CHART_FONT = '"Inter Variable", system-ui, sans-serif';
 const MIN_MARKER_USD = 5_000;
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -82,11 +84,7 @@ export class PriceChart {
     this.renderTimeframes();
     this.tfEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-tf]');
-      if (!button || button.dataset.tf === this.interval) return;
-      this.interval = button.dataset.tf!;
-      save('interval', this.interval);
-      this.renderTimeframes();
-      void this.load();
+      if (button) this.setTimeframe(button.dataset.tf!);
     });
     market.delta.on((changes) => {
       const mine = changes.find(([, next]) => next.symbol === this.symbol);
@@ -109,6 +107,18 @@ export class PriceChart {
     void this.load();
   }
 
+  setTimeframe(interval: string) {
+    if (!(interval in INTERVALS) || interval === this.interval) return;
+    this.interval = interval;
+    save('interval', interval);
+    this.renderTimeframes();
+    if (this.symbol) void this.load();
+  }
+
+  get timeframe() {
+    return this.interval;
+  }
+
   private renderTimeframes() {
     this.tfEl.innerHTML = Object.keys(INTERVALS)
       .map((tf) => `<button role="tab" data-tf="${tf}" aria-selected="${tf === this.interval}">${tf}</button>`)
@@ -126,7 +136,7 @@ export class PriceChart {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       data = (await response.json()) as CandleDto[];
     } catch (error) {
-      if (request === this.request) this.showError(`Could not load ${this.interval} candles: ${(error as Error).message}`);
+      if (request === this.request) this.showError(t('Could not load {tf} candles: {error}', { tf: this.interval, error: (error as Error).message }));
       return;
     }
     if (request !== this.request) return; // the user already switched to another pair or timeframe
@@ -149,7 +159,7 @@ export class PriceChart {
       layout: {
         background: { color: css('--bg-1') },
         textColor: ink3,
-        fontFamily: 'Azeret Mono, monospace',
+        fontFamily: CHART_FONT,
         fontSize: 11,
         attributionLogo: false, // credited in the status bar
       },
@@ -190,7 +200,7 @@ export class PriceChart {
       data.map((c) => ({
         time: c.time as UTCTimestamp,
         value: c.volume,
-        color: c.close >= c.open ? 'rgba(86,185,138,.26)' : 'rgba(224,106,92,.26)',
+        color: c.close >= c.open ? 'rgba(46,189,133,.28)' : 'rgba(246,70,93,.28)',
       })),
     );
 
@@ -278,7 +288,7 @@ export class PriceChart {
           lineWidth: 1,
           lineStyle: LineStyle.Solid,
           axisLabelVisible: true,
-          title: 'alert',
+          title: t('alert'),
         }),
       );
     }

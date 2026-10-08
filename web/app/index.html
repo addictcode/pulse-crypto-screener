@@ -4,45 +4,114 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0c11">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%230a0c11' stroke='%234db8ff' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%234db8ff' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
 <title>Pulse terminal</title>
 </head>
 <body>
 
-<header class="mast">
-  <a class="brand" href="/" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="#3ef0ff" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="#3ef0ff" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="#3ef0ff" fill-opacity=".14"/></svg><b>Pulse</b></a>
-  <nav class="views" aria-label="Views">
-    <a class="view" href="#screener" data-view="screener">Terminal</a>
-    <a class="view" href="#grid" data-view="grid">Grid</a>
-    <a class="view" href="#densities" data-view="densities">Densities</a>
-    <a class="view" href="#signals" data-view="signals">Signals</a>
+<header class="top">
+  <a class="brand" href="/" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/></svg><b>Pulse</b></a>
+  <nav class="views" data-i18n-attrs="aria-label" aria-label="Views">
+    <a class="view" href="#screener" data-view="screener" data-i18n>Terminal</a>
+    <a class="view" href="#grid" data-view="grid" data-i18n>Grid</a>
+    <a class="view" href="#densities" data-view="densities" data-i18n>Densities</a>
+    <a class="view" href="#signals" data-view="signals" data-i18n>Signals</a>
   </nav>
   <div class="market">
-    <div class="mk"><span class="mk-label">BTC</span><span class="mk-val"><span id="m-btc">&nbsp;</span><span id="m-btc-c"></span></span></div>
-    <div class="mk"><span class="mk-label">ETH</span><span class="mk-val"><span id="m-eth">&nbsp;</span><span id="m-eth-c"></span></span></div>
-    <div class="mk m-opt"><span class="mk-label">Volume 24h</span><span class="mk-val" id="m-vol">&nbsp;</span></div>
-    <div class="mk" title="Share of pairs up over 24h"><span class="mk-label">Breadth</span><span class="breadth" id="breadth"><i></i><i></i></span><span class="mk-val" id="breadth-v">&nbsp;</span></div>
-    <div class="mk sessions-wrap"><span class="mk-label">Sessions</span><span class="sessions" id="sessions"><span>Asia</span><span>London</span><span>New York</span></span></div>
+    <div class="mk"><span class="mk-label">BTC</span><span class="mk-val" id="m-btc">&nbsp;</span><span class="mk-chg" id="m-btc-c"></span></div>
+    <div class="mk"><span class="mk-label">ETH</span><span class="mk-val" id="m-eth">&nbsp;</span><span class="mk-chg" id="m-eth-c"></span></div>
+    <div class="mk m-opt"><span class="mk-label" data-i18n>Volume 24h</span><span class="mk-val" id="m-vol">&nbsp;</span></div>
+    <div class="mk m-opt" data-i18n-attrs="title" title="Share of pairs up over 24h"><span class="mk-label" data-i18n>Breadth</span><span class="breadth" id="breadth"><i></i><i></i></span><span class="mk-val" id="breadth-v">&nbsp;</span></div>
   </div>
-  <time class="clock" id="clock">00:00:00<span>UTC</span></time>
+  <div class="top-actions">
+    <div class="seg lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button></div>
+  </div>
 </header>
 
 <main class="desk">
-  <section class="panel screener" aria-label="Screener">
-    <div class="p-head">
-      <h2 class="p-title">Screener</h2>
-      <div class="presets" role="tablist" aria-label="Presets" id="presets"></div>
-      <div class="filters">
-        <label class="field"><span id="search-icon" class="field-icon"></span><span class="sr">Search symbol</span><input id="q" type="search" placeholder="Symbol" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
-        <label class="field vol-field"><span>Volume</span>
-          <select id="minvol">
-            <option value="0">any</option>
-            <option value="5000000">&ge; $5M</option>
-            <option value="50000000" selected>&ge; $50M</option>
-            <option value="200000000">&ge; $200M</option>
-          </select>
-        </label>
+  <section class="panel instrument" id="instrument" data-i18n-attrs="aria-label" aria-label="Selected instrument">
+    <div class="ins-top">
+      <header class="ins-head">
+        <div class="ins-id">
+          <h1 class="ins-sym" id="ins-sym">&nbsp;</h1>
+          <p class="ins-name" id="ins-name">&nbsp;</p>
+        </div>
+        <div class="ins-quote">
+          <span class="ins-price" id="ins-price">&nbsp;</span>
+          <span class="ins-chg" id="ins-chg">&nbsp;</span>
+        </div>
+      </header>
+      <div class="ins-strip">
+        <dl class="ins-stats">
+          <div><dt data-i18n>24h range</dt><dd><span class="range"><span id="rng-lo">&nbsp;</span><span class="range-line"><i id="rng-mark"></i></span><span id="rng-hi">&nbsp;</span></span></dd></div>
+          <div><dt data-i18n>Funding</dt><dd><span id="ins-fund">&nbsp;</span><span class="sub" id="ins-fund-t">&nbsp;</span></dd></div>
+          <div><dt data-i18n>Open interest</dt><dd><span id="ins-oi">&nbsp;</span><span class="sub" id="ins-oi15">&nbsp;</span></dd></div>
+          <div><dt data-i18n>Volume 24h</dt><dd><span id="ins-vol">&nbsp;</span><span class="sub" id="ins-volx">&nbsp;</span></dd></div>
+        </dl>
+        <dl class="ins-stats venue" id="venue" hidden></dl>
       </div>
     </div>
+    <div class="chart-bar">
+      <div class="tf" role="tablist" data-i18n-attrs="aria-label" aria-label="Timeframe" id="tf"></div>
+      <div class="moves" id="ins-moves" data-i18n-attrs="aria-label" aria-label="Price change"></div>
+      <div class="tags" id="tags" data-i18n-attrs="aria-label" aria-label="Active highlights"></div>
+      <div class="bar-actions">
+        <div class="al-box">
+          <button type="button" class="btn" id="al-btn" aria-expanded="false" aria-controls="al-menu"><span class="i" data-icon="bell"></span><span data-i18n>Alert</span><span class="count"></span></button>
+          <div class="menu al-menu" id="al-menu" hidden></div>
+        </div>
+        <div class="ind">
+          <button type="button" class="btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu"><span class="i" data-icon="indicators"></span><span data-i18n>Indicators</span><span class="count"></span></button>
+          <div class="menu ind-menu" id="ind-menu" hidden></div>
+        </div>
+        <button type="button" class="btn icon-only" id="focus-btn" aria-pressed="false" data-i18n-attrs="aria-label,title" aria-label="Chart only" title="Chart only (F)"><span class="i" data-icon="expand"></span></button>
+      </div>
+    </div>
+    <div class="bt" id="bt" hidden></div>
+    <div class="chart-area">
+      <div class="chart" id="chart"></div>
+    </div>
+  </section>
+
+  <section class="panel tape" data-i18n-attrs="aria-label" aria-label="Signal tape">
+    <div class="p-head">
+      <h2 class="p-title" data-i18n>Signal tape</h2>
+      <span class="p-meta" id="tape-meta"></span>
+      <button type="button" class="btn ghost" id="tape-sound" aria-pressed="false"></button>
+    </div>
+    <ol class="tape-list" id="tape"></ol>
+  </section>
+
+  <section class="panel liqs" data-i18n-attrs="aria-label" aria-label="Liquidations">
+    <div class="p-head"><h2 class="p-title" data-i18n>Liquidations</h2><span class="p-meta" data-i18n>last 5 min</span></div>
+    <div class="split">
+      <span class="down" id="liq-l">&nbsp;</span>
+      <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
+      <span class="up" id="liq-s">&nbsp;</span>
+    </div>
+    <ol class="liq-list" id="liqs"></ol>
+  </section>
+
+  <section class="panel book" data-i18n-attrs="aria-label" aria-label="Order book walls">
+    <div class="p-head"><h2 class="p-title" data-i18n>Order book</h2><span class="p-meta" id="book-meta"></span></div>
+    <div class="ladder" id="ladder"></div>
+  </section>
+
+  <section class="panel screener" data-i18n-attrs="aria-label" aria-label="Markets">
+    <div class="p-head list-head">
+      <label class="field search"><span class="i" data-icon="search"></span><span class="sr" data-i18n>Search symbol</span><input id="q" type="search" data-i18n-attrs="placeholder" placeholder="Symbol" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
+      <label class="field vol-field"><span class="sr" data-i18n>Minimum 24h volume</span>
+        <select id="minvol">
+          <option value="0" data-i18n>Any volume</option>
+          <option value="5000000">&ge; $5M</option>
+          <option value="50000000" selected>&ge; $50M</option>
+          <option value="200000000">&ge; $200M</option>
+        </select>
+      </label>
+      <button type="button" class="btn icon-only" id="list-wide" aria-pressed="false" data-i18n-attrs="aria-label,title" aria-label="All columns" title="All columns"><span class="i" data-icon="columns"></span></button>
+    </div>
+    <div class="presets" role="tablist" data-i18n-attrs="aria-label" aria-label="Presets" id="presets"></div>
     <div class="table-wrap" id="table-wrap">
       <table class="grid">
         <thead><tr id="head"></tr></thead>
@@ -51,149 +120,91 @@
     </div>
   </section>
 
-  <aside class="panel instrument" id="instrument" aria-label="Selected instrument">
-    <div class="ins-head">
-      <div>
-        <h1 class="ins-sym" id="ins-sym">&nbsp;</h1>
-        <p class="ins-name" id="ins-name">&nbsp;</p>
-      </div>
-      <div class="ins-quote">
-        <span class="ins-price" id="ins-price">&nbsp;</span>
-        <span class="ins-chg" id="ins-chg">&nbsp;</span>
-      </div>
-    </div>
-    <div class="tags" id="tags" aria-label="Active highlights"></div>
-    <dl class="ins-stats">
-      <div><dt>24h range</dt><dd><span class="range"><span id="rng-lo">&nbsp;</span><span class="range-line"><i id="rng-mark"></i></span><span id="rng-hi">&nbsp;</span></span></dd></div>
-      <div><dt>Funding</dt><dd><span id="ins-fund">&nbsp;</span><span class="sub" id="ins-fund-t">&nbsp;</span></dd></div>
-      <div><dt>Open interest</dt><dd><span id="ins-oi">&nbsp;</span><span class="sub" id="ins-oi15">&nbsp;</span></dd></div>
-      <div><dt>Volume 24h</dt><dd><span id="ins-vol">&nbsp;</span><span class="sub" id="ins-volx">&nbsp;</span></dd></div>
-    </dl>
-    <dl class="ins-stats venue" id="venue" hidden></dl>
-    <div class="chart-bar">
-      <div class="tf" role="tablist" aria-label="Timeframe" id="tf"></div>
-      <div class="al-box">
-        <button type="button" class="ind-btn" id="al-btn" aria-expanded="false" aria-controls="al-menu">Alert<span class="count"></span></button>
-        <div class="ind-menu al-menu" id="al-menu" hidden></div>
-      </div>
-      <div class="ind">
-        <button type="button" class="ind-btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu">Indicators<span class="count"></span></button>
-        <div class="ind-menu" id="ind-menu" hidden></div>
-      </div>
-    </div>
-    <div class="bt" id="bt" hidden></div>
-    <div class="chart" id="chart"></div>
-    <section class="book" aria-label="Order book walls">
-      <div class="p-head"><h2 class="p-title">Order book</h2><span class="p-meta" id="book-meta">walls within 5%</span></div>
-      <div class="ladder" id="ladder"></div>
-    </section>
-  </aside>
-
-  <section class="panel tape" aria-label="Signal tape">
-    <div class="p-head tape-head">
-      <h2 class="p-title">Signal tape</h2>
-      <span class="p-meta" id="tape-meta">live</span>
-      <div class="seg" role="group" aria-label="Sound"><button type="button" id="tape-sound" aria-pressed="false">Sound off</button></div>
-    </div>
-    <ol class="tape-list" id="tape"><li class="empty-note">Waiting for the market to move.</li></ol>
-  </section>
-
-  <section class="panel densmap" aria-label="Density map">
+  <section class="panel densmap" data-i18n-attrs="aria-label" aria-label="Density map">
     <div class="p-head">
-      <h2 class="p-title">Densities</h2>
-      <div class="seg" role="group" aria-label="Distance from price" id="dm-dist"></div>
-      <div class="seg" role="group" aria-label="Minimum wall size" id="dm-size"></div>
-      <div class="seg" role="group" aria-label="Side" id="dm-side"></div>
+      <h2 class="p-title" data-i18n>Densities</h2>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Distance from price" id="dm-dist"></div>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Minimum wall size" id="dm-size"></div>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Side" id="dm-side"></div>
       <span class="p-meta" id="dm-meta"></span>
     </div>
     <div class="map-wrap" id="map-wrap">
-      <svg id="map" role="img" aria-label="Walls by distance from price and size"></svg>
+      <svg id="map" role="img" data-i18n-attrs="aria-label" aria-label="Walls by distance from price and size"></svg>
       <div class="map-tip" id="map-tip" hidden></div>
     </div>
   </section>
 
-  <section class="panel charts" aria-label="Chart grid">
+  <section class="panel charts" data-i18n-attrs="aria-label" aria-label="Chart grid">
     <div class="p-head">
-      <h2 class="p-title">Grid</h2>
-      <div class="tf" role="tablist" aria-label="Timeframe" id="g-tf"></div>
+      <h2 class="p-title" data-i18n>Grid</h2>
+      <div class="tf" role="tablist" data-i18n-attrs="aria-label" aria-label="Timeframe" id="g-tf"></div>
       <span class="p-meta" id="g-meta"></span>
       <div class="pager">
-        <button type="button" id="g-prev" aria-label="Previous page">&lsaquo;</button>
+        <button type="button" class="btn icon-only" id="g-prev" data-i18n-attrs="aria-label" aria-label="Previous page"><span class="i" data-icon="prev"></span></button>
         <span id="g-page">1 / 1</span>
-        <button type="button" id="g-next" aria-label="Next page">&rsaquo;</button>
+        <button type="button" class="btn icon-only" id="g-next" data-i18n-attrs="aria-label" aria-label="Next page"><span class="i" data-icon="next"></span></button>
       </div>
     </div>
     <div class="cells" id="cells"></div>
   </section>
 
-  <section class="panel walllist" aria-label="Walls">
-    <div class="p-head"><h2 class="p-title">Walls</h2><span class="p-meta" id="wl-meta">nearest to price first</span></div>
+  <section class="panel walllist" data-i18n-attrs="aria-label" aria-label="Walls">
+    <div class="p-head"><h2 class="p-title" data-i18n>Walls</h2><span class="p-meta" id="wl-meta" data-i18n>nearest to price first</span></div>
     <div class="table-wrap">
       <table class="grid walls-grid">
         <thead><tr>
-          <th class="sym">Symbol</th><th>Side</th><th>Price</th><th>Size</th><th>Distance</th>
-          <th class="c-sm">&times; avg</th><th class="c-sm">Age</th><th class="c-sm">Eaten in</th>
+          <th class="sym" data-i18n>Symbol</th><th data-i18n>Side</th><th data-i18n>Price</th><th data-i18n>Size</th><th data-i18n>Distance</th>
+          <th class="c-sm">&times; <span data-i18n>avg</span></th><th class="c-sm" data-i18n>Age</th><th class="c-sm" data-i18n>Eaten in</th>
         </tr></thead>
         <tbody id="wl-rows"></tbody>
       </table>
     </div>
   </section>
 
-  <section class="panel outcomes" aria-label="What followed each kind of signal">
+  <section class="panel outcomes" data-i18n-attrs="aria-label" aria-label="What followed each kind of signal">
     <div class="p-head">
-      <h2 class="p-title">After the signal</h2>
-      <div class="seg" role="group" aria-label="Period" id="oc-period"></div>
+      <h2 class="p-title" data-i18n>After the signal</h2>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Period" id="oc-period"></div>
       <span class="p-meta" id="oc-meta"></span>
     </div>
     <div class="table-wrap">
       <table class="grid oc-grid">
         <thead><tr>
-          <th class="sym" rowspan="2">Signal</th><th rowspan="2">Count</th>
-          <th colspan="2" class="oc-h">5 min later</th><th colspan="2" class="oc-h">15 min later</th><th colspan="2" class="oc-h">1 hour later</th>
+          <th class="sym" rowspan="2" data-i18n>Signal</th><th rowspan="2" data-i18n>Count</th>
+          <th colspan="2" class="oc-h" data-i18n>5 min later</th><th colspan="2" class="oc-h" data-i18n>15 min later</th><th colspan="2" class="oc-h" data-i18n>1 hour later</th>
         </tr><tr class="oc-sub">
-          <th>Avg move</th><th>Price up</th><th>Avg move</th><th>Price up</th><th>Avg move</th><th>Price up</th>
+          <th data-i18n>Avg move</th><th data-i18n>Price up</th><th data-i18n>Avg move</th><th data-i18n>Price up</th><th data-i18n>Avg move</th><th data-i18n>Price up</th>
         </tr></thead>
         <tbody id="oc-rows"></tbody>
       </table>
     </div>
   </section>
 
-  <section class="panel sighist" aria-label="Signal history">
-    <div class="p-head"><h2 class="p-title">Signal history</h2><span class="p-meta" id="sh-meta"></span></div>
+  <section class="panel sighist" data-i18n-attrs="aria-label" aria-label="Signal history">
+    <div class="p-head"><h2 class="p-title" data-i18n>Signal history</h2><span class="p-meta" id="sh-meta"></span></div>
     <div class="table-wrap">
       <table class="grid sh-grid">
         <thead><tr>
-          <th class="sym">Time</th><th class="sym">Symbol</th><th class="sym">Signal</th><th class="c-sm">Price then</th>
+          <th class="sym" data-i18n>Time</th><th class="sym" data-i18n>Symbol</th><th class="sym" data-i18n>Signal</th><th class="c-sm" data-i18n>Price then</th>
           <th>+5m</th><th>+15m</th><th>+1h</th>
         </tr></thead>
         <tbody id="sh-rows"></tbody>
       </table>
     </div>
   </section>
-
-  <section class="panel liqs" aria-label="Liquidations">
-    <div class="p-head"><h2 class="p-title">Liquidations</h2><span class="p-meta">last 5 min</span></div>
-    <div class="split">
-      <span class="down" id="liq-l">Longs $0</span>
-      <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
-      <span class="up" id="liq-s">Shorts $0</span>
-    </div>
-    <ol class="liq-list" id="liqs"></ol>
-  </section>
 </main>
 
 <div class="toasts" id="toasts" aria-live="assertive"></div>
 
 <footer class="statusbar">
-  <span class="conn" id="st-conn">Connecting</span>
+  <span class="conn" id="st-conn">&nbsp;</span>
   <span>Binance USDT-M</span>
   <span id="st-pairs">&nbsp;</span>
   <span id="st-age">&nbsp;</span>
-  <span class="keys">
-    <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> select</span>
-    <span><kbd>/</kbd> search</span>
-    <span><kbd>W</kbd> watchlist</span>
-    <a href="https://www.tradingview.com/" target="_blank" rel="noopener">Charts by TradingView</a>
+  <span class="status-right">
+    <span class="sessions" id="sessions"><span data-i18n>Asia</span><span data-i18n>London</span><span data-i18n>New York</span></span>
+    <time class="clock" id="clock">00:00:00<span>UTC</span></time>
+    <a href="https://www.tradingview.com/" target="_blank" rel="noopener" data-i18n>Charts by TradingView</a>
   </span>
 </footer>
 

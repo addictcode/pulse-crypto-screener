@@ -1,5 +1,6 @@
 import type { BacktestLine, StudyId } from './studies';
 import { STUDIES } from './studies';
+import { t } from './i18n';
 import { load, save } from './storage';
 
 /**
@@ -58,14 +59,14 @@ export class IndicatorMenu {
     this.menu.innerHTML =
       groups
         .map(
-          (g) => `<fieldset><legend>${g}</legend>${STUDIES.filter((s) => s.group === g)
+          (g) => `<fieldset><legend>${t(g)}</legend>${STUDIES.filter((s) => s.group === g)
             .map(
-              (s) => `<label class="ind-item"><input type="checkbox" value="${s.id}"${this.chosen.has(s.id) ? ' checked' : ''}><span>${s.name}</span><span class="hint">${s.hint}</span></label>`,
+              (s) => `<label class="ind-item"><input type="checkbox" value="${s.id}"${this.chosen.has(s.id) ? ' checked' : ''}><span>${s.name}</span><span class="hint">${t(s.hint)}</span></label>`,
             )
             .join('')}</fieldset>`,
         )
         .join('') +
-      `<p class="ind-legend"><span class="dim"><i class="dash"></i>walls</span><span class="dim"><i class="dot"></i>liquidations</span><span class="hot"><i class="dot"></i>signals</span><span class="amber"><i class="line"></i>alerts</span></p>`;
+      `<p class="ind-legend"><span class="dim"><i class="dash"></i>${t('walls')}</span><span class="dim"><i class="dot"></i>${t('liquidations')}</span><span class="hot"><i class="dot"></i>${t('signals')}</span><span class="amber"><i class="line"></i>${t('alerts')}</span></p>`;
     this.renderCount();
   }
 }
@@ -75,19 +76,19 @@ export function renderBacktest(el: HTMLElement, lines: BacktestLine[]) {
   el.hidden = !lines.length;
   el.innerHTML = lines
     .map(({ name, result: r }) => {
-      if (r.tooFew) return `<p><b>${name}</b><span class="mute">needs more history, pick a longer timeframe</span></p>`;
-      if (!r.stats && !r.open) return `<p><b>${name}</b><span class="mute">no setups on these candles</span></p>`;
+      if (r.tooFew) return `<p><b>${name}</b><span class="mute">${t('needs more history, pick a longer timeframe')}</span></p>`;
+      if (!r.stats && !r.open) return `<p><b>${name}</b><span class="mute">${t('no setups on these candles')}</span></p>`;
       const s = r.stats;
       const open = r.open
-        ? `<span class="${r.open.dir === 1 ? 'up' : 'down'} open">${r.open.dir === 1 ? 'Long' : 'Short'} open ${r.open.r >= 0 ? '+' : ''}${r.open.r.toFixed(2)}R</span>`
+        ? `<span class="${r.open.dir === 1 ? 'up' : 'down'} open">${r.open.dir === 1 ? t('Long open') : t('Short open')} ${r.open.r >= 0 ? '+' : ''}${r.open.r.toFixed(2)}R</span>`
         : '';
-      if (!s) return `<p><b>${name}</b><span class="mute">first setup is still open</span>${open}</p>`;
+      if (!s) return `<p><b>${name}</b><span class="mute">${t('first setup is still open')}</span>${open}</p>`;
       const pf = Number.isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞';
-      return `<p title="Every past setup on these candles, one position at a time, stop checked before target">
+      return `<p title="${t('Every past setup on these candles, one position at a time, stop checked before target')}">
         <b>${name}</b>
-        <span>${s.trades} trades</span>
-        <span class="${s.winRate >= s.breakEven ? 'up' : 'down'}">${s.winRate.toFixed(0)}% win</span>
-        <span class="mute">break-even ${s.breakEven.toFixed(0)}%</span>
+        <span>${t('{n} trades', { n: s.trades })}</span>
+        <span class="${s.winRate >= s.breakEven ? 'up' : 'down'}">${t('{n}% win', { n: s.winRate.toFixed(0) })}</span>
+        <span class="mute">${t('break-even {n}%', { n: s.breakEven.toFixed(0) })}</span>
         <span>PF ${pf}</span>
         <span class="${s.netR >= 0 ? 'up' : 'down'}">${s.netR >= 0 ? '+' : ''}${s.netR.toFixed(1)}R</span>
         ${open}

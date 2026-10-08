@@ -1,9 +1,12 @@
 import { base, hms, pct, px, tone } from './format';
+import { lang, t } from './i18n';
+import { ICONS } from './icons';
+import { signalTitle } from './signal-text';
 import type { Market } from './market';
 import { load, save } from './storage';
 import type { OutcomeStats, Signal } from './types';
 
-const PERIODS: Array<[number, string]> = [[1, '24h'], [7, '7d'], [30, '30d']];
+const PERIODS: Array<[number, string]> = [[1, t('24h')], [7, t('7d')], [30, t('30d')]];
 const REFRESH_MS = 30_000;
 /** Below this many measured signals an average is an anecdote, so the row is dimmed. */
 const THIN_SAMPLE = 10;
@@ -98,23 +101,23 @@ export class SignalRecord {
     );
     const rows = (this.stats ?? []).filter((s) => s.horizons.some((h) => h.n > 0));
     const measured = rows.reduce((sum, s) => sum + Math.max(...s.horizons.map((h) => h.n)), 0);
-    $('oc-meta').textContent = this.stats === null ? 'loading' : `${measured} signals measured`;
+    $('oc-meta').textContent = this.stats === null ? t('loading') : t('{n} signals measured', { n: measured });
     if (this.stats === null) {
       $('oc-rows').innerHTML = '';
       return;
     }
     $('oc-rows').innerHTML = rows.length
       ? rows.map(statsRow).join('')
-      : `<tr class="empty"><td colspan="8">No measured signals in this period yet. Each signal is checked 5 minutes, 15 minutes and an hour after it fires, so the table fills in as the market moves.</td></tr>`;
+      : `<tr class="empty"><td colspan="8">${t('No measured signals in this period yet. Each signal is checked 5 minutes, 15 minutes and an hour after it fires, so the table fills in as the market moves.')}</td></tr>`;
   }
 
   private renderHistory() {
     if (!this.active) return;
     const signals = this.market.signals;
-    $('sh-meta').textContent = signals.length ? `latest ${signals.length}` : '';
+    $('sh-meta').textContent = signals.length ? t('latest {n}', { n: signals.length }) : '';
     $('sh-rows').innerHTML = signals.length
       ? signals.map((s) => historyRow(s, s.symbol === this.selected)).join('')
-      : '<tr class="empty"><td colspan="7">No signals yet. They appear here the moment the detector fires.</td></tr>';
+      : `<tr class="empty"><td colspan="7">${t('No signals yet. They appear here the moment the detector fires.')}</td></tr>`;
   }
 }
 
@@ -126,8 +129,9 @@ function statsRow(s: OutcomeStats) {
       return `<td class="${tone(h.avg)}">${pct(h.avg, 2)}</td><td>${upShare(h.upShare)}</td>`;
     })
     .join('');
-  const arrow = s.direction > 0 ? '<i class="dir up">\u25B2</i>' : s.direction < 0 ? '<i class="dir down">\u25BC</i>' : '<i class="dir"></i>';
-  return `<tr class="${count < THIN_SAMPLE ? 'thin' : ''}"${count < THIN_SAMPLE ? ' title="Few signals so far: treat these numbers as a hint, not a pattern"' : ''}><td class="sym">${arrow}${s.label}</td><td>${count}</td>${cells}</tr>`;
+  const arrow = `<span class="dir${s.direction > 0 ? ' up' : s.direction < 0 ? ' down' : ''}">${s.direction > 0 ? ICONS.up : s.direction < 0 ? ICONS.down : ''}</span>`;
+  const thin = count < THIN_SAMPLE;
+  return `<tr class="${thin ? 'thin' : ''}"${thin ? ` title="${t('Few signals so far: treat these numbers as a hint, not a pattern')}"` : ''}><td class="sym">${arrow}${t(s.label)}</td><td>${count}</td>${cells}</tr>`;
 }
 
 /** Share of signals after which the price was higher, with a bar centred on 50%. */
@@ -143,16 +147,18 @@ function historyRow(s: Signal, selected: boolean) {
     if (value !== null) return `<td class="${tone(value)}">${pct(value, 2)}</td>`;
     const left = Math.ceil((s.time + minutes * 60_000 - now) / 60_000);
     // past its horizon and still empty: the backend was not running then
-    return left > 0 ? `<td class="mute" title="Measured in ${left} min">${left}m</td>` : '<td class="mute" title="Not measured: Pulse was not running then">\u2013</td>';
+    return left > 0
+      ? `<td class="mute" title="${t('Measured in {n} min', { n: left })}">${t('{n}m', { n: left })}</td>`
+      : `<td class="mute" title="${t('Not measured: Pulse was not running then')}">\u2013</td>`;
   };
-  return `<tr data-sym="${s.symbol}"${selected ? ' class="is-selected"' : ''}><td class="sym mute">${day(s.time)}${hms(s.time).slice(0, 5)}</td><td class="sym">${base(s.symbol)}</td><td class="sym title">${escape(s.title)}</td><td class="c-sm dim">${px(s.price)}</td>${outcome(s.ret5m, 5)}${outcome(s.ret15m, 15)}${outcome(s.ret1h, 60)}</tr>`;
+  return `<tr data-sym="${s.symbol}"${selected ? ' class="is-selected"' : ''}><td class="sym when">${day(s.time)}${hms(s.time).slice(0, 5)}</td><td class="sym">${base(s.symbol)}</td><td class="sym title">${escape(signalTitle(s))}</td><td class="c-sm dim">${px(s.price)}</td>${outcome(s.ret5m, 5)}${outcome(s.ret15m, 15)}${outcome(s.ret1h, 60)}</tr>`;
 }
 
 /** "Oct 7 " for anything not from today (UTC), nothing otherwise. */
 function day(time: number) {
   const date = new Date(time);
   if (date.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10)) return '';
-  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} `;
+  return `${date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} `;
 }
 
 function escape(text: string) {

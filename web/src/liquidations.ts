@@ -1,4 +1,5 @@
 import { base, hms, usd } from './format';
+import { t } from './i18n';
 import type { Market } from './market';
 import { RULES } from './screener';
 
@@ -27,12 +28,12 @@ export class LiquidationsPanel {
         const side = l.side === 'LONG' ? 'long' : 'short';
         return `<li class="liq-row ${side}${fresh.has(l) ? ' enter' : ''}">
           <time>${hms(l.time)}</time><span class="s">${base(l.symbol)}</span>
-          <span class="${l.side === 'LONG' ? 'down' : 'up'}">${l.side === 'LONG' ? 'Long' : 'Short'}</span>
-          <span class="v"><i style="width:${Math.max(2, Math.round((value / max) * 44))}px"></i><span class="${value >= RULES.bigLiquidations ? 'strong' : 'dim'}">${usd(value)}</span></span>
+          <span class="${l.side === 'LONG' ? 'down' : 'up'}">${l.side === 'LONG' ? t('Long') : t('Short')}</span>
+          <span class="v"><i style="width:${Math.max(2, Math.round((value / max) * 36))}px"></i><span class="${value >= RULES.bigLiquidations ? 'strong' : 'dim'}">${usd(value)}</span></span>
         </li>`;
       })
       .join('');
-    if (!items.length) $('liqs').innerHTML = '<li class="empty-note">No liquidations yet.</li>';
+    if (!items.length) $('liqs').innerHTML = `<li class="empty-note">${t('No liquidations yet.')}</li>`;
     this.renderTotals();
   }
 
@@ -45,8 +46,8 @@ export class LiquidationsPanel {
       if (l.side === 'LONG') longs += l.price * l.quantity;
       else shorts += l.price * l.quantity;
     }
-    $('liq-l').textContent = `Longs ${usd(longs)}`;
-    $('liq-s').textContent = `Shorts ${usd(shorts)}`;
+    $('liq-l').textContent = t('Longs {v}', { v: usd(longs) });
+    $('liq-s').textContent = t('Shorts {v}', { v: usd(shorts) });
     $('liq-lb').style.flexGrow = String(longs || 1);
     $('liq-sb').style.flexGrow = String(shorts || 1);
   }

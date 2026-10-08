@@ -1,18 +1,20 @@
 import { base, hms, pct, usd } from './format';
+import { t } from './i18n';
+import { signalDetail, signalTitle } from './signal-text';
 import type { Market } from './market';
 import { load, save } from './storage';
 import type { Signal, TapeItem, TapeKind } from './types';
 
 const KINDS: Record<TapeKind, [string, 'up' | 'down' | 'hot']> = {
-  PUMP_1M: ['Pump 1m', 'up'],
-  PUMP_5M: ['Pump 5m', 'up'],
-  DUMP_1M: ['Dump 1m', 'down'],
-  DUMP_5M: ['Dump 5m', 'down'],
-  VOLUME: ['Volume', 'hot'],
-  OI_UP: ['OI up', 'up'],
-  OI_DOWN: ['OI down', 'down'],
-  LIQ_LONGS: ['Longs rekt', 'down'],
-  LIQ_SHORTS: ['Shorts rekt', 'up'],
+  PUMP_1M: [t('Pump 1m'), 'up'],
+  PUMP_5M: [t('Pump 5m'), 'up'],
+  DUMP_1M: [t('Dump 1m'), 'down'],
+  DUMP_5M: [t('Dump 5m'), 'down'],
+  VOLUME: [t('Volume'), 'hot'],
+  OI_UP: [t('OI up'), 'up'],
+  OI_DOWN: [t('OI down'), 'down'],
+  LIQ_LONGS: [t('Longs rekt'), 'down'],
+  LIQ_SHORTS: [t('Shorts rekt'), 'up'],
 };
 
 const ALERT_TONE: Record<Signal['type'], 'up' | 'down' | 'hot'> = {
@@ -48,7 +50,7 @@ export class Tape {
     });
     const toggle = $('tape-sound');
     const paint = () => {
-      toggle.textContent = this.sound ? 'Sound on' : 'Sound off';
+      toggle.textContent = this.sound ? t('Sound on') : t('Sound off');
       toggle.setAttribute('aria-pressed', String(this.sound));
     };
     toggle.addEventListener('click', () => {
@@ -58,6 +60,7 @@ export class Tape {
       if (this.sound) this.beep(880); // also unlocks audio, which browsers allow only after a click
     });
     paint();
+    this.render([], []);
   }
 
   private render(freshKeys: string[], freshTape: TapeItem[], freshSignals: Signal[] = []) {
@@ -70,9 +73,9 @@ export class Tape {
     const fresh = new Set(freshKeys);
     $('tape').innerHTML = rows.length
       ? rows.map((r) => (fresh.has(r.key) ? r.html.replace('class="tape-row', 'class="tape-row enter') : r.html)).join('')
-      : '<li class="empty-note">Waiting for the market to move.</li>';
+      : `<li class="empty-note">${t('Waiting for the market to move.')}</li>`;
     const minute = this.market.tape.filter((t) => t.time > Date.now() - 60_000).length;
-    $('tape-meta').textContent = `${minute} / min`;
+    $('tape-meta').textContent = t('{n} / min', { n: minute });
 
     if (this.sound && (freshSignals.length || freshTape.some((t) => t.kind.startsWith('PUMP') || t.kind.startsWith('DUMP')))) {
       const up = freshSignals.length ? ALERT_TONE[freshSignals[0].type] !== 'down' : freshTape.some((t) => t.kind.startsWith('PUMP'));
@@ -112,7 +115,7 @@ export function tapeRow(t: TapeItem) {
 }
 
 export function alertRow(s: Signal) {
-  return `<li class="tape-row alert" data-sym="${s.symbol}" title="${escape(s.detail)}"><time>${hms(s.time)}</time><span class="s">${base(s.symbol)}</span><span class="badge ${ALERT_TONE[s.type]}">Alert</span><span class="v">${escape(s.title)}</span></li>`;
+  return `<li class="tape-row alert" data-sym="${s.symbol}" title="${escape(signalDetail(s))}"><time>${hms(s.time)}</time><span class="s">${base(s.symbol)}</span><span class="badge ${ALERT_TONE[s.type]}">${t('Alert')}</span><span class="v">${escape(signalTitle(s))}</span></li>`;
 }
 
 function escape(text: string) {

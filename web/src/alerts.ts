@@ -1,4 +1,6 @@
 import { base, hms, pct, priceDigits, px } from './format';
+import { t } from './i18n';
+import { ICONS } from './icons';
 import { Emitter, type Market } from './market';
 import { load, save } from './storage';
 
@@ -61,7 +63,7 @@ export class Alerts {
       const input = this.menu.querySelector<HTMLInputElement>('input')!;
       const level = parseLevel(input.value);
       if (level === null) {
-        this.say('Type a price, for example ' + this.suggestion());
+        this.say(t('Type a price, for example {v}', { v: this.suggestion() }));
         return;
       }
       this.say(this.add(this.symbol, level) ?? '');
@@ -101,11 +103,11 @@ export class Alerts {
   /** @returns a message for the user when the alert was not set */
   add(symbol: string, level: number): string | null {
     const price = this.market.rows.get(symbol)?.price;
-    if (!price) return 'No live price for this pair yet.';
-    if (this.list.length >= MAX_ALERTS) return `That is the limit of ${MAX_ALERTS} alerts. Remove one first.`;
+    if (!price) return t('No live price for this pair yet.');
+    if (this.list.length >= MAX_ALERTS) return t('That is the limit of {n} alerts. Remove one first.', { n: MAX_ALERTS });
     const rounded = Number(level.toFixed(priceDigits(level)));
-    if (rounded === price) return 'That is the current price.';
-    if (this.list.some((a) => a.symbol === symbol && a.level === rounded)) return 'There is already an alert at that price.';
+    if (rounded === price) return t('That is the current price.');
+    if (this.list.some((a) => a.symbol === symbol && a.level === rounded)) return t('There is already an alert at that price.');
     this.list.push({ id: Date.now() + Math.floor(Math.random() * 1000), symbol, level: rounded, above: rounded > price, created: Date.now() });
     this.unlock();
     this.commit();
@@ -128,17 +130,18 @@ export class Alerts {
   }
 
   private announce(alert: PriceAlert, price: number) {
-    const text = `${base(alert.symbol)} ${alert.above ? 'rose to' : 'fell to'} ${px(alert.level)}`;
+    const vars = { sym: base(alert.symbol), level: px(alert.level) };
+    const text = alert.above ? t('{sym} rose to {level}', vars) : t('{sym} fell to {level}', vars);
     const toast = document.createElement('div');
     toast.className = `toast ${alert.above ? 'up' : 'down'}`;
     toast.dataset.sym = alert.symbol;
     toast.setAttribute('role', 'alert');
-    toast.innerHTML = `<b>${text}</b><span>now ${px(price)}, ${hms(Date.now())} UTC</span><button type="button" class="toast-x" aria-label="Dismiss">\u00d7</button>`;
+    toast.innerHTML = `<b>${text}</b><span>${t('now {price}, {time} UTC', { price: px(price), time: hms(Date.now()) })}</span><button type="button" class="toast-x" aria-label="${t('Dismiss')}">${ICONS.close}</button>`;
     $('toasts').prepend(toast);
     this.chime(alert.above);
     try {
       if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-        new Notification(`Pulse: ${text}`, { body: `Now ${px(price)}`, tag: `pulse-alert-${alert.id}` });
+        new Notification(`Pulse: ${text}`, { body: t('now {price}, {time} UTC', { price: px(price), time: hms(Date.now()) }), tag: `pulse-alert-${alert.id}` });
       }
     } catch {
       // the toast and the sound already said it
@@ -185,16 +188,16 @@ export class Alerts {
     const keep = this.menu.querySelector<HTMLInputElement>('input')?.value;
     this.menu.innerHTML = `
       <form class="al-form">
-        <label for="al-level">Tell me when ${base(this.symbol)} reaches</label>
-        <div class="al-row"><input id="al-level" inputmode="decimal" autocomplete="off" spellcheck="false" value="${keep ?? this.suggestion()}"><button type="submit">Set alert</button></div>
+        <label for="al-level">${t('Tell me when {sym} reaches', { sym: base(this.symbol) })}</label>
+        <div class="al-row"><input id="al-level" inputmode="decimal" autocomplete="off" spellcheck="false" value="${keep ?? this.suggestion()}"><button type="submit">${t('Set alert')}</button></div>
         <p class="al-note" role="status"></p>
       </form>
       ${mine.length ? `<ul class="al-list">${mine
         .map(
-          (a) => `<li><span class="${a.above ? 'up' : 'down'}">${a.above ? 'above' : 'below'}</span><span>${px(a.level)}</span><span class="mute">${price ? pct((a.level / price - 1) * 100, 2) : ''}</span><button type="button" data-remove="${a.id}" aria-label="Remove alert at ${px(a.level)}">\u00d7</button></li>`,
+          (a) => `<li><span class="${a.above ? 'up' : 'down'}">${a.above ? t('above') : t('below')}</span><span>${px(a.level)}</span><span class="mute">${price ? pct((a.level / price - 1) * 100, 2) : ''}</span><button type="button" data-remove="${a.id}" aria-label="${t('Remove alert at {level}', { level: px(a.level) })}">${ICONS.close}</button></li>`,
         )
         .join('')}</ul>` : ''}
-      <p class="al-hint">Alt + click on the chart sets one at that price. Alerts live in this browser and fire while a Pulse tab is open${others ? `; ${others} more on other pairs` : ''}.</p>`;
+      <p class="al-hint">${t('Alt + click on the chart sets one at that price. Alerts live in this browser and fire while a Pulse tab is open.')}${others ? ` ${t('{n} more on other pairs.', { n: others })}` : ''}</p>`;
   }
 
   /** Called from a click: lets the browser play sound later and asks once for notifications. */

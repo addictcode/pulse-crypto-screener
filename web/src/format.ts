@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 const MINUS = '−';
 
 export type Tone = 'up' | 'down' | 'flat';
@@ -34,21 +36,21 @@ export const base = (symbol: string) => symbol.replace(/USDT$/, '');
 
 /** 45s, 12m, 2h 05m */
 export const age = (seconds: number) => {
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) return t('{n}s', { n: seconds });
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+  if (minutes < 60) return t('{n}m', { n: minutes });
+  return t('{h}h {m}m', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
 };
 
 export const eatTime = (minutes: number | null) => {
   if (minutes === null) return '\u2013';
-  if (minutes < 1) return '<1 min';
-  if (minutes < 120) return `~${Math.round(minutes)} min`;
-  return `~${Math.round(minutes / 60)} h`;
+  if (minutes < 1) return t('<1 min');
+  if (minutes < 120) return t('~{n} min', { n: Math.round(minutes) });
+  return t('~{n} h', { n: Math.round(minutes / 60) });
 };
 
 export const countdown = (until: number | null, now = Date.now()) => {
   if (until === null) return '–';
   const minutes = Math.max(0, Math.round((until - now) / 60_000));
-  return `in ${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, '0')}m`;
+  return t('in {h}h {m}m', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
 };
