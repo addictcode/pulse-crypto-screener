@@ -287,6 +287,76 @@ export const RU: Record<string, string> = {
 
   // ---------- landing ----------
   'Pulse, a radar for crypto futures': 'Pulse: радар крипто-фьючерсов',
+  'Pulse scans every Binance USDT perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.':
+    'Pulse дважды в секунду просматривает все USDT-фьючерсы Binance: пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену.',
+  'Pulse scans every Binance perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.':
+    'Pulse дважды в секунду просматривает все бессрочные контракты Binance: пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену.',
+  'Sections': 'Разделы страницы',
+  'Live': 'Вживую',
+  'Features': 'Возможности',
+  'How it works': 'Как это работает',
+  'Open terminal': 'Открыть терминал',
+  'The whole futures market<br>on <em>one radar</em>.': 'Весь рынок фьючерсов<br>на <em>одном радаре</em>.',
+  'Pairs live': 'Пар в работе',
+  'Order books': 'Стаканов',
+  'Tape, last min': 'Лента за минуту',
+  'Liquidated 5m': 'Ликвидации 5м',
+  'A planet of cubes, one for each of the most traded perpetuals, coloured by their 24 hour move':
+    'Планета из кубов: по одному на каждый из самых торгуемых контрактов, цвет по движению за 24 часа',
+  'up 24h': 'рост за 24ч',
+  'down 24h': 'падение за 24ч',
+  'height: volume and move': 'высота: объём и движение',
+  'Everything that moves, as it moves.': 'Всё, что движется, в момент движения.',
+  'The tape lists every pump, dump, volume burst and liquidation wave the moment it happens. Stronger events are promoted to alerts, which also go to Telegram.':
+    'В ленту попадает каждый памп, дамп, всплеск объёма и волна ликвидаций в тот момент, когда они случаются. Сильные события становятся алертами и уходят ещё и в Telegram.',
+  'Connecting to the market.': 'Подключаемся к рынку.',
+  'See where the size is waiting.': 'Видно, где стоит крупный объём.',
+  'Live order books for the 60 most traded pairs. Pulse finds resting orders many times larger than the book around them, tracks how long they stand and how fast the market would eat through them.':
+    'Живые стаканы 60 самых торгуемых пар. Pulse находит заявки в разы крупнее соседних уровней, следит, сколько они стоят и как быстро рынок их съест.',
+  'Largest walls near price': 'Крупнейшие стены у цены',
+  'within 1%': 'в пределах 1%',
+  'Order books are syncing.': 'Стаканы синхронизируются.',
+  'One terminal, ten instruments.': 'Один терминал, десять инструментов.',
+  'Screener': 'Скринер',
+  'Every perpetual with 5 minute to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.':
+    'Каждый контракт с движением от 5 минут до 24 часов, всплеском объёма, NATR, фандингом, открытым интересом и ликвидациями. Список пересортировывается вживую, но не под курсором.',
+  'Walls plotted by distance and size. Fresh ones are dashed, old ones solid: the ones that hold are easy to tell apart.':
+    'Стены на карте по расстоянию и размеру. Свежие нарисованы пунктиром, старые сплошной линией: те, что держатся, видно сразу.',
+  'Walls within 2% of price, bids left, asks right': 'Стены в пределах 2% от цены: покупка слева, продажа справа',
+  'Seven detectors with cooldowns and a per-coin budget, so one wild small cap cannot flood your screen.':
+    'Семь детекторов с паузами и лимитом на монету, чтобы одна бешеная мелочь не забила весь экран.',
+  'Alerts reach your phone with context in one message. Bursts arrive as a digest. Thresholds, mute and watchlist are set by chatting to the bot.':
+    'Алерт приходит на телефон одним сообщением вместе с контекстом. Пачка сигналов приходит дайджестом. Пороги, паузу и избранное задаёшь командами боту.',
+  'WIF jumps 2.8% in five minutes': 'WIF растёт на 2,8% за 5 минут',
+  'Price 0.8421, +9.6% on the day. Volume 4.1× the hourly pace, open interest +3.2% over 15 minutes.':
+    'Цена 0.8421, +9,6% за день. Объём в 4,1× выше часового темпа, открытый интерес +3,2% за 15 минут.',
+  'Pump, 14:32 UTC': 'Памп, 14:32 UTC',
+  'Signal record': 'Статистика сигналов',
+  'Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what usually follows each kind, so you learn which ones deserve a reaction.':
+    'Каждый сигнал проверяется через 5 минут, 15 минут и час. Статистика показывает, что обычно бывает после каждого вида, и видно, на какие стоит реагировать.',
+  'Price alerts': 'Ценовые алерты',
+  'Set a level from the chart with Alt and a click, or from the bot. It fires once: a sound and a note on screen, a message on your phone.':
+    'Уровень ставится с графика через Alt и клик или через бота. Срабатывает один раз: звук и плашка на экране, сообщение на телефоне.',
+  'Binance vs Bybit': 'Binance против Bybit',
+  'Funding on both venues brought to the same 8 hours, the price gap between them and where the open interest sits. The Arb preset lists the widest funding gaps.':
+    'Фандинг обеих бирж в пересчёте на одни и те же 8 часов, разрыв цены между ними и где лежит открытый интерес. Пресет «Арбитраж» показывает самые широкие разрывы фандинга.',
+  'The 140 largest pairs on one screen, sized by volume or open interest and coloured by the last 5 minutes, hour or day.':
+    '140 крупнейших пар на одном экране: размер по объёму или открытому интересу, цвет по движению за 5 минут, час или сутки.',
+  'Trend lines, rays, levels, zones, Fibonacci and a ruler. Drawings are tied to time and price, so they survive a timeframe change and a reload.':
+    'Трендовые линии, лучи, уровни, зоны, Фибоначчи и линейка. Построения привязаны ко времени и цене, поэтому переживают смену таймфрейма и перезагрузку.',
+  'Keyboard first': 'Всё с клавиатуры',
+  'One shortcut finds any pair or command. Number keys switch timeframes, arrows walk the list, and the whole interface speaks English and Russian.':
+    'Одно сочетание клавиш находит любую пару или команду. Цифры переключают таймфрейм, стрелки ходят по списку, а весь интерфейс есть на русском и английском.',
+  'Binance streams': 'Стримы Binance',
+  'Tickers, candles, mark prices, liquidations and order books over WebSockets.': 'Тикеры, свечи, цены маркировки, ликвидации и стаканы по WebSocket.',
+  'Pulse engine': 'Движок Pulse',
+  'Java backend keeps the market in memory, rebuilds books, scores walls and runs the detectors every 2 seconds.':
+    'Бэкенд на Java держит рынок в памяти, собирает стаканы, оценивает стены и каждые 2 секунды запускает детекторы.',
+  'Your screen': 'Твой экран',
+  'Only changed numbers travel to the browser, twice a second, compressed to a few kilobytes.':
+    'В браузер уходят только изменившиеся числа, дважды в секунду, в сжатом виде это несколько килобайт.',
+  'Watch the market, not tabs.': 'Смотри на рынок, а не на вкладки.',
+  'Pulse is a personal research tool. Nothing here is investment advice.': 'Pulse — личный исследовательский инструмент. Ничто здесь не является инвестиционной рекомендацией.',
 
   // ---------- command palette ----------
   'Pair, view or command': 'Пара, раздел или команда',

@@ -3,32 +3,53 @@ import '@fontsource/chakra-petch/600.css';
 import '@fontsource/chakra-petch/700.css';
 import '@fontsource/azeret-mono/400.css';
 import '@fontsource/azeret-mono/500.css';
+// Chakra Petch has no Cyrillic; the files are split by unicode range, so only Russian pages fetch this
+import '@fontsource-variable/tektur';
 import './theme.css';
 import './landing.css';
 
 import { age, base, pct, px, tone, usd } from './format';
+import { localize, mountLangSwitch, t } from './i18n';
 import { connect, Market } from './market';
-import { VoxelPlanet, webglAvailable } from './planet';
+import type { VoxelPlanet } from './planet';
 import { alertRow, tapeRow } from './tape';
+
+localize();
+mountLangSwitch(document.getElementById('lang')!);
 
 const $ = (id: string) => document.getElementById(id)!;
 const market = new Market();
 
-// hero planet, or a static disc where WebGL is not available
+// The hero planet is three.js, by far the heaviest thing on the page. It loads after the text
+// and the live numbers are already on screen; without WebGL a static disc stands in for it.
 const wrap = document.querySelector<HTMLElement>('.planet-wrap')!;
 let planet: VoxelPlanet | null = null;
-if (webglAvailable()) {
+const canvas = $('planet') as HTMLCanvasElement;
+const hasWebgl = (() => {
+  try {
+    const probe = document.createElement('canvas');
+    return Boolean(probe.getContext('webgl2') ?? probe.getContext('webgl'));
+  } catch {
+    return false;
+  }
+})();
+if (hasWebgl) {
   const tip = $('planet-tip');
-  planet = new VoxelPlanet($('planet') as HTMLCanvasElement, (coin, x, y) => {
-    if (!coin) {
-      tip.hidden = true;
-      return;
-    }
-    tip.innerHTML = `<b>${base(coin.symbol)}</b>${px(coin.price)} <span class="${tone(coin.ch24h)}">${pct(coin.ch24h)}</span> <span class="mute">${usd(coin.vol24h)}</span>`;
-    tip.style.left = `${x + 14}px`;
-    tip.style.top = `${y + 14}px`;
-    tip.hidden = false;
-  });
+  void import('./planet')
+    .then(({ VoxelPlanet }) => {
+      planet = new VoxelPlanet(canvas, (coin, x, y) => {
+        if (!coin) {
+          tip.hidden = true;
+          return;
+        }
+        tip.innerHTML = `<b>${base(coin.symbol)}</b>${px(coin.price)} <span class="${tone(coin.ch24h)}">${pct(coin.ch24h)}</span> <span class="mute">${usd(coin.vol24h)}</span>`;
+        tip.style.left = `${x + 14}px`;
+        tip.style.top = `${y + 14}px`;
+        tip.hidden = false;
+      });
+      refreshPlanet();
+    })
+    .catch(() => wrap.classList.add('static'));
 } else {
   wrap.classList.add('static');
 }
@@ -39,15 +60,18 @@ setInterval(refreshPlanet, 5_000);
 
 function renderStats() {
   $('s-pairs').textContent = market.rows.size ? String(market.rows.size) : '–';
-  $('s-books').textContent = market.coverage.size ? String(market.coverage.size) : 'syncing';
+  $('s-books').textContent = market.coverage.size ? String(market.coverage.size) : t('syncing');
   const minute = market.tape.filter((t) => t.time > Date.now() - 60_000).length;
   $('s-tape').textContent = String(minute);
-  $('tape-rate').textContent = `${minute} / min`;
+  $('tape-rate').textContent = t('{n} / min', { n: minute });
   const since = Date.now() - 5 * 60_000;
   const liquidated = market.liquidations.filter((l) => l.time >= since).reduce((sum, l) => sum + l.price * l.quantity, 0);
   $('s-liq').textContent = usd(liquidated);
 }
 setInterval(renderStats, 1_000);
+
+/** As many rows as the frame is tall (see .live-tape in landing.css). */
+const TAPE_ROWS = 11;
 
 function renderTape(fresh: Set<string> = new Set()) {
   const rows = [
@@ -55,7 +79,7 @@ function renderTape(fresh: Set<string> = new Set()) {
     ...market.signals.map((s) => ({ time: s.time, key: `s${s.id}`, html: alertRow(s) })),
   ]
     .sort((a, b) => b.time - a.time)
-    .slice(0, 12);
+    .slice(0, TAPE_ROWS);
   if (!rows.length) return;
   $('tape-preview').innerHTML = rows
     .map((r) => (fresh.has(r.key) ? r.html.replace('class="tape-row', 'class="tape-row enter') : r.html))
@@ -75,9 +99,9 @@ function renderWalls() {
     .map(
       (w) => `<tr>
         <td>${base(w.symbol)}</td>
-        <td class="${w.side === 'BID' ? 'up' : 'down'}">${w.side === 'BID' ? 'Bid' : 'Ask'}</td>
+        <td class="${w.side === 'BID' ? 'up' : 'down'}">${w.side === 'BID' ? t('Bid') : t('Ask')}</td>
         <td class="r">${usd(w.size)}</td>
-        <td><span class="bar" style="width:${Math.max(4, (w.size / max) * 120).toFixed(0)}px;background:var(--${w.side === 'BID' ? 'up' : 'down'})"></span></td>
+        <td class="barcell"><span class="bar" style="width:${Math.max(3, (w.size / max) * 100).toFixed(0)}%;background:var(--${w.side === 'BID' ? 'up' : 'down'})"></span></td>
         <td class="r hot">${pct(w.distance, 2)}</td>
         <td class="r mute">${age(w.age)}</td>
       </tr>`,
@@ -122,7 +146,7 @@ function renderMovers() {
     .slice(0, 5);
   ($('movers-preview') as HTMLTableElement).tBodies[0].innerHTML = movers
     .map(
-      (r) => `<tr><td>${base(r.symbol)}</td><td class="r">${px(r.price)}</td><td class="r ${tone(r.ch5m)}">${pct(r.ch5m)} 5m</td><td class="r mute">${usd(r.vol24h)}</td></tr>`,
+      (r) => `<tr><td>${base(r.symbol)}</td><td class="r">${px(r.price)}</td><td class="r ${tone(r.ch5m)}">${pct(r.ch5m)} ${t('5m')}</td><td class="r mute">${usd(r.vol24h)}</td></tr>`,
     )
     .join('');
 }
