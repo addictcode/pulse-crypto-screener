@@ -8,6 +8,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 
+import { candles } from './api';
 import { CHART_FONT, INTERVALS, liveBar, type Bar } from './chart';
 import { base, pct, priceDigits, px, tone, usd } from './format';
 import { t } from './i18n';
@@ -213,9 +214,7 @@ export class ChartGrid {
     let entry = this.cache.get(key);
     if (!entry || Date.now() - entry.at > CACHE_MS) {
       try {
-        const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${HISTORY}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        entry = { at: Date.now(), data: (await response.json()) as CandleDto[] };
+        entry = { at: Date.now(), data: await candles(symbol, interval, HISTORY) };
         this.cache.set(key, entry);
         if (this.cache.size > 120) this.cache.delete(this.cache.keys().next().value!);
       } catch {

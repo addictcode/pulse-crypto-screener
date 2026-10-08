@@ -665,3 +665,6 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
   .liqs { order: 4; }
   .book { order: 5; }
 }
+
+/* ---------- standalone demo: no server, so no stored signals ---------- */
+body[data-mode="lite"] .view[data-view="signals"] { display: none; }

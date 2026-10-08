@@ -3,6 +3,7 @@ import '@fontsource/chakra-petch/700.css';
 import './styles.css';
 
 import { Alerts } from './alerts';
+import { STANDALONE, startFeed, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
 import { Densities } from './densities';
 import { ChartGrid } from './grid';
@@ -11,7 +12,7 @@ import { lang, localize, mountLangSwitch, setLang, t } from './i18n';
 import { ICONS, mountIcons } from './icons';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
-import { connect, Market, watchVenues } from './market';
+import { Market } from './market';
 import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
@@ -103,7 +104,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: t('Grid'), icon: 'view', run: go('grid') },
   { label: t('Heatmap'), icon: 'view', run: go('heatmap') },
   { label: t('Densities'), icon: 'view', run: go('densities') },
-  { label: t('Signals'), icon: 'view', run: go('signals') },
+  ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command]),
   { label: t('Chart only'), icon: 'expand', hint: 'F', run: toggleFocus },
   { label: t('All columns in the list'), icon: 'columns', run: () => screener.setWide(!screener.wide) },
   ...Object.keys(INTERVALS).map((tf, i): Command => ({
@@ -137,6 +138,14 @@ document.addEventListener('keydown', (e) => {
   if (timeframe && e.key.length === 1) chart.setTimeframe(timeframe);
 });
 
-const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-connect(market, `${scheme}://${location.host}/ws/market`);
+if (STANDALONE) {
+  // no server behind this page: no stored signals, so nothing to show in that section
+  document.body.dataset.mode = 'lite';
+  document.getElementById('st-source')!.textContent = t('Binance USDT-M, demo running in your browser');
+}
+startFeed(market).catch(() => {
+  const status = document.getElementById('st-conn')!;
+  status.dataset.state = 'reconnecting';
+  status.textContent = t('Binance cannot be reached from this network');
+});
 watchVenues(market);

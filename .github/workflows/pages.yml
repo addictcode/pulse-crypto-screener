@@ -1,0 +1,50 @@
+name: pages
+
+# Publishes the standalone demo to GitHub Pages: the frontend built without a server behind it
+# (the page reads Binance itself), next to the root page that forwards to the full version when
+# that one is online.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      # relative base: the site lives under /<repository>/demo/, not at the domain root
+      - run: npx vite build --base=./ --outDir ../_site/demo --emptyOutDir
+        working-directory: web
+        env:
+          VITE_STANDALONE: "1"
+      - run: cp index.html .nojekyll _site/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

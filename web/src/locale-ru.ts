@@ -28,6 +28,8 @@ export const RU: Record<string, string> = {
   'London': 'Лондон',
   'New York': 'Нью-Йорк',
   'Charts by TradingView': 'Графики: TradingView',
+  'Binance USDT-M, demo running in your browser': 'Binance USDT-M, демо работает в твоём браузере',
+  'Binance cannot be reached from this network': 'Binance недоступен из этой сети',
 
   // ---------- units ----------
   '{n}s': '{n}с',

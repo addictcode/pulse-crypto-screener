@@ -168,25 +168,3 @@ export function connect(market: Market, url: string) {
 
   open();
 }
-
-const COMPARE_EVERY_MS = 10_000;
-
-/**
- * Polls the Binance against Bybit comparison. It is not part of the stream: funding spreads move
- * slowly, and the backend itself only hears from Bybit every few seconds.
- */
-export function watchVenues(market: Market) {
-  const poll = async (force = false) => {
-    // a background tab keeps what it has; the first load happens either way
-    if (document.hidden && !force) return;
-    try {
-      const response = await fetch('/api/compare');
-      if (response.ok) market.setGaps((await response.json()) as VenueGap[]);
-    } catch {
-      // the previous comparison stays on screen until the next poll works
-    }
-  };
-  void poll(true);
-  setInterval(() => void poll(), COMPARE_EVERY_MS);
-  document.addEventListener('visibilitychange', () => void poll());
-}

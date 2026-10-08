@@ -1,3 +1,4 @@
+import { signalHistory, signalStats } from './api';
 import { base, hms, pct, px, tone } from './format';
 import { lang, t } from './i18n';
 import { ICONS } from './icons';
@@ -70,9 +71,7 @@ export class SignalRecord {
   private async loadStats() {
     const days = this.days;
     try {
-      const response = await fetch(`/api/signals/stats?days=${days}`);
-      if (!response.ok) throw new Error(String(response.status));
-      const stats = (await response.json()) as OutcomeStats[];
+      const stats = await signalStats(days);
       if (days !== this.days) return; // the period changed while this was loading
       this.stats = stats;
     } catch {
@@ -85,10 +84,9 @@ export class SignalRecord {
   private async loadHistory() {
     if (this.historyLoaded) return;
     try {
-      const response = await fetch('/api/signals?limit=100');
-      if (!response.ok) return;
+      const items = await signalHistory(100);
       this.historyLoaded = true;
-      this.market.apply({ type: 'signals', items: (await response.json()) as Signal[] });
+      this.market.apply({ type: 'signals', items });
     } catch {
       // the live part still works
     }

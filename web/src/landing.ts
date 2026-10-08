@@ -10,7 +10,8 @@ import './landing.css';
 
 import { age, base, pct, px, tone, usd } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
-import { connect, Market } from './market';
+import { startFeed } from './api';
+import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeRow } from './tape';
 
@@ -153,5 +154,4 @@ function renderMovers() {
 market.snapshot.on(renderMovers);
 setInterval(renderMovers, 3_000);
 
-const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-connect(market, `${scheme}://${location.host}/ws/market`);
+void startFeed(market).catch(() => undefined);

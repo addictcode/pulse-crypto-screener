@@ -8,7 +8,8 @@
 <meta name="description" content="Pulse: a real-time screener for Binance USDT perpetuals. This page opens the live demo.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%230a0c11' stroke='%234db8ff' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%234db8ff' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
 <style>
-  /* This page lives on GitHub Pages and only forwards to wherever Pulse is running right now. */
+  /* This page lives on GitHub Pages and forwards the visitor: to the full Pulse when its server
+     is online, otherwise to the demo next to it, which needs no server at all. */
   * { box-sizing: border-box; margin: 0; }
   body { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: #0a0c11; color: #e7eaf0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 440px; }
@@ -18,7 +19,6 @@
   a { color: #4db8ff; }
   .state { margin-top: 22px; display: flex; align-items: center; gap: 10px; color: #e7eaf0; }
   .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f0b90b; }
-  .state.off .dot { background: #f6465d; }
 </style>
 </head>
 <body>
@@ -30,8 +30,10 @@
   <p id="more"></p>
 </main>
 <script>
-  // The live demo runs on its author's computer behind a tunnel whose address changes on every
-  // restart. deploy/home.sh writes the current one to url.txt on the "live" branch.
+  // The full version runs on its author's computer behind a tunnel whose address changes on
+  // every restart; deploy/home.sh writes the current one to url.txt on the "live" branch. When
+  // it does not answer, the demo in ./demo/ takes over: the same terminal, reading Binance
+  // straight from the browser.
   const REPO = 'addictcode/pulse-crypto-screener';
   const ru = (navigator.language || '').toLowerCase().startsWith('ru');
   const say = (en, russian) => (ru ? russian : en);
@@ -41,15 +43,11 @@
     'A real-time screener for Binance USDT perpetuals: the whole market, order book walls, signals and what followed them.',
     'Реалтайм-скринер USDT-фьючерсов Binance: весь рынок, стены в стакане, сигналы и то, что было после них.',
   );
-  $('state-text').textContent = say('Looking for the live demo', 'Ищем живое демо');
+  $('state-text').textContent = say('Opening Pulse', 'Открываем Pulse');
   $('more').innerHTML = say('Source code: ', 'Исходный код: ') + `<a href="https://github.com/${REPO}">github.com/${REPO}</a>`;
 
-  function offline() {
-    $('state').classList.add('off');
-    $('state-text').textContent = say(
-      'The demo is offline right now. It runs on the author\'s computer, so it is up when that computer is.',
-      'Демо сейчас не в сети. Оно работает на компьютере автора и доступно, когда тот включён.',
-    );
+  function openDemo() {
+    location.replace('demo/' + location.hash);
   }
 
   async function currentAddress() {
@@ -68,10 +66,9 @@
     .then(async (address) => {
       // resolves when the host answers at all, rejects when the tunnel is gone
       await fetch(`${address}/api/status`, { mode: 'no-cors' });
-      $('state-text').textContent = say('Opening Pulse', 'Открываем Pulse');
       location.replace(address + '/' + location.hash);
     })
-    .catch(offline);
+    .catch(openDemo);
 </script>
 </body>
 </html>

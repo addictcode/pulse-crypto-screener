@@ -14,6 +14,7 @@ import {
 } from 'lightweight-charts';
 
 import type { Alerts } from './alerts';
+import { candles } from './api';
 import { DrawLayer, type ToolId } from './draw';
 import { priceDigits, px, usd } from './format';
 import { t } from './i18n';
@@ -171,9 +172,7 @@ export class PriceChart {
     this.el.classList.add('loading');
     let data: CandleDto[];
     try {
-      const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&interval=${this.interval}&limit=${HISTORY}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      data = (await response.json()) as CandleDto[];
+      data = await candles(symbol, this.interval, HISTORY);
     } catch (error) {
       if (request === this.request) this.showError(t('Could not load {tf} candles: {error}', { tf: this.interval, error: (error as Error).message }));
       return;
