@@ -10,11 +10,14 @@ export const RU: Record<string, string> = {
   'Views': 'Разделы',
   'Terminal': 'Терминал',
   'Grid': 'Сетка',
+  'Heatmap': 'Карта рынка',
   'Densities': 'Плотности',
   'Signals': 'Сигналы',
   'Volume 24h': 'Объём 24ч',
   'Breadth': 'Ширина рынка',
   'Share of pairs up over 24h': 'Доля пар, выросших за 24 часа',
+  'Search': 'Поиск',
+  'Search pairs and commands': 'Поиск пар и команд',
   'Language': 'Язык',
   'Connecting': 'Подключение',
   'Connected': 'Подключено',
@@ -203,6 +206,12 @@ export const RU: Record<string, string> = {
     'Под этот пресет сейчас ничего не подходит. Снизь фильтр объёма или очисти поиск.',
   'Waiting for market data.': 'Ждём рыночные данные.',
 
+  // ---------- heatmap ----------
+  'Market heatmap': 'Карта рынка',
+  'Colour by': 'Цвет по',
+  'Size by': 'Размер по',
+  '{n} largest pairs': 'крупнейших пар: {n}',
+
   // ---------- densities ----------
   'Density map': 'Карта плотностей',
   'Distance from price': 'Расстояние от цены',
@@ -279,4 +288,16 @@ export const RU: Record<string, string> = {
   // ---------- landing ----------
   'Pulse, a radar for crypto futures': 'Pulse: радар крипто-фьючерсов',
 
+  // ---------- command palette ----------
+  'Pair, view or command': 'Пара, раздел или команда',
+  'Pairs': 'Пары',
+  'Commands': 'Команды',
+  'Most traded': 'Самые торгуемые',
+  'Nothing found. Try a ticker like SOL, or a command like "heatmap".': 'Ничего не найдено. Попробуй тикер, например SOL, или команду, например «карта».',
+  'All columns in the list': 'Все колонки в списке',
+  'Timeframe {tf}': 'Таймфрейм {tf}',
+  'Copy a link to this chart': 'Скопировать ссылку на этот график',
+  'move': 'выбор',
+  'open': 'открыть',
+  'close': 'закрыть',
 };

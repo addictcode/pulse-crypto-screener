@@ -15,6 +15,7 @@
   <nav class="views" data-i18n-attrs="aria-label" aria-label="Views">
     <a class="view" href="#screener" data-view="screener" data-i18n>Terminal</a>
     <a class="view" href="#grid" data-view="grid" data-i18n>Grid</a>
+    <a class="view" href="#heatmap" data-view="heatmap" data-i18n>Heatmap</a>
     <a class="view" href="#densities" data-view="densities" data-i18n>Densities</a>
     <a class="view" href="#signals" data-view="signals" data-i18n>Signals</a>
   </nav>
@@ -25,6 +26,7 @@
     <div class="mk m-opt" data-i18n-attrs="title" title="Share of pairs up over 24h"><span class="mk-label" data-i18n>Breadth</span><span class="breadth" id="breadth"><i></i><i></i></span><span class="mk-val" id="breadth-v">&nbsp;</span></div>
   </div>
   <div class="top-actions">
+    <button type="button" class="cmd-btn" id="cmd-btn" data-i18n-attrs="aria-label" aria-label="Search pairs and commands"><span class="i" data-icon="search"></span><span class="cmd-text" data-i18n>Search</span><kbd id="cmd-kbd">Ctrl K</kbd></button>
     <div class="seg lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button></div>
   </div>
 </header>
@@ -121,6 +123,16 @@
     </div>
   </section>
 
+  <section class="panel heat" data-i18n-attrs="aria-label" aria-label="Market heatmap">
+    <div class="p-head">
+      <h2 class="p-title" data-i18n>Heatmap</h2>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Colour by" id="hm-metric"></div>
+      <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Size by" id="hm-size"></div>
+      <span class="p-meta" id="hm-meta"></span>
+    </div>
+    <div class="heat-wrap" id="heat"></div>
+  </section>
+
   <section class="panel densmap" data-i18n-attrs="aria-label" aria-label="Density map">
     <div class="p-head">
       <h2 class="p-title" data-i18n>Densities</h2>
@@ -196,6 +208,12 @@
 </main>
 
 <div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<dialog class="palette" id="palette" data-i18n-attrs="aria-label" aria-label="Search pairs and commands">
+  <label class="pal-input"><span class="i" data-icon="search"></span><input id="pal-q" type="text" data-i18n-attrs="placeholder" placeholder="Pair, view or command" autocomplete="off" spellcheck="false"></label>
+  <ul class="pal-list" id="pal-list" role="listbox"></ul>
+  <p class="pal-foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> <span data-i18n>move</span></span><span><kbd>Enter</kbd> <span data-i18n>open</span></span><span><kbd>Esc</kbd> <span data-i18n>close</span></span></p>
+</dialog>
 
 <footer class="statusbar">
   <span class="conn" id="st-conn">&nbsp;</span>

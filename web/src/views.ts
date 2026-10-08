@@ -1,9 +1,9 @@
-export type View = 'screener' | 'grid' | 'densities' | 'signals';
+export type View = 'screener' | 'grid' | 'heatmap' | 'densities' | 'signals';
 
-const VIEWS: View[] = ['screener', 'grid', 'densities', 'signals'];
+const VIEWS: View[] = ['screener', 'grid', 'heatmap', 'densities', 'signals'];
 
 /**
- * What the address bar says: `#signals`, `#screener:SOLUSDT`. The pair is optional and rides
+ * What the address bar says: `#heatmap`, `#screener:SOLUSDT`. The pair is optional and rides
  * along so a copied link opens the same chart.
  */
 export function parseHash(hash: string): { view: View; symbol: string | null } {
@@ -22,7 +22,7 @@ export function rememberSymbol(symbol: string) {
 }
 
 /**
- * Layouts over the same market: the terminal, the chart grid, the density map and
+ * Layouts over the same market: the terminal, the chart grid, the heatmap, the density map and
  * the signal record. The view lives in the URL hash so a reload or a shared link lands on the
  * same screen.
  */
