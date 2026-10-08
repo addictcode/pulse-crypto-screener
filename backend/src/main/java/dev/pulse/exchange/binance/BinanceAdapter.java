@@ -26,6 +26,7 @@ import dev.pulse.exchange.ExchangeStatus;
 import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.MarketSink;
+import dev.pulse.market.Positioning;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
@@ -203,6 +204,28 @@ public class BinanceAdapter implements ExchangeAdapter {
     @Override
     public List<Candle> candles(String symbol, String interval, int limit) {
         return rest.chartKlines(symbol, interval, limit);
+    }
+
+    /** Five independent requests; in parallel the answer takes as long as the slowest one. */
+    @Override
+    public Positioning positioning(String symbol, String period, int limit) {
+        var openInterest = workers.submit(() -> rest.statistic("openInterestHist", symbol, period, limit, "sumOpenInterestValue"));
+        var accounts = workers.submit(() -> rest.statistic("globalLongShortAccountRatio", symbol, period, limit, "longShortRatio"));
+        var top = workers.submit(() -> rest.statistic("topLongShortPositionRatio", symbol, period, limit, "longShortRatio"));
+        var taker = workers.submit(() -> rest.statistic("takerlongshortRatio", symbol, period, limit, "buySellRatio"));
+        var funding = workers.submit(() -> rest.fundingHistory(symbol, Math.min(limit, 200)));
+        return new Positioning(join(openInterest), join(accounts), join(top), join(taker), join(funding));
+    }
+
+    private static List<Positioning.Point> join(Future<List<Positioning.Point>> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return List.of();
+        } catch (ExecutionException e) {
+            return List.of();
+        }
     }
 
     @Override

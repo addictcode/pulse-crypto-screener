@@ -1,3 +1,4 @@
+import { MAX_PRESETS, MAX_RULES, METRICS, OPS, matches, parseNumber, sanitize, type CustomPreset, type Rule } from './filters';
 import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
 import { sparkline } from './sparkline';
@@ -21,7 +22,7 @@ interface Column {
   key: Key;
   label: string;
   cls?: string;
-  /** Shown in the narrow list beside the chart; the rest appear with "All columns". */
+  /** In the narrow list beside the chart unless the user chose otherwise. */
   core?: boolean;
   sortable?: boolean;
   /** Sort value for keys that are not SymbolMetrics fields. */
@@ -86,7 +87,7 @@ const COLUMNS: Column[] = [
     cell: (_r, { spark }) => `<td class="spark c-md">${spark ? sparkline(spark) : ''}</td>`,
   },
   { key: 'price', label: t('Price'), core: true, cell: (r) => `<td>${px(r.price)}</td>` },
-  { key: 'ch5m', label: t('5m'), cls: 'c-opt', core: true, cell: (r) => pctCell(r.ch5m, ' c-opt') },
+  { key: 'ch5m', label: t('5m'), core: true, cell: (r) => pctCell(r.ch5m) },
   { key: 'ch15m', label: t('15m'), cls: 'c-lg', cell: (r) => pctCell(r.ch15m, ' c-lg') },
   { key: 'ch1h', label: t('1h'), cls: 'c-sm', cell: (r) => pctCell(r.ch1h, ' c-sm') },
   { key: 'ch24h', label: t('24h'), core: true, cell: (r) => pctCell(r.ch24h) },
@@ -134,9 +135,15 @@ const COLUMNS: Column[] = [
   },
 ];
 
+/** Columns that are always there; the rest of the narrow list is the user's choice. */
+const FIXED: Key[] = ['star', 'symbol'];
+const DEFAULT_COLUMNS = COLUMNS.filter((c) => c.core && !FIXED.includes(c.key)).map((c) => c.key);
+const compact = new Set<Key>(load<Key[]>('listCols', DEFAULT_COLUMNS).filter((key) => COLUMNS.some((c) => c.key === key)));
+const inCompact = (c: Column) => FIXED.includes(c.key) || compact.has(c.key);
+
 /** Cells of the columns hidden in the narrow list carry the class `x`. */
 const cellHtml = (c: Column, r: SymbolMetrics, ctx: RowContext) =>
-  c.core ? c.cell(r, ctx) : c.cell(r, ctx).replace('<td class="', '<td class="x ');
+  inCompact(c) ? c.cell(r, ctx) : c.cell(r, ctx).replace('<td class="', '<td class="x ');
 
 const RESORT_EVERY_MS = 5_000;
 const VIEW_MARGIN_ROWS = 8;
@@ -160,6 +167,11 @@ export class Screener {
 
   private readonly state: ScreenerState;
   private readonly starred = new Set<string>(load<string[]>('watchlist', ['BTCUSDT', 'ETHUSDT']));
+  private custom: CustomPreset[] = sanitize(load<unknown>('customPresets', []));
+  private readonly filterMenu = document.getElementById('flt-menu')!;
+  private readonly columnsMenu = document.getElementById('cols-menu')!;
+  /** The custom preset open in the editor, or null for a new one. */
+  private editing: CustomPreset | null = null;
   private pointerInside = false;
   private scrollFrame = 0;
 
@@ -206,7 +218,19 @@ export class Screener {
   }
 
   get presetLabel() {
-    return PRESETS.find((p) => p.id === this.state.preset)!.label;
+    return this.preset().label;
+  }
+
+  /** Built-in presets, then the ones the user built. */
+  private presets(): Preset[] {
+    return [
+      ...PRESETS,
+      ...this.custom.map((c) => ({ id: `custom:${c.id}`, label: c.name, test: (r: SymbolMetrics, ctx: RowContext) => matches(c.rules, r, ctx.wall, ctx.gap) })),
+    ];
+  }
+
+  private preset(): Preset {
+    return this.presets().find((p) => p.id === this.state.preset) ?? PRESETS[0];
   }
 
   render() {
@@ -246,7 +270,7 @@ export class Screener {
   }
 
   private visibleRows() {
-    const preset = PRESETS.find((p) => p.id === this.state.preset)!;
+    const preset = this.preset();
     const q = this.state.query.trim().toUpperCase();
     const rows = [...this.market.rows.values()].filter(
       (r) =>
@@ -348,10 +372,19 @@ export class Screener {
 
   private renderPresets() {
     const rows = [...this.market.rows.values()];
-    this.presetsEl.innerHTML = PRESETS.map((p) => {
+    const selected = this.preset().id;
+    const chips = this.presets().map((p) => {
       const n = rows.filter((r) => p.test(r, this.context(r)) && (p.id === 'watch' || r.vol24h >= this.state.minVolume)).length;
-      return `<button class="preset" role="tab" data-preset="${p.id}" aria-selected="${p.id === this.state.preset}">${p.label}<span class="count">${n}</span></button>`;
-    }).join('');
+      return `<button class="preset" role="tab" data-preset="${p.id}" aria-selected="${p.id === selected}">${escapeHtml(p.label)}<span class="count">${n}</span></button>`;
+    });
+    // a custom preset can be edited while it is selected; a new one can always be added
+    const edit = selected.startsWith('custom:')
+      ? `<button type="button" class="preset tool" data-act="edit" title="${t('Edit this filter')}" aria-label="${t('Edit this filter')}">${ICONS.edit}</button>`
+      : '';
+    const add = this.custom.length < MAX_PRESETS
+      ? `<button type="button" class="preset tool" data-act="new" title="${t('New filter')}" aria-label="${t('New filter')}">${ICONS.plus}</button>`
+      : '';
+    this.presetsEl.innerHTML = chips.join('') + edit + add;
   }
 
   private renderHead() {
@@ -359,7 +392,7 @@ export class Screener {
       const on = c.key === this.state.sortKey;
       const sorted = on ? ` sorted${this.state.ascending ? ' asc' : ''}` : '';
       const aria = on ? ` aria-sort="${this.state.ascending ? 'ascending' : 'descending'}"` : '';
-      return `<th class="${c.cls ?? ''}${c.core ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${c.label}</th>`;
+      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${c.label}</th>`;
     }).join('');
   }
 
@@ -382,10 +415,157 @@ export class Screener {
     return document.body.dataset.list === 'wide';
   }
 
+  // ---------- which columns the narrow list shows ----------
+
+  private renderColumnsMenu() {
+    this.columnsMenu.innerHTML =
+      `<p class="menu-title">${t('Columns in the list')}</p>` +
+      COLUMNS.filter((c) => !FIXED.includes(c.key))
+        .map((c) => `<label class="ind-item"><input type="checkbox" value="${c.key}"${compact.has(c.key) ? ' checked' : ''}><span>${c.key === 'spark' ? t('Sparkline 2h') : c.label}</span></label>`)
+        .join('') +
+      `<p class="menu-note">${t('"All columns" shows every one of them at once.')}</p>`;
+  }
+
+  private applyColumns() {
+    document.documentElement.style.setProperty('--list-cols', String(Math.max(2, compact.size)));
+  }
+
+  private toggleMenu(menu: HTMLElement, button: HTMLElement | null, open: boolean) {
+    menu.hidden = !open;
+    button?.setAttribute('aria-expanded', String(open));
+  }
+
+  // ---------- custom filters ----------
+
+  private openFilter(preset: CustomPreset | null) {
+    this.editing = preset;
+    const rules: Rule[] = preset ? preset.rules : [{ metric: 'ch5m', op: 'abs', value: 2 }];
+    this.filterMenu.innerHTML = `
+      <form class="flt-form" novalidate>
+        <label class="flt-name"><span>${t('Filter name')}</span><input name="name" maxlength="24" autocomplete="off" spellcheck="false" value="${escapeHtml(preset?.name ?? '')}" placeholder="${t('For example: Squeeze')}"></label>
+        <div class="flt-rules">${rules.map((r) => this.ruleHtml(r)).join('')}</div>
+        <button type="button" class="btn ghost" data-act="add-rule">${ICONS.plus}<span>${t('Add a condition')}</span></button>
+        <p class="al-note" role="status"></p>
+        <div class="flt-actions">
+          ${preset ? `<button type="button" class="btn" data-act="delete">${t('Delete')}</button>` : ''}
+          <button type="button" class="btn" data-act="cancel">${t('Cancel')}</button>
+          <button type="submit" class="btn primary">${t('Save')}</button>
+        </div>
+      </form>`;
+    this.toggleMenu(this.filterMenu, null, true);
+    this.filterMenu.querySelector<HTMLInputElement>('input[name="name"]')!.focus();
+  }
+
+  private ruleHtml(rule: Rule) {
+    const unit = METRICS.find((m) => m.id === rule.metric)?.unit ?? '';
+    return `<div class="flt-rule">
+      <select name="metric" aria-label="${t('Metric')}">${METRICS.map((m) => `<option value="${m.id}"${m.id === rule.metric ? ' selected' : ''}>${m.label}</option>`).join('')}</select>
+      <select name="op" aria-label="${t('Comparison')}">${OPS.map(([op, label]) => `<option value="${op}"${op === rule.op ? ' selected' : ''}>${label}</option>`).join('')}</select>
+      <input name="value" inputmode="decimal" autocomplete="off" aria-label="${t('Value')}" value="${rule.value}">
+      <span class="unit">${unit}</span>
+      <button type="button" data-act="remove-rule" aria-label="${t('Remove this condition')}">${ICONS.close}</button>
+    </div>`;
+  }
+
+  private saveFilter() {
+    const form = this.filterMenu.querySelector('form')!;
+    const note = form.querySelector<HTMLElement>('.al-note')!;
+    const name = form.querySelector<HTMLInputElement>('input[name="name"]')!.value.trim();
+    const rules: Rule[] = [];
+    for (const row of form.querySelectorAll<HTMLElement>('.flt-rule')) {
+      const value = parseNumber(row.querySelector<HTMLInputElement>('input[name="value"]')!.value);
+      if (value === null) {
+        note.textContent = t('Every condition needs a number.');
+        return;
+      }
+      rules.push({
+        metric: row.querySelector<HTMLSelectElement>('select[name="metric"]')!.value as Rule['metric'],
+        op: row.querySelector<HTMLSelectElement>('select[name="op"]')!.value as Rule['op'],
+        value,
+      });
+    }
+    if (!name) {
+      note.textContent = t('Give the filter a name.');
+      return;
+    }
+    if (!rules.length) {
+      note.textContent = t('Add at least one condition.');
+      return;
+    }
+    const id = this.editing?.id ?? String(Date.now());
+    const saved: CustomPreset = { id, name, rules };
+    this.custom = this.editing ? this.custom.map((c) => (c.id === id ? saved : c)) : [...this.custom, saved];
+    save('customPresets', this.custom);
+    this.state.preset = `custom:${id}`;
+    this.toggleMenu(this.filterMenu, null, false);
+    this.render();
+  }
+
+  private bindMenus() {
+    const columnsButton = document.getElementById('list-cols')!;
+    this.applyColumns();
+    columnsButton.addEventListener('click', () => {
+      const open = this.columnsMenu.hidden !== false;
+      if (open) this.renderColumnsMenu();
+      this.toggleMenu(this.columnsMenu, columnsButton, open);
+    });
+    this.columnsMenu.addEventListener('change', (e) => {
+      const box = e.target as HTMLInputElement;
+      if (box.checked) compact.add(box.value as Key);
+      else compact.delete(box.value as Key);
+      save('listCols', [...compact]);
+      this.applyColumns();
+      this.render();
+    });
+    this.filterMenu.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.saveFilter();
+    });
+    this.filterMenu.addEventListener('change', (e) => {
+      // the unit follows the metric: volume is typed in millions, liquidations in thousands
+      const select = e.target as HTMLSelectElement;
+      if (select.name !== 'metric') return;
+      select.closest('.flt-rule')!.querySelector('.unit')!.textContent = METRICS.find((m) => m.id === select.value)?.unit ?? '';
+    });
+    this.filterMenu.addEventListener('click', (e) => {
+      const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+      const rulesEl = this.filterMenu.querySelector('.flt-rules');
+      if (act === 'add-rule' && rulesEl && rulesEl.children.length < MAX_RULES) {
+        rulesEl.insertAdjacentHTML('beforeend', this.ruleHtml({ metric: 'vol24h', op: 'gte', value: 100 }));
+      } else if (act === 'remove-rule') {
+        (e.target as HTMLElement).closest('.flt-rule')!.remove();
+      } else if (act === 'cancel') {
+        this.toggleMenu(this.filterMenu, null, false);
+      } else if (act === 'delete' && this.editing) {
+        this.custom = this.custom.filter((c) => c.id !== this.editing!.id);
+        save('customPresets', this.custom);
+        this.state.preset = 'all';
+        this.toggleMenu(this.filterMenu, null, false);
+        this.render();
+      }
+    });
+    document.addEventListener('pointerdown', (e) => {
+      const target = e.target as HTMLElement;
+      if (!this.columnsMenu.hidden && !target.closest('#cols-menu, #list-cols')) this.toggleMenu(this.columnsMenu, columnsButton, false);
+      if (!this.filterMenu.hidden && !target.closest('#flt-menu, #presets')) this.toggleMenu(this.filterMenu, null, false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!this.columnsMenu.hidden) this.toggleMenu(this.columnsMenu, columnsButton, false);
+      if (!this.filterMenu.hidden) this.toggleMenu(this.filterMenu, null, false);
+    });
+  }
+
   private bindEvents() {
+    this.bindMenus();
     document.getElementById('list-wide')!.addEventListener('click', () => this.setWide(!this.wide));
     this.setWide(load('listWide', false));
     this.presetsEl.addEventListener('click', (e) => {
+      const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+      if (act) {
+        this.openFilter(act.dataset.act === 'edit' ? (this.custom.find((c) => `custom:${c.id}` === this.state.preset) ?? null) : null);
+        return;
+      }
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-preset]');
       if (!button) return;
       this.state.preset = button.dataset.preset!;
@@ -453,4 +633,8 @@ export class Screener {
       }
     });
   }
+}
+
+function escapeHtml(text: string) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

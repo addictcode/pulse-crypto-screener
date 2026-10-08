@@ -30,7 +30,9 @@
 
   --top-h: 44px;
   --status-h: 26px;
-  --list-w: 424px;
+  /* the narrow list is as wide as the columns the user chose for it */
+  --list-cols: 4;
+  --list-w: clamp(340px, calc(152px + var(--list-cols) * 68px), 46vw);
   --dock-h: 214px;
   --side-w: 480px;
   --r: 6px;
@@ -327,7 +329,7 @@ body[data-view="screener"][data-focus] .desk > .panel:not(.instrument) { display
 }
 .tape-row:hover { background: var(--bg-2); }
 .tape-row time { color: var(--ink-3); font-size: 11.5px; }
-.tape-row .s { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.tape-row .s { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tape-row .v { text-align: right; }
 .badge { justify-self: start; font-size: 11px; font-weight: 500; color: var(--tone); white-space: nowrap; }
 .badge.up { --tone: var(--up); }
@@ -343,7 +345,7 @@ body[data-view="screener"][data-focus] .desk > .panel:not(.instrument) { display
 .liq-list { overflow: hidden; }
 .liq-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 44px 96px; align-items: center; height: 22px; padding: 0 8px; font-size: 12px; }
 .liq-row time { color: var(--ink-3); font-size: 11.5px; }
-.liq-row .s { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.liq-row .s { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .liq-row .v { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .liq-row .v i { display: block; height: 4px; border-radius: 2px; }
 .liq-row.long .v i { background: color-mix(in srgb, var(--down) 55%, transparent); }
@@ -408,9 +410,34 @@ tr:hover .star { color: var(--ink-3); }
 .empty td { height: 110px; text-align: left; white-space: normal; font-size: 12.5px; color: var(--ink-3); padding: 0 14px; }
 /* in the narrow list only the columns that identify a move; the rest wait for "All columns" */
 body:not([data-list="wide"]) .screener .x { display: none; }
-@container list (max-width: 1020px) { .screener .c-lg { display: none; } }
-@container list (max-width: 860px) { .screener .c-md { display: none; } }
-@container list (max-width: 700px) { .screener .c-sm { display: none; } }
+/* in the full table the less urgent columns step aside as it gets narrower */
+@container list (max-width: 1020px) { body[data-list="wide"] .screener .c-lg { display: none; } }
+@container list (max-width: 860px) { body[data-list="wide"] .screener .c-md { display: none; } }
+@container list (max-width: 700px) { body[data-list="wide"] .screener .c-sm { display: none; } }
+
+.preset.tool { display: inline-grid; place-items: center; width: 24px; padding: 0; font-size: 14px; }
+.menu-title { padding: 10px 14px 6px; color: var(--ink-3); font-size: 11px; font-weight: 600; }
+.menu-note { padding: 8px 14px 4px; border-top: 1px solid var(--rule-strong); color: var(--ink-3); font-size: 11.5px; line-height: 1.5; }
+.cols-menu { top: 40px; right: 8px; width: 230px; max-height: min(70dvh, 520px); overflow-y: auto; padding-bottom: 6px; }
+.flt-menu { top: 74px; left: 8px; right: 8px; padding: 12px; }
+.flt-form { display: grid; gap: 10px; }
+.flt-name { display: grid; gap: 6px; color: var(--ink-2); font-size: 12px; }
+.flt-form input, .flt-form select { height: 28px; min-width: 0; padding: 0 8px; background: var(--bg-0); border: 1px solid var(--rule-strong); border-radius: var(--r); font-size: 12.5px; outline: none; }
+.flt-form input:focus, .flt-form select:focus { border-color: var(--accent); }
+.flt-form select option { background: var(--bg-2); }
+.flt-rules { display: grid; gap: 6px; }
+.flt-rule { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px 22px 22px; align-items: center; gap: 6px; }
+.flt-rule .unit { color: var(--ink-3); font-size: 11.5px; }
+.flt-rule button { display: grid; place-items: center; height: 22px; color: var(--ink-3); font-size: 13px; border-radius: 4px; }
+.flt-rule button:hover { color: var(--down); }
+.flt-form [data-act="add-rule"] { justify-self: start; }
+.flt-form .al-note { min-height: 0; margin: 0; }
+.flt-form .al-note:empty { display: none; }
+.flt-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.flt-actions [data-act="delete"] { margin-right: auto; }
+.flt-actions [data-act="delete"]:hover { color: var(--down); border-color: var(--down); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #06121c; font-weight: 600; }
+.btn.primary:hover { background: var(--accent); color: #06121c; filter: brightness(1.1); }
 
 /* five cells lit by how hard volume is running */
 .meter { display: inline-flex; gap: 2px; margin-right: 7px; vertical-align: -1px; }
@@ -483,9 +510,10 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 
 /* ---------- chart grid ---------- */
 .pager { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-2); }
-.pager span { min-width: 52px; text-align: center; }
+.pager > span { min-width: 52px; text-align: center; }
 .cells { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
-.cell { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-1); }
+/* overflow: the chart library sizes its canvas in whole pixels and can run one over */
+.cell { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg-1); }
 .cell[hidden] { display: none; }
 .cell-head { flex: none; display: flex; align-items: baseline; gap: 9px; height: 30px; padding: 0 10px; text-align: left; white-space: nowrap; overflow: hidden; }
 .cell-head b { font-weight: 600; font-size: 13px; color: var(--ink); }
@@ -607,13 +635,9 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
   .mk.m-opt { display: none; }
 }
 @media (max-width: 1180px) {
-  :root { --list-w: 372px; --side-w: 420px; }
+  :root { --list-w: clamp(320px, calc(100px + var(--list-cols) * 68px), 44vw); --side-w: 420px; }
   .cmd-btn .cmd-text, .cmd-btn kbd { display: none; }
   .moves { display: none; }
-}
-
-@media (min-width: 901px) and (max-width: 1180px) {
-  body:not([data-list="wide"]) .screener .c-opt { display: none; }
 }
 
 /* ---------- phone and small tablet: one scrolling column ---------- */
@@ -638,6 +662,8 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
   .liq-list { max-height: 260px; }
   .ladder { max-height: 220px; }
   .c-sm { display: none; }
+  /* columns picked for the list stay, whatever their priority in the full table */
+  .screener .c-sm:not(.x) { display: table-cell; }
   body[data-view="screener"][data-focus] .chart-area { height: calc(100dvh - 240px); }
   .heat-wrap { flex: none; height: 70dvh; }
   .map-wrap { flex: none; height: 420px; }

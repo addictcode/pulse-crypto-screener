@@ -3,6 +3,7 @@ package dev.pulse.exchange;
 import java.util.List;
 
 import dev.pulse.market.Candle;
+import dev.pulse.market.Positioning;
 
 /**
  * An exchange integration. Implementations push normalized events into a
@@ -20,6 +21,15 @@ public interface ExchangeAdapter {
     List<Candle> candles(String symbol, String interval, int limit);
 
     ExchangeStatus status();
+
+    /**
+     * Open interest, long/short ratios and funding over time.
+     *
+     * @param period exchange-style period such as 5m, 1h, 1d
+     */
+    default Positioning positioning(String symbol, String period, int limit) {
+        return Positioning.EMPTY;
+    }
 
     /**
      * How often the symbol pays funding. Rates are quoted per interval, so two rates only

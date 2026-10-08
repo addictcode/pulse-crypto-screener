@@ -18,7 +18,8 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 
-import { px } from './format';
+import { px, usd } from './format';
+import { t as tr } from './i18n';
 import {
   bollinger,
   divergences,
@@ -38,18 +39,23 @@ import {
   type StrategyResult,
   type Trail,
 } from './indicators';
+import type { Point, Positioning } from './types';
 
 export type StudyId =
   | 'ema' | 'bb' | 'vwap' | 'st' | 'smart'
   | 'fvg' | 'ob' | 'ms' | 'div'
   | 'rsi' | 'macd' | 'hw'
-  | 'rsi2' | 'squeeze';
+  | 'rsi2' | 'squeeze'
+  | 'oi' | 'ls' | 'taker' | 'fund';
+
+/** Studies drawn from the exchange's statistics rather than from the candles on screen. */
+export const POSITIONING: StudyId[] = ['oi', 'ls', 'taker', 'fund'];
 
 export interface StudyInfo {
   id: StudyId;
   name: string;
   hint: string;
-  group: 'Overlays' | 'Smart money' | 'Oscillators' | 'Strategies';
+  group: 'Overlays' | 'Smart money' | 'Oscillators' | 'Strategies' | 'Positioning';
 }
 
 export const STUDIES: StudyInfo[] = [
@@ -67,7 +73,33 @@ export const STUDIES: StudyInfo[] = [
   { id: 'hw', name: 'HyperWave + money flow', hint: 'momentum, turning points', group: 'Oscillators' },
   { id: 'rsi2', name: 'RSI-2 pullback', hint: 'entries, stop, target, backtest', group: 'Strategies' },
   { id: 'squeeze', name: 'Squeeze breakout', hint: 'entries, stop, target, backtest', group: 'Strategies' },
+  { id: 'oi', name: 'Open interest', hint: 'in USD, over time', group: 'Positioning' },
+  { id: 'ls', name: 'Long/short ratio', hint: 'all accounts and top traders', group: 'Positioning' },
+  { id: 'taker', name: 'Taker buy/sell', hint: 'who is hitting the market', group: 'Positioning' },
+  { id: 'fund', name: 'Funding history', hint: 'rate at each payment', group: 'Positioning' },
 ];
+
+/**
+ * A statistic on the chart's own bars. With `fill` each bar shows the latest reading known by its
+ * end, so a 5-minute statistic steps along a 1-minute chart; without it only the bar a reading
+ * falls into gets a value, which is right for events such as a funding payment.
+ */
+export function alignPoints(times: number[], points: Point[], fill: boolean): Line {
+  const out: Line = new Array<number | null>(times.length).fill(null);
+  let next = 0;
+  let last: number | null = null;
+  for (let i = 0; i < times.length; i++) {
+    const end = i + 1 < times.length ? times[i + 1] : Infinity;
+    let inside: number | null = null;
+    while (next < points.length && points[next].time < end) {
+      last = points[next].value;
+      if (points[next].time >= times[i]) inside = last;
+      next++;
+    }
+    out[i] = fill ? last : inside;
+  }
+  return out;
+}
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 /** #rrggbb from the theme to rgba(); both the chart library and canvas parse that everywhere. */
@@ -222,6 +254,7 @@ export class Studies {
   private lines = new Map<string, ISeriesApi<'Line'> | ISeriesApi<'Histogram'>>();
   private bars: Bar[] = [];
   private lastLive = 0;
+  private positioning: Positioning | null = null;
 
   constructor(chart: IChartApi, candles: ISeriesApi<'Candlestick'>, onBacktest: (lines: BacktestLine[]) => void) {
     this.chart = chart;
@@ -246,6 +279,16 @@ export class Studies {
     this.lines.clear();
     this.enabled = new Set(ids);
     this.createSeries();
+    this.compute();
+  }
+
+  /** True when a pane needs the exchange's statistics, which the chart then has to fetch. */
+  get wantsPositioning() {
+    return POSITIONING.some((id) => this.enabled.has(id));
+  }
+
+  setPositioning(positioning: Positioning | null) {
+    this.positioning = positioning;
     this.compute();
   }
 
@@ -327,6 +370,31 @@ export class Studies {
       level(wave, -60);
       level(wave, 0, false);
     }
+    if (on('oi')) {
+      pane++;
+      this.add('oi', pane, {
+        color: p.accent, lineWidth: 2, lastValueVisible: true, title: 'OI',
+        priceFormat: { type: 'custom', formatter: (v: number) => usd(v), minMove: 1 },
+      });
+    }
+    if (on('ls')) {
+      pane++;
+      this.add('lsAccounts', pane, { color: p.amber, lineWidth: 2, lastValueVisible: true, title: tr('L/S accounts') });
+      this.add('lsTop', pane, { color: p.violet, lastValueVisible: true, title: tr('L/S top traders') });
+      level(this.lines.get('lsAccounts') as ISeriesApi<'Line'>, 1);
+    }
+    if (on('taker')) {
+      pane++;
+      // bars grow from 1: above it buyers were the aggressors, below it sellers
+      this.lines.set('taker', this.chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: true, base: 1, title: tr('Takers') }, pane));
+    }
+    if (on('fund')) {
+      pane++;
+      this.lines.set('fund', this.chart.addSeries(HistogramSeries, {
+        priceLineVisible: false, lastValueVisible: false, title: tr('Funding'),
+        priceFormat: { type: 'custom', formatter: (v: number) => `${v.toFixed(4)}%`, minMove: 0.0001 },
+      }, pane));
+    }
     // the price keeps most of the height; each oscillator pane is a third of it
     const panes = this.chart.panes();
     panes.forEach((p, i) => p.setStretchFactor(i === 0 ? 3 : 1));
@@ -352,8 +420,26 @@ export class Studies {
     this.set(`${prefix}Down`, trail.line.map((v, i) => (trail.dir[i] === -1 ? v : null)));
   }
 
+  /** Statistics panes: the exchange's own series, laid onto the bars on screen. */
+  private computePositioning() {
+    const data = this.positioning;
+    if (!data || !this.bars.length) return;
+    const times = this.bars.map((b) => b.time);
+    const p = this.palette;
+    const histogram = (key: string, values: Line, colour: (v: number) => string) =>
+      this.lines.get(key)?.setData(
+        times.map((time, i) => (values[i] === null ? { time: time as UTCTimestamp } : { time: time as UTCTimestamp, value: values[i]!, color: colour(values[i]!) })),
+      );
+    this.set('oi', alignPoints(times, data.openInterest, true));
+    this.set('lsAccounts', alignPoints(times, data.longShortAccounts, true));
+    this.set('lsTop', alignPoints(times, data.longShortTop, true));
+    histogram('taker', alignPoints(times, data.takerBuySell, true), (v) => alpha(v >= 1 ? p.up : p.down, 0.55));
+    histogram('fund', alignPoints(times, data.funding, false), (v) => alpha(v >= 0 ? p.up : p.down, 0.8));
+  }
+
   private compute() {
     const bars = this.bars;
+    this.computePositioning();
     if (bars.length < 30) return;
     const p = this.palette;
     const on = (id: StudyId) => this.enabled.has(id);

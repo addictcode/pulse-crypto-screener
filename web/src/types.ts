@@ -88,6 +88,26 @@ export interface VenueGap {
   vol24h: number;
 }
 
+/** One reading of a statistic: epoch seconds and the figure. */
+export interface Point {
+  time: number;
+  value: number;
+}
+
+/** Mirror of dev.pulse.market.Positioning. Every series is oldest first and may be empty. */
+export interface Positioning {
+  /** Open interest in USD. */
+  openInterest: Point[];
+  /** Accounts net long divided by accounts net short. */
+  longShortAccounts: Point[];
+  /** The same ratio by position size among the largest traders. */
+  longShortTop: Point[];
+  /** Volume of market buys divided by market sells. */
+  takerBuySell: Point[];
+  /** Funding rate in percent at each payment. */
+  funding: Point[];
+}
+
 export type TapeKind =
   | 'PUMP_1M' | 'PUMP_5M' | 'DUMP_1M' | 'DUMP_5M' | 'VOLUME' | 'OI_UP' | 'OI_DOWN' | 'LIQ_LONGS' | 'LIQ_SHORTS';
 

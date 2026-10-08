@@ -15,6 +15,7 @@ import dev.pulse.market.Candle;
 import dev.pulse.market.Instrument;
 import dev.pulse.market.MarkPriceUpdate;
 import dev.pulse.market.OpenInterestPoint;
+import dev.pulse.market.Positioning;
 import dev.pulse.market.TickerUpdate;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
@@ -72,6 +73,31 @@ final class BinanceRestClient {
     /** Funding interval in hours by symbol; Binance lists the contracts it has adjusted. */
     Map<String, Integer> fundingIntervals() {
         return parser.fundingIntervals(get(background, "/fapi/v1/fundingInfo"));
+    }
+
+    /**
+     * Requested by a user looking at one pair, so it rides the interactive lane. A series that
+     * fails comes back empty: these statistics lag or go missing on freshly listed contracts.
+     */
+    List<Positioning.Point> statistic(String path, String symbol, String period, int limit, String valueField) {
+        try {
+            JsonNode body = get(interactive, "/futures/data/" + path + "?symbol={symbol}&period={period}&limit={limit}", symbol, period, limit);
+            return parser.statistic(body, "timestamp", valueField, 1);
+        } catch (RuntimeException e) {
+            log.debug("Binance: {} for {} failed: {}", path, symbol, e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Past funding payments, in percent. */
+    List<Positioning.Point> fundingHistory(String symbol, int limit) {
+        try {
+            JsonNode body = get(interactive, "/fapi/v1/fundingRate?symbol={symbol}&limit={limit}", symbol, limit);
+            return parser.statistic(body, "fundingTime", "fundingRate", 100);
+        } catch (RuntimeException e) {
+            log.debug("Binance: funding history for {} failed: {}", symbol, e.getMessage());
+            return List.of();
+        }
     }
 
     /** One-minute history for the metrics engine. */

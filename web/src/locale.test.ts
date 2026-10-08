@@ -16,8 +16,9 @@ function codeKeys(): string[] {
   for (const file of readdirSync(src)) {
     if (!file.endsWith('.ts') || file.endsWith('.test.ts') || file === 'locale-ru.ts') continue;
     const text = read(join(src, file));
-    for (const m of text.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) keys.push(m[1].replace(/\\'/g, "'"));
-    for (const m of text.matchAll(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g)) keys.push(m[1]);
+    // `tr` is the same function where a module already has a local called `t`
+    for (const m of text.matchAll(/\b(?:t|tr)\(\s*'((?:[^'\\]|\\.)*)'/g)) keys.push(m[1].replace(/\\'/g, "'"));
+    for (const m of text.matchAll(/\b(?:t|tr)\(\s*"((?:[^"\\]|\\.)*)"/g)) keys.push(m[1]);
   }
   return keys;
 }
@@ -44,6 +45,8 @@ function dynamicKeys(): string[] {
   return [
     ...[...studies.matchAll(/hint: '([^']*)'/g)].map((m) => m[1]),
     ...[...studies.matchAll(/group: '([^']*)' \}/g)].map((m) => m[1]),
+    // the statistics panes have plain-language names; the indicators keep their own (EMA, RSI, ...)
+    ...[...studies.matchAll(/name: '([^']*)', hint: '[^']*', group: 'Positioning'/g)].map((m) => m[1]),
     // dev.pulse.signal.SignalType#label(direction)
     'Pump', 'Dump', 'Volume', 'Open interest', 'Funding', 'Liquidations', 'Near wall',
     'Volume, price up', 'Volume, price down', 'OI climbs', 'OI drops', 'Funding positive', 'Funding negative',

@@ -18,7 +18,10 @@ import list from '@phosphor-icons/core/assets/regular/list.svg?raw';
 import magnifyingGlass from '@phosphor-icons/core/assets/regular/magnifying-glass.svg?raw';
 import minus from '@phosphor-icons/core/assets/regular/minus.svg?raw';
 import rectangle from '@phosphor-icons/core/assets/regular/rectangle.svg?raw';
+import pencil from '@phosphor-icons/core/assets/regular/pencil-simple.svg?raw';
+import plus from '@phosphor-icons/core/assets/regular/plus.svg?raw';
 import ruler from '@phosphor-icons/core/assets/regular/ruler.svg?raw';
+import sliders from '@phosphor-icons/core/assets/regular/sliders-horizontal.svg?raw';
 import squaresFour from '@phosphor-icons/core/assets/regular/squares-four.svg?raw';
 import starFill from '@phosphor-icons/core/assets/fill/star-fill.svg?raw';
 import star from '@phosphor-icons/core/assets/regular/star.svg?raw';
@@ -54,6 +57,9 @@ export const ICONS = {
   command: icon(command),
   view: icon(squaresFour),
   translate: icon(translate),
+  plus: icon(plus),
+  edit: icon(pencil),
+  sliders: icon(sliders),
 };
 
 export type IconName = keyof typeof ICONS;

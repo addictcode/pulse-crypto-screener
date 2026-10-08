@@ -13,6 +13,7 @@ import dev.pulse.market.Liquidation;
 import dev.pulse.market.MarkPriceUpdate;
 import dev.pulse.market.MarketSink;
 import dev.pulse.market.OpenInterestPoint;
+import dev.pulse.market.Positioning;
 import dev.pulse.market.PositionSide;
 import dev.pulse.market.TickerUpdate;
 import tools.jackson.databind.JsonNode;
@@ -94,6 +95,29 @@ final class BinanceParser {
                     p.path("time").asLong()));
         }
         return result;
+    }
+
+    /**
+     * The /futures/data statistics all share one shape: an array of objects with a millisecond
+     * {@code timestamp} and the figure of interest under some field name.
+     */
+    List<Positioning.Point> statistic(JsonNode array, String timeField, String valueField, double scale) {
+        List<Positioning.Point> points = new ArrayList<>();
+        for (JsonNode p : array) {
+            String raw = p.path(valueField).asString();
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            try {
+                // rounded: 0.0000345 * 100 is 0.0034499999999999997 in binary, noise nobody asked for
+                double value = Math.round(Double.parseDouble(raw) * scale * 1e8) / 1e8;
+                points.add(new Positioning.Point(p.path(timeField).asLong() / 1000, value));
+            } catch (NumberFormatException e) {
+                // one malformed point is not worth losing the series
+            }
+        }
+        points.sort(java.util.Comparator.comparingLong(Positioning.Point::time));
+        return points;
     }
 
     Map<String, Integer> fundingIntervals(JsonNode array) {

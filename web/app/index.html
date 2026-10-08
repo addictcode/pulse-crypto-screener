@@ -112,9 +112,12 @@
           <option value="200000000">&ge; $200M</option>
         </select>
       </label>
+      <button type="button" class="btn icon-only" id="list-cols" aria-expanded="false" aria-controls="cols-menu" data-i18n-attrs="aria-label,title" aria-label="Choose columns" title="Choose columns"><span class="i" data-icon="sliders"></span></button>
       <button type="button" class="btn icon-only" id="list-wide" aria-pressed="false" data-i18n-attrs="aria-label,title" aria-label="All columns" title="All columns"><span class="i" data-icon="columns"></span></button>
     </div>
+    <div class="menu cols-menu" id="cols-menu" hidden></div>
     <div class="presets" role="tablist" data-i18n-attrs="aria-label" aria-label="Presets" id="presets"></div>
+    <div class="menu flt-menu" id="flt-menu" hidden></div>
     <div class="table-wrap" id="table-wrap">
       <table class="grid">
         <thead><tr id="head"></tr></thead>

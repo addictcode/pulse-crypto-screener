@@ -1,5 +1,5 @@
 import { connect, type Market } from './market';
-import type { CandleDto, OutcomeStats, Signal, VenueGap } from './types';
+import type { CandleDto, OutcomeStats, Positioning, Signal, VenueGap } from './types';
 
 /**
  * Built as the standalone demo: no Pulse server, the page talks to the exchanges itself. Set at
@@ -24,6 +24,16 @@ export async function candles(symbol: string, interval: string, limit: number): 
     const c = klineToCandle(k);
     return { time: c.openTime / 1000, open: c.open, high: c.high, low: c.low, close: c.close, volume: Math.round(c.quoteVolume) };
   });
+}
+
+/** The exchange publishes these statistics from 5 minutes up; a 1-minute chart uses the finest. */
+const STATISTIC_PERIOD: Record<string, string> = { '1m': '5m', '5m': '5m', '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d' };
+
+/** Open interest, long/short ratios and funding over time, for the panes under the chart. */
+export async function positioning(symbol: string, interval: string, limit = 300): Promise<Positioning> {
+  const period = STATISTIC_PERIOD[interval] ?? '5m';
+  if (!STANDALONE) return getJson(`/api/positioning?symbol=${encodeURIComponent(symbol)}&period=${period}&limit=${limit}`);
+  return (await import('./lite/positioning')).positioningFromBinance(symbol, period, limit);
 }
 
 /** Binance against Bybit, pair by pair. */

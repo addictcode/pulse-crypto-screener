@@ -131,6 +131,30 @@ class BinanceParserTest {
     }
 
     @Test
+    void readsStatisticsOldestFirstAndInSeconds() {
+        var points = parser.statistic(mapper.readTree("""
+                [{"symbol":"BTCUSDT","longShortRatio":"1.8500","timestamp":1791150300000},
+                 {"symbol":"BTCUSDT","longShortRatio":"1.7000","timestamp":1791150000000},
+                 {"symbol":"BTCUSDT","longShortRatio":"","timestamp":1791150600000}]
+                """), "timestamp", "longShortRatio", 1);
+
+        assertThat(points).extracting(p -> p.time(), p -> p.value())
+                .containsExactly(org.assertj.core.api.Assertions.tuple(1791150000L, 1.7), org.assertj.core.api.Assertions.tuple(1791150300L, 1.85));
+    }
+
+    @Test
+    void fundingHistoryIsInPercent() {
+        var points = parser.statistic(mapper.readTree("""
+                [{"symbol":"BTCUSDT","fundingTime":1791129600000,"fundingRate":"0.00010000","markPrice":"83000.0"}]
+                """), "fundingTime", "fundingRate", 100);
+
+        assertThat(points).singleElement().satisfies(p -> {
+            assertThat(p.time()).isEqualTo(1791129600L);
+            assertThat(p.value()).isCloseTo(0.01, org.assertj.core.api.Assertions.within(1e-12));
+        });
+    }
+
+    @Test
     void readsFundingIntervalsBySymbol() {
         var hours = parser.fundingIntervals(mapper.readTree("""
                 [{"symbol":"GTCUSDT","fundingIntervalHours":8},{"symbol":"WIFUSDT","fundingIntervalHours":4},{"symbol":"ODDUSDT"}]

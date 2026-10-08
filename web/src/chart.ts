@@ -14,7 +14,7 @@ import {
 } from 'lightweight-charts';
 
 import type { Alerts } from './alerts';
-import { candles } from './api';
+import { candles, positioning } from './api';
 import { DrawLayer, type ToolId } from './draw';
 import { priceDigits, px, usd } from './format';
 import { t } from './i18n';
@@ -86,6 +86,8 @@ export class PriceChart {
   private lastBar: Bar | null = null;
   private wallLines = new Map<string, IPriceLine>();
   private alertLines = new Map<number, IPriceLine>();
+  private positioningKey = '';
+  private positioningAt = 0;
   private symbol = '';
   private interval = load('interval', '5m');
   private request = 0;
@@ -106,7 +108,12 @@ export class PriceChart {
       else if (button.dataset.act === 'clear') this.draw.clear();
       else this.draw.setTool((button.dataset.tool as ToolId) || null);
     });
-    this.menu = new IndicatorMenu((ids) => this.studies?.setEnabled(ids));
+    this.menu = new IndicatorMenu((ids) => {
+      this.studies?.setEnabled(ids);
+      void this.loadPositioning();
+    });
+    // the exchange refreshes these statistics every few minutes
+    setInterval(() => void this.loadPositioning(), 60_000);
     this.renderTimeframes();
     this.tfEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-tf]');
@@ -157,6 +164,25 @@ export class PriceChart {
       '<hr>' +
       button(`data-act="delete"${this.draw.hasSelection ? '' : ' disabled'}`, 'close', t('Delete the selected drawing (Del)')) +
       button(`data-act="clear"${this.draw.count ? '' : ' disabled'}`, 'trash', t('Remove all drawings on this pair'));
+  }
+
+  /** Open interest, long/short and funding panes read the exchange's statistics, not the candles. */
+  private async loadPositioning() {
+    const studies = this.studies;
+    if (!studies?.wantsPositioning || !this.symbol) return;
+    // a rebuild and a menu change can ask for the same thing in the same moment
+    const key = `${this.symbol}:${this.interval}:${this.request}`;
+    if (key === this.positioningKey && Date.now() - this.positioningAt < 5_000) return;
+    this.positioningKey = key;
+    this.positioningAt = Date.now();
+    const request = this.request;
+    try {
+      const data = await positioning(this.symbol, this.interval);
+      // the chart may have moved on to another pair or timeframe while this was loading
+      if (request === this.request && studies === this.studies) studies.setPositioning(data);
+    } catch {
+      // the panes stay empty; the next refresh tries again
+    }
   }
 
   private renderTimeframes() {
@@ -248,6 +274,7 @@ export class PriceChart {
     this.studies = new Studies(this.chart, this.candles, (lines) => renderBacktest(this.backtestEl, lines));
     this.studies.setEnabled(this.menu.enabled);
     this.studies.setBars(this.history);
+    void this.loadPositioning();
 
     this.markerList = [];
     this.markers = createSeriesMarkers(this.candles, []);

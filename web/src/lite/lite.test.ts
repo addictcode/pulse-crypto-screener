@@ -152,3 +152,19 @@ describe('Binance against Bybit in the browser', () => {
     expect(compareVenues(home, 8, { ...away, lastPrice: '' })).toBeNull();
   });
 });
+
+describe('statistics for the panes under the chart', () => {
+  it('reads a Binance statistic into points', async () => {
+    const { toPoints } = await import('./positioning');
+    const rows = [
+      { timestamp: 1_791_150_300_000, longShortRatio: '1.85' },
+      { timestamp: 1_791_150_000_000, longShortRatio: '1.70' },
+      { timestamp: 1_791_150_600_000, longShortRatio: '' },
+    ];
+    expect(toPoints(rows, 'timestamp', 'longShortRatio')).toEqual([
+      { time: 1_791_150_000, value: 1.7 },
+      { time: 1_791_150_300, value: 1.85 },
+    ]);
+    expect(toPoints([{ fundingTime: 1_791_129_600_000, fundingRate: '0.0001' }], 'fundingTime', 'fundingRate', 100)[0].value).toBeCloseTo(0.01, 12);
+  });
+});

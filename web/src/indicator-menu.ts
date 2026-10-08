@@ -61,7 +61,7 @@ export class IndicatorMenu {
         .map(
           (g) => `<fieldset><legend>${t(g)}</legend>${STUDIES.filter((s) => s.group === g)
             .map(
-              (s) => `<label class="ind-item"><input type="checkbox" value="${s.id}"${this.chosen.has(s.id) ? ' checked' : ''}><span>${s.name}</span><span class="hint">${t(s.hint)}</span></label>`,
+              (s) => `<label class="ind-item"><input type="checkbox" value="${s.id}"${this.chosen.has(s.id) ? ' checked' : ''}><span>${t(s.name)}</span><span class="hint">${t(s.hint)}</span></label>`,
             )
             .join('')}</fieldset>`,
         )
