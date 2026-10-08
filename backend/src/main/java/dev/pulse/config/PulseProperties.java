@@ -6,7 +6,7 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("pulse")
-public record PulseProperties(Binance binance, Stream stream, Density density, Signals signals, Telegram telegram) {
+public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Density density, Signals signals, Telegram telegram) {
 
     /**
      * @param streamUrl       combined-stream endpoint. Binance moved market data to {@code /market/stream};
@@ -26,6 +26,13 @@ public record PulseProperties(Binance binance, Stream stream, Density density, S
             int restRequestsPerSecond,
             Duration openInterestPoll,
             Duration staleAfter) {
+    }
+
+    /**
+     * Bybit is a second opinion, not a second market: only its tickers are read, to compare
+     * prices, funding and open interest with Binance.
+     */
+    public record Bybit(boolean enabled, String restUrl, Duration poll) {
     }
 
     public record Stream(long broadcastIntervalMs, List<String> allowedOrigins) {

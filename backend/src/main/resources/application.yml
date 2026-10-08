@@ -51,6 +51,11 @@ pulse:
     rest-requests-per-second: 15
     open-interest-poll: 60s
     stale-after: 30s
+  bybit:
+    enabled: ${PULSE_BYBIT_ENABLED:true}
+    rest-url: https://api.bybit.com
+    # one request returns every linear contract, so polling is cheap
+    poll: 5s
   stream:
     broadcast-interval-ms: 500
     # comma separated; in production the public https origin

@@ -33,6 +33,11 @@ export class InstrumentPanel {
       if (mine) this.fill(mine[1]);
     });
     market.wallsUpdated.on(() => this.renderLadder());
+    market.gapsUpdated.on(() => {
+      this.renderVenue();
+      const row = market.rows.get(this.symbol);
+      if (row) this.fill(row);
+    });
     setInterval(() => {
       const row = market.rows.get(this.symbol);
       if (row) $('ins-fund-t').textContent = countdown(row.nextFunding);
@@ -44,11 +49,28 @@ export class InstrumentPanel {
     const row = this.market.rows.get(symbol);
     if (row) this.fill(row);
     this.renderLadder();
+    this.renderVenue();
     // the crop marks flash to tie the panel to the row you just picked
     const panel = $('instrument');
     panel.classList.add('ping');
     clearTimeout(this.pingTimer);
     this.pingTimer = window.setTimeout(() => panel.classList.remove('ping'), 700);
+  }
+
+  /** How the same contract trades on Bybit; hidden for pairs Bybit does not list. */
+  private renderVenue() {
+    const el = $('venue');
+    const g = this.market.gaps.get(this.symbol);
+    el.hidden = !g;
+    if (!g) return;
+    const wide = g.spread8h !== null && Math.abs(g.spread8h) >= RULES.fundingGap;
+    const how = (g.spread8h ?? 0) > 0 ? 'short Binance, long Bybit' : 'long Binance, short Bybit';
+    const hint = `Binance funding minus Bybit funding, both per 8 hours. About ${Math.abs(g.spreadApr ?? 0).toFixed(1)}% a year to whoever is ${how}.`;
+    el.innerHTML = `
+      <div><dt>Bybit price</dt><dd>${px(g.price)} <span class="${tone(g.gap, 0.03)}">${pct(g.gap, 3)}</span></dd></div>
+      <div><dt>Bybit funding</dt><dd>${g.funding === null ? '\u2013' : `${pct(g.funding, 4)} /${g.fundingHours}h`}</dd></div>
+      <div title="${hint}"><dt>Funding gap 8h</dt><dd class="${wide ? 'hot' : ''}">${pct(g.spread8h, 4)}</dd></div>
+      <div><dt>Bybit OI</dt><dd>${usd(g.oi)}${g.oiShare === null ? '' : ` <span class="mute">${Math.round(g.oiShare * 100)}%</span>`}</dd></div>`;
   }
 
   /** Walls of the selected pair as a small book: asks on top, bids below, bars to scale. */
@@ -108,7 +130,8 @@ export class InstrumentPanel {
     $('rng-mark').style.left = `${Math.min(100, Math.max(0, position))}%`;
 
     const funding = $('ins-fund');
-    funding.textContent = pct(r.funding, 4);
+    const hours = this.market.gaps.get(r.symbol)?.homeHours;
+    funding.textContent = pct(r.funding, 4) + (hours && r.funding !== null ? ` /${hours}h` : '');
     funding.className = r.funding !== null && Math.abs(r.funding) >= RULES.funding ? 'hot' : '';
     $('ins-fund-t').textContent = countdown(r.nextFunding);
 

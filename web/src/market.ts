@@ -1,4 +1,4 @@
-import type { Liquidation, Signal, StreamMessage, SymbolMetrics, TapeItem, Wall } from './types';
+import type { Liquidation, Signal, StreamMessage, SymbolMetrics, TapeItem, VenueGap, Wall } from './types';
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting';
 
@@ -35,6 +35,8 @@ export class Market {
   /** Symbols with a live order book, and how far from the price that book is fully known. */
   readonly coverage = new Map<string, number>();
   private wallsBySymbol = new Map<string, Wall[]>();
+  /** Binance against Bybit by symbol; empty while Bybit is off or unreachable. */
+  gaps = new Map<string, VenueGap>();
   connection: ConnectionState = 'connecting';
   /** Server timestamp of the newest tick, used to show how fresh the data is. */
   lastTick = 0;
@@ -50,6 +52,7 @@ export class Market {
   /** Tape items that just arrived; empty after a reconnect replaced the list. */
   readonly newTape = new Emitter<TapeItem[]>();
   readonly connectionChanged = new Emitter<ConnectionState>();
+  readonly gapsUpdated = new Emitter<void>();
 
   apply(message: StreamMessage) {
     switch (message.type) {
@@ -120,6 +123,11 @@ export class Market {
     }
   }
 
+  setGaps(gaps: VenueGap[]) {
+    this.gaps = new Map(gaps.map((g) => [g.symbol, g]));
+    this.gapsUpdated.emit();
+  }
+
   wallsFor(symbol: string): Wall[] {
     return this.wallsBySymbol.get(symbol) ?? [];
   }
@@ -159,4 +167,26 @@ export function connect(market: Market, url: string) {
   };
 
   open();
+}
+
+const COMPARE_EVERY_MS = 10_000;
+
+/**
+ * Polls the Binance against Bybit comparison. It is not part of the stream: funding spreads move
+ * slowly, and the backend itself only hears from Bybit every few seconds.
+ */
+export function watchVenues(market: Market) {
+  const poll = async (force = false) => {
+    // a background tab keeps what it has; the first load happens either way
+    if (document.hidden && !force) return;
+    try {
+      const response = await fetch('/api/compare');
+      if (response.ok) market.setGaps((await response.json()) as VenueGap[]);
+    } catch {
+      // the previous comparison stays on screen until the next poll works
+    }
+  };
+  void poll(true);
+  setInterval(() => void poll(), COMPARE_EVERY_MS);
+  document.addEventListener('visibilitychange', () => void poll());
 }

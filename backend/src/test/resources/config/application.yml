@@ -1,0 +1,4 @@
+# Loaded on top of the main application.yml in tests only: nothing here may reach the network.
+pulse:
+  bybit:
+    enabled: false

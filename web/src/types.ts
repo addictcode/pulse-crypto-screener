@@ -70,6 +70,24 @@ export interface OutcomeStats {
   horizons: Array<{ horizon: string; n: number; avg: number | null; upShare: number | null }>;
 }
 
+/** Mirror of dev.pulse.compare.VenueGap: one symbol on Binance against the same contract on Bybit. */
+export interface VenueGap {
+  symbol: string;
+  price: number;
+  /** How far Bybit trades from Binance, in percent. */
+  gap: number | null;
+  funding: number | null;
+  fundingHours: number;
+  /** The Binance funding interval in hours. */
+  homeHours: number;
+  /** Binance funding minus Bybit funding, both per 8 hours. */
+  spread8h: number | null;
+  spreadApr: number | null;
+  oi: number | null;
+  oiShare: number | null;
+  vol24h: number;
+}
+
 export type TapeKind =
   | 'PUMP_1M' | 'PUMP_5M' | 'DUMP_1M' | 'DUMP_5M' | 'VOLUME' | 'OI_UP' | 'OI_DOWN' | 'LIQ_LONGS' | 'LIQ_SHORTS';
 

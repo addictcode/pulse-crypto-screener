@@ -130,6 +130,15 @@ class BinanceParserTest {
         assertThat(candles.getFirst().quoteVolume()).isEqualTo(105.0);
     }
 
+    @Test
+    void readsFundingIntervalsBySymbol() {
+        var hours = parser.fundingIntervals(mapper.readTree("""
+                [{"symbol":"GTCUSDT","fundingIntervalHours":8},{"symbol":"WIFUSDT","fundingIntervalHours":4},{"symbol":"ODDUSDT"}]
+                """));
+
+        assertThat(hours).containsOnly(java.util.Map.entry("GTCUSDT", 8), java.util.Map.entry("WIFUSDT", 4));
+    }
+
     private static final class RecordingSink implements MarketSink {
         final List<TickerUpdate> tickers = new ArrayList<>();
         final List<MarkPriceUpdate> markPrices = new ArrayList<>();

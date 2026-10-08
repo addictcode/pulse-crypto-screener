@@ -2,6 +2,7 @@ package dev.pulse.exchange.binance;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
 import org.springframework.http.HttpStatus;
@@ -66,6 +67,11 @@ final class BinanceRestClient {
 
     List<MarkPriceUpdate> premiumIndex() {
         return parser.restPremiumIndex(get(background, "/fapi/v1/premiumIndex"));
+    }
+
+    /** Funding interval in hours by symbol; Binance lists the contracts it has adjusted. */
+    Map<String, Integer> fundingIntervals() {
+        return parser.fundingIntervals(get(background, "/fapi/v1/fundingInfo"));
     }
 
     /** One-minute history for the metrics engine. */

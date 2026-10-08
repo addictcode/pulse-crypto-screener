@@ -20,4 +20,12 @@ public interface ExchangeAdapter {
     List<Candle> candles(String symbol, String interval, int limit);
 
     ExchangeStatus status();
+
+    /**
+     * How often the symbol pays funding. Rates are quoted per interval, so two rates only
+     * compare once both are brought to the same number of hours.
+     */
+    default int fundingIntervalHours(String symbol) {
+        return 8;
+    }
 }

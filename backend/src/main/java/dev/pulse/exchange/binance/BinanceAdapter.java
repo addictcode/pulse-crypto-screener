@@ -5,6 +5,7 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +53,7 @@ public class BinanceAdapter implements ExchangeAdapter {
     private final AtomicInteger historyLoaded = new AtomicInteger();
 
     private volatile List<Instrument> instruments = List.of();
+    private volatile Map<String, Integer> fundingHours = Map.of();
 
     private final ApplicationEventPublisher events;
 
@@ -83,6 +85,7 @@ public class BinanceAdapter implements ExchangeAdapter {
             rest.tickers().forEach(sink::onTicker);
             rest.premiumIndex().forEach(sink::onMarkPrice);
             openStreams();
+            refreshFundingIntervals();
             loadHistory();
             loadOpenInterestHistory();
             pollOpenInterest();
@@ -175,6 +178,21 @@ public class BinanceAdapter implements ExchangeAdapter {
                 }
             });
         }
+    }
+
+    /** Binance moves contracts between 8, 4 and 1 hour funding now and then. */
+    @Scheduled(fixedDelay = 3_600_000, initialDelay = 3_600_000)
+    void refreshFundingIntervals() {
+        try {
+            fundingHours = rest.fundingIntervals();
+        } catch (RuntimeException e) {
+            log.warn("Binance: funding intervals failed, keeping the previous ones: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public int fundingIntervalHours(String symbol) {
+        return fundingHours.getOrDefault(symbol, 8);
     }
 
     @Scheduled(fixedDelay = 10_000)

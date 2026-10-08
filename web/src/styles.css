@@ -713,3 +713,34 @@ body[data-view="signals"] .sighist { display: flex; }
   .toast { animation: toastIn .25s ease-out; }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
 }
+
+/* ---------- Bybit comparison ---------- */
+/* a second row of the stats grid, so the Bybit numbers sit under their Binance counterparts */
+.ins-stats.venue { border-top: 0; }
+.ins-stats.venue[hidden] { display: none; }
+.ins-stats.venue > div { padding-top: 8px; padding-bottom: 9px; }
+.ins-stats.venue > div[title] { cursor: help; }
+/* eight presets: a little tighter so they all fit beside the filters on a laptop */
+.screener .p-head { gap: 16px; }
+.presets { gap: 14px; }
+.filters { gap: 14px; }
+
+/* ---------- phone fit ---------- */
+@media (max-width: 900px) {
+  .outcomes .p-head { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px 14px; }
+  .outcomes .p-meta { flex-basis: 100%; margin-left: 0; }
+  .chart-bar { flex-wrap: wrap; height: auto; padding: 6px 16px; row-gap: 6px; }
+  .oc-grid th, .oc-grid td, .sh-grid th, .sh-grid td { padding-left: 7px; padding-right: 7px; }
+  .oc-grid th.sym, .oc-grid td.sym, .sh-grid th:first-child, .sh-grid td:first-child { padding-left: 14px; }
+  .share { width: 26px; margin-right: 6px; }
+  /* the title already names the pair */
+  .sh-grid th:nth-child(2), .sh-grid td:nth-child(2) { display: none; }
+  .sh-grid td.title { width: 100%; }
+  .ins-stats.venue > div:nth-child(n+3) { border-top: 1px solid var(--rule-soft); }
+  .toasts { right: 8px; bottom: 12px; }
+}
+@media (max-width: 520px) {
+  .brand b { display: none; }
+  .mast { gap: 8px; padding: 0 10px; }
+  .view { padding: 5px 7px; font-size: 11px; letter-spacing: .06em; }
+}

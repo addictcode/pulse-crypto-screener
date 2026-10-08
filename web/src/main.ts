@@ -15,7 +15,7 @@ import { ChartGrid } from './grid';
 import { ICONS } from './icons';
 import { InstrumentPanel } from './instrument';
 import { LiquidationsPanel } from './liquidations';
-import { connect, Market } from './market';
+import { connect, Market, watchVenues } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
 import { SignalRecord } from './signals';
@@ -65,3 +65,4 @@ initViews((view) => {
 
 const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
 connect(market, `${scheme}://${location.host}/ws/market`);
+watchVenues(market);

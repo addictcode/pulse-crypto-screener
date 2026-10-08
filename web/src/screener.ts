@@ -3,16 +3,17 @@ import type { Market } from './market';
 import { sparkline } from './sparkline';
 import { ICONS } from './icons';
 import { load, save } from './storage';
-import type { SymbolMetrics, Wall } from './types';
+import type { SymbolMetrics, VenueGap, Wall } from './types';
 import { currentView } from './views';
 
-type Key = keyof SymbolMetrics | 'star' | 'spark' | 'wall';
+type Key = keyof SymbolMetrics | 'star' | 'spark' | 'wall' | 'fgap';
 
 /** Per-row data that does not live in SymbolMetrics. */
 interface RowContext {
   starred: boolean;
   spark: number[] | undefined;
   wall: Wall | null;
+  gap: VenueGap | undefined;
 }
 
 interface Column {
@@ -43,6 +44,8 @@ export const RULES = {
   funding: 0.03,
   oiRise: 3,
   bigLiquidations: 250_000,
+  /** Funding on Binance and Bybit this far apart per 8 hours is worth a look. */
+  fundingGap: 0.03,
   nearWall: 1,
   hotWall: 0.5,
 };
@@ -52,6 +55,7 @@ const PRESETS: Preset[] = [
   { id: 'movers', label: 'Movers', test: (r) => abs(r.ch5m) >= RULES.move5m || abs(r.ch1h) >= RULES.move1h },
   { id: 'surge', label: 'Surge', test: (r) => (r.surge ?? 0) >= RULES.surge },
   { id: 'funding', label: 'Funding', test: (r) => abs(r.funding) >= RULES.funding },
+  { id: 'fgap', label: 'Arb', test: (_r, ctx) => abs(ctx.gap?.spread8h ?? null) >= RULES.fundingGap },
   { id: 'oi', label: 'OI rising', test: (r) => (r.oiCh15m ?? 0) >= RULES.oiRise },
   { id: 'walls', label: 'Near walls', test: (_r, ctx) => ctx.wall !== null && Math.abs(ctx.wall.distance) <= RULES.nearWall },
   { id: 'watch', label: 'Watchlist', test: (_r, ctx) => ctx.starred },
@@ -95,6 +99,16 @@ const COLUMNS: Column[] = [
     cell: (r) => `<td class="c-sm ${abs(r.funding) >= RULES.funding ? 'hot' : 'dim'}">${pct(r.funding, 4)}</td>`,
   },
   {
+    key: 'fgap', label: 'vs Bybit', cls: 'c-md',
+    value: (_r, { gap }) => (gap?.spread8h === null || gap?.spread8h === undefined ? null : Math.abs(gap.spread8h)),
+    cell: (_r, { gap }) => {
+      const spread = gap?.spread8h ?? null;
+      if (!gap || spread === null) return '<td class="c-md flat">\u2013</td>';
+      const title = `Funding per 8h: Binance ${spread > 0 ? 'higher' : 'lower'} than Bybit by ${Math.abs(spread).toFixed(4)}%, about ${Math.abs(gap.spreadApr ?? 0).toFixed(0)}% a year`;
+      return `<td class="c-md ${Math.abs(spread) >= RULES.fundingGap ? 'hot strong' : 'dim'}" title="${title}">${pct(spread, 4)}</td>`;
+    },
+  },
+  {
     key: 'wall', label: 'Wall', cls: 'c-sm', ascendingFirst: true,
     value: (_r, { wall }) => (wall ? Math.abs(wall.distance) : null),
     cell: (_r, { wall }) =>
@@ -102,7 +116,7 @@ const COLUMNS: Column[] = [
         ? `<td class="c-sm ${Math.abs(wall.distance) <= RULES.hotWall ? 'hot strong' : wall.side === 'BID' ? 'up' : 'down'}" title="${wall.side === 'BID' ? 'Bid' : 'Ask'} wall ${usd(wall.size)}">${pct(wall.distance, 2)}</td>`
         : '<td class="c-sm flat">\u2013</td>',
   },
-  { key: 'oi', label: 'OI', cls: 'c-md', cell: (r) => `<td class="dim c-md">${usd(r.oi)}</td>` },
+  { key: 'oi', label: 'OI', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${usd(r.oi)}</td>` },
   {
     key: 'oiCh15m', label: 'OI 15m', cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${tone(r.oiCh15m, 0.1)}${(r.oiCh15m ?? 0) >= RULES.oiRise ? ' strong' : ''}">${pct(r.oiCh15m, 1)}</td>`,
@@ -166,7 +180,8 @@ export class Screener {
       });
     });
     market.sparklinesUpdated.on(() => this.refreshSparklines());
-    market.wallsUpdated.on(() => this.refreshWalls());
+    market.wallsUpdated.on(() => this.refreshColumn('wall'));
+    market.gapsUpdated.on(() => this.refreshColumn('fgap'));
     setInterval(() => this.periodic(), RESORT_EVERY_MS);
   }
 
@@ -247,6 +262,7 @@ export class Screener {
       starred: this.starred.has(r.symbol),
       spark: this.market.sparklines.get(r.symbol),
       wall: this.market.nearestWall(r.symbol),
+      gap: this.market.gaps.get(r.symbol),
     };
   }
 
@@ -256,9 +272,9 @@ export class Screener {
     return `<tr data-sym="${r.symbol}" tabindex="${selected ? 0 : -1}"${selected ? ' class="is-selected"' : ''}>${COLUMNS.map((c) => c.cell(r, ctx)).join('')}</tr>`;
   }
 
-  /** Walls rescan once a second; only their cells change. */
-  private refreshWalls() {
-    const index = COLUMNS.findIndex((c) => c.key === 'wall');
+  /** Walls and the Bybit comparison arrive on their own clock; only their cells change. */
+  private refreshColumn(key: Key) {
+    const index = COLUMNS.findIndex((c) => c.key === key);
     const column = COLUMNS[index];
     const visible = this.visibleSymbols();
     this.body.querySelectorAll<HTMLTableRowElement>('tr[data-sym]').forEach((tr) => {

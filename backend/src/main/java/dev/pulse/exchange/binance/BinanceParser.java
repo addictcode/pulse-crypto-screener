@@ -1,7 +1,9 @@
 package dev.pulse.exchange.binance;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import dev.pulse.depth.DepthSnapshot;
 import dev.pulse.depth.DepthUpdate;
@@ -92,6 +94,17 @@ final class BinanceParser {
                     p.path("time").asLong()));
         }
         return result;
+    }
+
+    Map<String, Integer> fundingIntervals(JsonNode array) {
+        Map<String, Integer> hours = new HashMap<>();
+        for (JsonNode f : array) {
+            int interval = f.path("fundingIntervalHours").asInt(0);
+            if (interval > 0) {
+                hours.put(f.path("symbol").asString(), interval);
+            }
+        }
+        return hours;
     }
 
     /**
