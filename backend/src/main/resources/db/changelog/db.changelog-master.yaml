@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/003-signal-outcomes.yaml
   - include:
       file: db/changelog/changes/004-price-alerts.yaml
+  - include:
+      file: db/changelog/changes/005-backfill-signal-direction.yaml

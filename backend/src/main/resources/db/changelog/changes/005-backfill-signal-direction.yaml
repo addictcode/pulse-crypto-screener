@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-backfill-signal-direction
+      author: pulse
+      comment: >
+        Signals fired before 003 have direction 0, which the statistics would list as a separate
+        "direction unknown" row for every type. The direction is recovered from the type and the
+        wording of the title; volume signals did not record it and stay 0.
+      changes:
+        - sql:
+            sql: >
+              UPDATE signal SET direction = CASE
+                WHEN type = 'PUMP' THEN 1
+                WHEN type = 'DUMP' THEN -1
+                WHEN type = 'OPEN_INTEREST' AND title LIKE '%climbs%' THEN 1
+                WHEN type = 'OPEN_INTEREST' AND title LIKE '%drops%' THEN -1
+                WHEN type = 'FUNDING' AND title LIKE '%longs pay shorts%' THEN 1
+                WHEN type = 'FUNDING' AND title LIKE '%shorts pay longs%' THEN -1
+                WHEN type = 'LIQUIDATIONS' AND title LIKE '%shorts liquidated%' THEN 1
+                WHEN type = 'LIQUIDATIONS' AND title LIKE '%longs liquidated%' THEN -1
+                WHEN type = 'WALL' AND title LIKE '%bid wall%' THEN 1
+                WHEN type = 'WALL' AND title LIKE '%ask wall%' THEN -1
+                ELSE 0 END
+              WHERE direction = 0
