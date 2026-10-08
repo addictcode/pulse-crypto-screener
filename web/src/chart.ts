@@ -14,8 +14,10 @@ import {
 } from 'lightweight-charts';
 
 import type { Alerts } from './alerts';
+import { DrawLayer, type ToolId } from './draw';
 import { priceDigits, px, usd } from './format';
 import { t } from './i18n';
+import { ICONS, type IconName } from './icons';
 import { IndicatorMenu, renderBacktest } from './indicator-menu';
 import type { Market } from './market';
 import { load, save } from './storage';
@@ -25,6 +27,16 @@ import type { CandleDto, Liquidation, Signal } from './types';
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
 const HISTORY = 300;
 export const CHART_FONT = '"Inter Variable", system-ui, sans-serif';
+
+/** The drawing toolbar, top to bottom. */
+const TOOLS: Array<[ToolId, IconName, string]> = [
+  ['trend', 'trend', t('Trend line')],
+  ['ray', 'ray', t('Ray')],
+  ['hline', 'hline', t('Horizontal level')],
+  ['rect', 'rect', t('Zone')],
+  ['fib', 'fib', t('Fibonacci retracement')],
+  ['measure', 'measure', t('Ruler: change, bars and time between two points')],
+];
 const MIN_MARKER_USD = 5_000;
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -58,6 +70,10 @@ export class PriceChart {
   private readonly el = document.getElementById('chart')!;
   private readonly tfEl = document.getElementById('tf')!;
   private readonly backtestEl = document.getElementById('bt')!;
+  private readonly toolsEl = document.getElementById('tools')!;
+  private readonly draw: DrawLayer;
+  /** Open times of the candles on screen, in seconds: the drawings' time axis. */
+  private times: number[] = [];
   private readonly menu: IndicatorMenu;
   private studies: Studies | null = null;
   /** The candles on screen with volume, which the indicators read; the last one is live. */
@@ -80,6 +96,15 @@ export class PriceChart {
     this.market = market;
     this.alerts = alerts;
     alerts.changed.on(() => this.syncAlerts());
+    this.draw = new DrawLayer(this.el, () => this.renderTools());
+    this.renderTools();
+    this.toolsEl.addEventListener('click', (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+      if (!button || button.disabled) return;
+      if (button.dataset.act === 'delete') this.draw.deleteSelected();
+      else if (button.dataset.act === 'clear') this.draw.clear();
+      else this.draw.setTool((button.dataset.tool as ToolId) || null);
+    });
     this.menu = new IndicatorMenu((ids) => this.studies?.setEnabled(ids));
     this.renderTimeframes();
     this.tfEl.addEventListener('click', (e) => {
@@ -104,6 +129,7 @@ export class PriceChart {
   show(symbol: string) {
     if (symbol === this.symbol) return;
     this.symbol = symbol;
+    this.draw.setSymbol(symbol);
     void this.load();
   }
 
@@ -117,6 +143,19 @@ export class PriceChart {
 
   get timeframe() {
     return this.interval;
+  }
+
+  /** Cursor, the drawing tools, then delete and clear. */
+  private renderTools() {
+    const tool = this.draw.tool;
+    const button = (attrs: string, icon: IconName, label: string, pressed?: boolean) =>
+      `<button type="button" ${attrs} title="${label}" aria-label="${label}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}>${ICONS[icon]}</button>`;
+    this.toolsEl.innerHTML =
+      button('data-tool=""', 'cursor', t('Cursor: select and move drawings'), tool === null) +
+      TOOLS.map(([id, icon, label]) => button(`data-tool="${id}"`, icon, label, tool === id)).join('') +
+      '<hr>' +
+      button(`data-act="delete"${this.draw.hasSelection ? '' : ' disabled'}`, 'close', t('Delete the selected drawing (Del)')) +
+      button(`data-act="clear"${this.draw.count ? '' : ' disabled'}`, 'trash', t('Remove all drawings on this pair'));
   }
 
   private renderTimeframes() {
@@ -205,6 +244,8 @@ export class PriceChart {
     );
 
     this.history = data.map((c) => ({ ...c }));
+    this.times = data.map((c) => c.time);
+    this.draw.attach(this.chart, this.candles, () => this.times, INTERVALS[this.interval]);
     this.studies = new Studies(this.chart, this.candles, (lines) => renderBacktest(this.backtestEl, lines));
     this.studies.setEnabled(this.menu.enabled);
     this.studies.setBars(this.history);
@@ -234,7 +275,10 @@ export class PriceChart {
 
     const last = this.history.at(-1);
     if (last && last.time === this.lastBar.time) Object.assign(last, this.lastBar);
-    else this.history.push({ ...this.lastBar, volume: 0 });
+    else {
+      this.history.push({ ...this.lastBar, volume: 0 });
+      this.times.push(this.lastBar.time);
+    }
     this.studies?.live(this.history);
   }
 
@@ -334,6 +378,7 @@ export class PriceChart {
     this.studies?.dispose();
     this.studies = null;
     renderBacktest(this.backtestEl, []);
+    this.draw.detach();
     this.chart?.remove();
     this.chart = null;
     this.candles = null;
