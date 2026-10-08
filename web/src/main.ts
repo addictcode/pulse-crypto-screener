@@ -17,6 +17,7 @@ import { LiquidationsPanel } from './liquidations';
 import { connect, Market } from './market';
 import { Masthead } from './masthead';
 import { Screener } from './screener';
+import { SignalRecord } from './signals';
 import { Tape } from './tape';
 import { initViews } from './views';
 
@@ -30,14 +31,18 @@ new LiquidationsPanel(market);
 
 // the screener owns the selection; the density view selects through it so both stay in step
 let densities: Densities | null = null;
+let record: SignalRecord | null = null;
 const screener = new Screener(market, (symbol) => {
   instrument.show(symbol);
   chart.show(symbol);
   densities?.setSelected(symbol);
+  record?.setSelected(symbol);
 });
 densities = new Densities(market, (symbol) => screener.select(symbol));
 new Tape(market, (symbol) => screener.select(symbol));
 densities.setSelected(screener.selected);
+record = new SignalRecord(market, (symbol) => screener.select(symbol));
+record.setSelected(screener.selected);
 const grid = new ChartGrid(
   market,
   () => ({ rows: screener.list(), label: screener.presetLabel }),
@@ -49,6 +54,7 @@ const grid = new ChartGrid(
 initViews((view) => {
   densities?.setActive(view === 'densities');
   grid.setActive(view === 'grid');
+  record?.setActive(view === 'signals');
 });
 
 const scheme = location.protocol === 'https:' ? 'wss' : 'ws';

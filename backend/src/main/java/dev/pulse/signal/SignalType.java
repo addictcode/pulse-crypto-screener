@@ -96,6 +96,22 @@ public enum SignalType {
         return higherIsStronger ? threshold >= floor : threshold > 0 && threshold <= floor;
     }
 
+    /** What a signal of this type pointing this way is called in statistics: "Shorts liquidated". */
+    public String label(int direction) {
+        boolean up = direction > 0;
+        if (direction == 0) {
+            return label;
+        }
+        return switch (this) {
+            case PUMP, DUMP -> label;
+            case VOLUME -> up ? "Volume, price up" : "Volume, price down";
+            case OPEN_INTEREST -> up ? "OI climbs" : "OI drops";
+            case FUNDING -> up ? "Funding positive" : "Funding negative";
+            case LIQUIDATIONS -> up ? "Shorts liquidated" : "Longs liquidated";
+            case WALL -> up ? "Near bid wall" : "Near ask wall";
+        };
+    }
+
     public static Optional<SignalType> fromKey(String key) {
         return Arrays.stream(values()).filter(t -> t.key.equalsIgnoreCase(key)).findFirst();
     }

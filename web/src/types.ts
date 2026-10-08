@@ -54,6 +54,20 @@ export interface Signal {
   value: number;
   title: string;
   detail: string;
+  /** Which way the event points: 1 up, -1 down, 0 unknown. */
+  direction: number;
+  /** Price change in percent after the signal; null until that horizon has passed. */
+  ret5m: number | null;
+  ret15m: number | null;
+  ret1h: number | null;
+}
+
+/** Mirror of dev.pulse.signal.OutcomeStats: how one kind of signal played out. */
+export interface OutcomeStats {
+  type: SignalType;
+  direction: number;
+  label: string;
+  horizons: Array<{ horizon: string; n: number; avg: number | null; upShare: number | null }>;
 }
 
 export type TapeKind =
@@ -76,6 +90,7 @@ export type StreamMessage =
   | { type: 'sparklines'; series: Record<string, number[]> }
   | { type: 'walls'; ts: number; walls: Wall[]; coverage: Record<string, number> }
   | { type: 'signals'; items: Signal[] }
+  | { type: 'outcomes'; items: Signal[] }
   | { type: 'tape'; items: TapeItem[] };
 
 export interface CandleDto {

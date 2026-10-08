@@ -158,6 +158,10 @@ final class SymbolState {
         return new double[] {longs, shorts};
     }
 
+    synchronized double price() {
+        return price;
+    }
+
     synchronized double quoteVolume24h() {
         return quoteVolume24h;
     }

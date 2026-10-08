@@ -14,6 +14,7 @@
     <a class="view" href="#screener" data-view="screener">Terminal</a>
     <a class="view" href="#grid" data-view="grid">Grid</a>
     <a class="view" href="#densities" data-view="densities">Densities</a>
+    <a class="view" href="#signals" data-view="signals">Signals</a>
   </nav>
   <div class="market">
     <div class="mk"><span class="mk-label">BTC</span><span class="mk-val"><span id="m-btc">&nbsp;</span><span id="m-btc-c"></span></span></div>
@@ -129,6 +130,38 @@
           <th class="c-sm">&times; avg</th><th class="c-sm">Age</th><th class="c-sm">Eaten in</th>
         </tr></thead>
         <tbody id="wl-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel outcomes" aria-label="What followed each kind of signal">
+    <div class="p-head">
+      <h2 class="p-title">After the signal</h2>
+      <div class="seg" role="group" aria-label="Period" id="oc-period"></div>
+      <span class="p-meta" id="oc-meta"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid oc-grid">
+        <thead><tr>
+          <th class="sym" rowspan="2">Signal</th><th rowspan="2">Count</th>
+          <th colspan="2" class="oc-h">5 min later</th><th colspan="2" class="oc-h">15 min later</th><th colspan="2" class="oc-h">1 hour later</th>
+        </tr><tr class="oc-sub">
+          <th>Avg move</th><th>Price up</th><th>Avg move</th><th>Price up</th><th>Avg move</th><th>Price up</th>
+        </tr></thead>
+        <tbody id="oc-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel sighist" aria-label="Signal history">
+    <div class="p-head"><h2 class="p-title">Signal history</h2><span class="p-meta" id="sh-meta"></span></div>
+    <div class="table-wrap">
+      <table class="grid sh-grid">
+        <thead><tr>
+          <th class="sym">Time</th><th class="sym">Symbol</th><th class="sym">Signal</th><th class="c-sm">Price then</th>
+          <th>+5m</th><th>+15m</th><th>+1h</th>
+        </tr></thead>
+        <tbody id="sh-rows"></tbody>
       </table>
     </div>
   </section>

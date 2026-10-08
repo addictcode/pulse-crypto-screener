@@ -46,6 +46,18 @@ class SignalEntity {
     @Column(nullable = false, length = 400)
     private String detail;
 
+    @Column(nullable = false)
+    private int direction;
+
+    @Column(name = "ret_5m")
+    private Double ret5m;
+
+    @Column(name = "ret_15m")
+    private Double ret15m;
+
+    @Column(name = "ret_1h")
+    private Double ret1h;
+
     static SignalEntity from(Signal s) {
         SignalEntity e = new SignalEntity();
         e.type = s.type();
@@ -55,10 +67,19 @@ class SignalEntity {
         e.value = s.value();
         e.title = s.title();
         e.detail = s.detail();
+        e.direction = s.direction();
         return e;
     }
 
+    void setOutcome(Horizon horizon, double changePct) {
+        switch (horizon) {
+            case M5 -> ret5m = changePct;
+            case M15 -> ret15m = changePct;
+            case H1 -> ret1h = changePct;
+        }
+    }
+
     Signal toSignal() {
-        return new Signal(id, type, symbol, firedAt.toEpochMilli(), price, value, title, detail);
+        return new Signal(id, type, symbol, firedAt.toEpochMilli(), price, value, title, detail, direction, ret5m, ret15m, ret1h);
     }
 }

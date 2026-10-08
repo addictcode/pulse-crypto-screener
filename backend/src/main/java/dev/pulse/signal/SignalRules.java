@@ -45,28 +45,29 @@ public final class SignalRules {
         String sym = base(m.symbol());
 
         if (m.ch5m() != null && m.ch5m() >= SignalType.PUMP.floor()) {
-            signals.add(signal(SignalType.PUMP, m, now, m.ch5m(), sym + " jumps " + num(m.ch5m(), 1) + "% in five minutes"));
+            signals.add(signal(SignalType.PUMP, m, now, m.ch5m(), 1, sym + " jumps " + num(m.ch5m(), 1) + "% in five minutes"));
         }
         if (m.ch5m() != null && -m.ch5m() >= SignalType.DUMP.floor()) {
-            signals.add(signal(SignalType.DUMP, m, now, -m.ch5m(), sym + " falls " + num(-m.ch5m(), 1) + "% in five minutes"));
+            signals.add(signal(SignalType.DUMP, m, now, -m.ch5m(), -1, sym + " falls " + num(-m.ch5m(), 1) + "% in five minutes"));
         }
         if (m.surge() != null && m.surge() >= SignalType.VOLUME.floor() && m.vol24h() >= minVolume24h * VOLUME_LIQUIDITY_FACTOR) {
-            signals.add(signal(SignalType.VOLUME, m, now, m.surge(), sym + " volume runs at " + num(m.surge(), 1) + "× the hourly pace"));
+            signals.add(signal(SignalType.VOLUME, m, now, m.surge(), sign(m.ch5m()), sym + " volume runs at " + num(m.surge(), 1) + "× the hourly pace"));
         }
         if (m.oiCh15m() != null && Math.abs(m.oiCh15m()) >= SignalType.OPEN_INTEREST.floor()) {
             String verb = m.oiCh15m() > 0 ? "climbs" : "drops";
-            signals.add(signal(SignalType.OPEN_INTEREST, m, now, Math.abs(m.oiCh15m()),
+            signals.add(signal(SignalType.OPEN_INTEREST, m, now, Math.abs(m.oiCh15m()), sign(m.oiCh15m()),
                     "Open interest in " + sym + " " + verb + " " + num(Math.abs(m.oiCh15m()), 1) + "% in 15 minutes"));
         }
         if (m.funding() != null && Math.abs(m.funding()) >= SignalType.FUNDING.floor()) {
             String who = m.funding() < 0 ? "shorts pay longs" : "longs pay shorts";
-            signals.add(signal(SignalType.FUNDING, m, now, Math.abs(m.funding()),
+            signals.add(signal(SignalType.FUNDING, m, now, Math.abs(m.funding()), sign(m.funding()),
                     sym + " funding at " + pct(m.funding(), 3) + ", " + who));
         }
         double liquidated = longLiquidated + shortLiquidated;
         if (liquidated >= Math.max(SignalType.LIQUIDATIONS.floor(), m.vol24h() * LIQUIDATION_VOLUME_SHARE)) {
             String side = longLiquidated >= shortLiquidated ? "longs" : "shorts";
-            signals.add(signal(SignalType.LIQUIDATIONS, m, now, liquidated,
+            // liquidated shorts are forced buys: the event points up
+            signals.add(signal(SignalType.LIQUIDATIONS, m, now, liquidated, longLiquidated >= shortLiquidated ? -1 : 1,
                     usd(liquidated) + " of " + sym + " " + side + " liquidated in five minutes"));
         }
         if (nearestWall != null && isEstablished(nearestWall) && Math.abs(nearestWall.distance()) <= SignalType.WALL.floor()) {
@@ -74,7 +75,7 @@ public final class SignalRules {
             String where = nearestWall.side() == BookSide.BID
                     ? "above a " + usd(nearestWall.size()) + " bid wall"
                     : "below a " + usd(nearestWall.size()) + " ask wall";
-            signals.add(signal(SignalType.WALL, m, now, distance, sym + " trades " + num(distance, 2) + "% " + where));
+            signals.add(signal(SignalType.WALL, m, now, distance, nearestWall.side() == BookSide.BID ? 1 : -1, sym + " trades " + num(distance, 2) + "% " + where));
         }
         return signals;
     }
@@ -107,7 +108,11 @@ public final class SignalRules {
         return text.toString();
     }
 
-    private static Signal signal(SignalType type, SymbolMetrics m, long now, double value, String title) {
-        return new Signal(null, type, m.symbol(), now, m.price(), value, title, detail(m, type));
+    private static int sign(Double value) {
+        return value == null ? 0 : (int) Math.signum(value);
+    }
+
+    private static Signal signal(SignalType type, SymbolMetrics m, long now, double value, int direction, String title) {
+        return new Signal(null, type, m.symbol(), now, m.price(), value, title, detail(m, type)).withDirection(direction);
     }
 }

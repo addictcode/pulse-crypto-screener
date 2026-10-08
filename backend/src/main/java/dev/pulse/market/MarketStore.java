@@ -77,6 +77,12 @@ public class MarketStore implements MarketSink {
         }
     }
 
+    /** Last traded price, or null for a symbol that is not listed or has not traded yet. */
+    public Double price(String symbol) {
+        SymbolState state = states.get(symbol);
+        return state == null || state.price() <= 0 ? null : state.price();
+    }
+
     public double volume24h(String symbol) {
         SymbolState state = states.get(symbol);
         return state == null ? 0 : state.quoteVolume24h();

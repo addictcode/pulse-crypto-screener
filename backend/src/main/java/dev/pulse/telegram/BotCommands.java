@@ -14,6 +14,7 @@ import dev.pulse.account.DeliverySettings;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.MarketStore;
+import dev.pulse.signal.OutcomeStats;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalHistory;
 import dev.pulse.signal.SignalType;
@@ -31,6 +32,7 @@ final class BotCommands {
     static final List<TelegramApi.Command> MENU = List.of(
             new TelegramApi.Command("signals", "Signal types, on/off and thresholds"),
             new TelegramApi.Command("last", "Latest signals"),
+            new TelegramApi.Command("stats", "What the price did after each kind of signal"),
             new TelegramApi.Command("status", "What the screener sees right now"),
             new TelegramApi.Command("mute", "Pause signals: /mute 1h, /mute off"),
             new TelegramApi.Command("watchlist", "Your watchlist"),
@@ -39,6 +41,8 @@ final class BotCommands {
     private static final Pattern DURATION = Pattern.compile("(\\d{1,3})\\s*([mhd])");
     private static final int LAST_DEFAULT = 5;
     private static final int LAST_MAX = 15;
+    private static final int STATS_DEFAULT_DAYS = 7;
+    private static final int STATS_MAX_DAYS = 90;
 
     private final AccountService accounts;
     private final SignalHistory history;
@@ -74,6 +78,7 @@ final class BotCommands {
                 case "/watchlist" -> watchlist(userId);
                 case "/scope" -> scope(userId, arg1);
                 case "/last" -> last(arg1);
+                case "/stats" -> stats(arg1);
                 default -> "Unknown command. /help lists what I understand.";
             };
         } catch (IllegalArgumentException e) {
@@ -92,6 +97,7 @@ final class BotCommands {
                 /watch <i>symbol</i>, /unwatch <i>symbol</i>, /watchlist
                 /scope <i>all | watchlist</i> - which symbols you get signals for
                 /last <i>[n]</i> - latest signals
+                /stats <i>[days]</i> - what the price did after each kind of signal
                 /status - what the screener sees right now""";
     }
 
@@ -242,6 +248,33 @@ final class BotCommands {
             text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
         }
         return text.toString();
+    }
+
+    private String stats(String arg) {
+        int days = STATS_DEFAULT_DAYS;
+        if (arg != null) {
+            try {
+                days = Math.max(1, Math.min(STATS_MAX_DAYS, Integer.parseInt(arg.toLowerCase(Locale.ROOT).replace("d", ""))));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Use a number of days, e.g. /stats 30.");
+            }
+        }
+        List<OutcomeStats> stats = history.outcomes(Instant.now().minus(Duration.ofDays(days))).stream()
+                .filter(s -> s.measured() > 0)
+                .toList();
+        if (stats.isEmpty()) {
+            return "No measured signals in the last " + days + " d yet. Outcomes are taken 5 minutes, 15 minutes and an hour after each signal.";
+        }
+        StringBuilder text = new StringBuilder("<b>After the signal</b>, last " + days + " d\n<pre>");
+        text.append(String.format(Locale.US, "%-19s %4s %7s %7s %7s%n", "", "n", "5m", "15m", "1h"));
+        for (OutcomeStats s : stats) {
+            text.append(String.format(Locale.US, "%-19s %4d", s.label(), s.measured()));
+            for (OutcomeStats.Cell cell : s.horizons()) {
+                text.append(String.format(Locale.US, " %7s", cell.avg() == null ? "–" : Text.pct(cell.avg(), 2)));
+            }
+            text.append('\n');
+        }
+        return text.append("</pre>Average price change after the signal fired.").toString();
     }
 
     private SignalType type(String arg) {

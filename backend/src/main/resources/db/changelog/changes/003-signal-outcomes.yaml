@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-signal-outcomes
+      author: pulse
+      comment: >
+        What the price did after each signal, filled in as the horizons pass, and which way
+        the signal pointed. NULL means "not measured" (too early, or the backend was down then).
+      changes:
+        - addColumn:
+            tableName: signal
+            columns:
+              - column: { name: direction, type: integer, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: ret_5m, type: double precision }
+              - column: { name: ret_15m, type: double precision }
+              - column: { name: ret_1h, type: double precision }

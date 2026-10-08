@@ -62,6 +62,14 @@ public sealed interface StreamMessage {
         }
     }
 
+    /** Signals whose outcome was just measured, in their updated form; clients replace by id. */
+    record Outcomes(List<Signal> items) implements StreamMessage {
+        @JsonProperty
+        public String type() {
+            return "outcomes";
+        }
+    }
+
     /** Live tape events, newest first: recent history on connect, then each scan's batch. */
     record Tape(List<TapeItem> items) implements StreamMessage {
         @JsonProperty

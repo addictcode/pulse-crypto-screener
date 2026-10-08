@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import dev.pulse.signal.SignalFired;
+import dev.pulse.signal.SignalsMeasured;
 import dev.pulse.signal.TapeFired;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,11 @@ class SignalBroadcaster {
     @EventListener
     void onSignal(SignalFired event) {
         sockets.broadcast(new StreamMessage.Signals(List.of(event.signal())));
+    }
+
+    @EventListener
+    void onMeasured(SignalsMeasured event) {
+        sockets.broadcast(new StreamMessage.Outcomes(event.signals()));
     }
 
     @EventListener

@@ -1,6 +1,7 @@
 package dev.pulse.signal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.List;
 
@@ -41,6 +42,20 @@ class SignalRulesTest {
                 "WIF falls 3.1% in five minutes",
                 "Open interest in WIF drops 5.0% in 15 minutes",
                 "WIF funding at −0.210%, shorts pay longs");
+    }
+
+    @Test
+    void everySignalSaysWhichWayItPoints() {
+        assertThat(evaluate(row(-3.1, 6.2, -5.0, -0.21), 0, 0, null)).extracting(Signal::type, Signal::direction)
+                .containsExactlyInAnyOrder(
+                        tuple(SignalType.DUMP, -1),
+                        tuple(SignalType.VOLUME, -1),
+                        tuple(SignalType.OPEN_INTEREST, -1),
+                        tuple(SignalType.FUNDING, -1));
+        // liquidated shorts are forced buys, a bid wall is support: both point up
+        assertThat(evaluate(row(0, 1, 0, 0.01), 150_000, 500_000, null)).singleElement().extracting(Signal::direction).isEqualTo(1);
+        Wall bid = new Wall("WIFUSDT", BookSide.BID, 0.8400, 2_100_000, -0.25, 22, 600, 4.0);
+        assertThat(evaluate(row(0, 1, 0, 0.01), 0, 0, bid)).singleElement().extracting(Signal::direction).isEqualTo(1);
     }
 
     @Test

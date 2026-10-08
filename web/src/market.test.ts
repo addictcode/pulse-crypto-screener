@@ -10,6 +10,7 @@ const row = (symbol: string, price: number): SymbolMetrics => ({
 
 const signal = (id: number, time: number): Signal => ({
   id, type: 'PUMP', symbol: 'WIFUSDT', time, price: 1, value: 2.5, title: `s${id}`, detail: '',
+  direction: 1, ret5m: null, ret15m: null, ret1h: null,
 });
 
 const wall = (symbol: string, distance: number): Wall => ({

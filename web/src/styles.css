@@ -589,3 +589,45 @@ body[data-view="grid"] .charts { display: flex; }
 .chart { transition: opacity .15s; }
 .chart.loading { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .chart { transition: none; } }
+
+/* ---------- signal record ---------- */
+.outcomes { grid-area: outcomes; display: none; }
+.sighist { grid-area: sighist; display: none; }
+body[data-view="signals"] .desk {
+  grid-template-columns: minmax(0, 1fr) var(--side-w);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "outcomes instrument" "sighist instrument";
+}
+body[data-view="signals"] .screener,
+body[data-view="signals"] .tape,
+body[data-view="signals"] .liqs { display: none; }
+body[data-view="signals"] .outcomes,
+body[data-view="signals"] .sighist { display: flex; }
+.outcomes { max-height: 52dvh; }
+.outcomes .p-head { gap: 16px; }
+.oc-grid th { cursor: default; }
+.oc-grid th.oc-h { text-align: center; color: var(--ink-2); padding-bottom: 4px; border-bottom: 0; border-left: 1px solid var(--rule-soft); }
+.oc-grid .oc-sub th { top: 31px; padding-top: 2px; }
+.oc-grid .oc-sub th:nth-child(odd), .oc-grid td:nth-child(2n+3) { border-left: 1px solid var(--rule-soft); }
+.oc-grid tbody tr, .oc-grid tbody tr:hover td { cursor: default; background: none; }
+.oc-grid tr.thin td { color: var(--ink-3); }
+.oc-grid tr.thin td.sym { color: var(--ink-2); }
+.dir { display: inline-block; width: 16px; font-size: 8px; font-style: normal; vertical-align: 1px; color: var(--ink-3); }
+.dir.up { color: var(--up); }
+.dir.down { color: var(--down); }
+/* how far from a coin flip: the bar grows right of centre when the price mostly rose */
+.share { position: relative; display: inline-block; width: 44px; height: 6px; margin-right: 9px; background: linear-gradient(var(--rule-strong), var(--rule-strong)) center / 1px 100% no-repeat; }
+.share i { position: absolute; top: 1px; height: 4px; }
+.share.up i { left: 50%; background: var(--up); }
+.share.down i { right: 50%; background: var(--down); }
+.sh-grid th { cursor: default; }
+.sh-grid td.title { font: 12.5px var(--f-ui); color: var(--ink-2); max-width: 0; width: 46%; overflow: hidden; text-overflow: ellipsis; }
+.sh-grid td.sym.mute { font: 11.5px var(--f-num); }
+@media (max-width: 900px) {
+  .outcomes { max-height: none; }
+  .outcomes .table-wrap, .sighist .table-wrap { max-height: 60dvh; }
+  body[data-view="signals"] .outcomes { order: 1; }
+  body[data-view="signals"] .sighist { order: 2; }
+  body[data-view="signals"] .instrument { order: 3; }
+  .oc-grid td:nth-child(n+5), .oc-grid th.oc-h:nth-child(n+4), .oc-grid .oc-sub th:nth-child(n+3) { display: none; }
+}

@@ -15,7 +15,7 @@ class Emitter<T> {
 }
 
 const RECENT_LIQUIDATIONS = 60;
-export const RECENT_SIGNALS = 60;
+export const RECENT_SIGNALS = 100;
 const RECENT_TAPE = 120;
 
 /**
@@ -96,6 +96,12 @@ export class Market {
         const fresh = message.items.filter((s) => !known.has(s.id));
         this.signals = [...fresh, ...this.signals].sort((a, b) => b.time - a.time).slice(0, RECENT_SIGNALS);
         this.newSignals.emit(message.items.length === 1 ? fresh : []);
+        break;
+      }
+      case 'outcomes': {
+        const updated = new Map(message.items.map((s) => [s.id, s]));
+        this.signals = this.signals.map((s) => updated.get(s.id) ?? s);
+        this.newSignals.emit([]);
         break;
       }
       case 'tape': {
