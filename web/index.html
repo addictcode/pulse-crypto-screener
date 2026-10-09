@@ -23,6 +23,10 @@
 
 <main>
   <section class="hero">
+    <div class="scene">
+      <canvas id="planet" data-i18n-attrs="aria-label" aria-label="A planet of cubes, one for each of the most traded perpetuals, coloured by their 24 hour move"></canvas>
+      <div class="planet-layer" id="planet-layer"><div class="planet-tip" id="planet-tip" hidden></div></div>
+    </div>
     <div class="hero-copy">
       <h1 data-i18n-html>The whole futures market<br>on <em>one radar</em>.</h1>
       <p class="lede" data-i18n>Pulse scans every Binance perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.</p>
@@ -37,12 +41,12 @@
         <div><dt data-i18n>Liquidated 5m</dt><dd id="s-liq">&nbsp;</dd></div>
       </dl>
     </div>
-    <div class="planet-wrap">
-      <canvas id="planet" data-i18n-attrs="aria-label" aria-label="A planet of cubes, one for each of the most traded perpetuals, coloured by their 24 hour move"></canvas>
-      <div class="planet-tip" id="planet-tip" hidden></div>
-      <p class="planet-note"><span><i class="sw up"></i><span data-i18n>up 24h</span></span><span><i class="sw down"></i><span data-i18n>down 24h</span></span><span class="mute" data-i18n>height: volume and move</span></p>
+    <div class="planet-wrap" id="planet-anchor">
+      <p class="planet-note"><span><i class="sw up"></i><span data-i18n>up 24h</span></span><span><i class="sw down"></i><span data-i18n>down 24h</span></span><span class="mute" data-i18n>height: volume and move</span><span class="mute hint" data-i18n>drag to spin, click a column to open the pair</span></p>
     </div>
   </section>
+
+  <div class="ticker" id="ticker" data-i18n-attrs="aria-label" aria-label="The most traded pairs right now"><div class="ticker-track" id="ticker-track"></div></div>
 
   <section class="band" id="live">
     <div class="band-copy">
@@ -95,31 +99,15 @@
           <i data-i18n>Pump, 14:32 UTC</i>
         </div>
       </article>
-      <article class="cell">
-        <h3 data-i18n>Signal record</h3>
-        <p data-i18n>Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what usually follows each kind, so you learn which ones deserve a reaction.</p>
-      </article>
-      <article class="cell">
-        <h3 data-i18n>Price alerts</h3>
-        <p data-i18n>Set a level from the chart with Alt and a click, or from the bot. It fires once: a sound and a note on screen, a message on your phone.</p>
-      </article>
-      <article class="cell">
-        <h3 data-i18n>Binance vs Bybit</h3>
-        <p data-i18n>Funding on both venues brought to the same 8 hours, the price gap between them and where the open interest sits. The Arb preset lists the widest funding gaps.</p>
-      </article>
-      <article class="cell">
-        <h3 data-i18n>Heatmap</h3>
-        <p data-i18n>The 140 largest pairs on one screen, sized by volume or open interest and coloured by the last 5 minutes, hour or day.</p>
-      </article>
-      <article class="cell">
-        <h3 data-i18n>Drawing tools</h3>
-        <p data-i18n>Trend lines, rays, levels, zones, Fibonacci and a ruler. Drawings are tied to time and price, so they survive a timeframe change and a reload.</p>
-      </article>
-      <article class="cell">
-        <h3 data-i18n>Keyboard first</h3>
-        <p data-i18n>One shortcut finds any pair or command. Number keys switch timeframes, arrows walk the list, and the whole interface speaks English and Russian.</p>
-      </article>
     </div>
+    <dl class="spec">
+      <div><dt data-i18n>Signal record</dt><dd data-i18n>Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what usually follows each kind, so you learn which ones deserve a reaction.</dd></div>
+      <div><dt data-i18n>Price alerts</dt><dd data-i18n>Set a level from the chart with Alt and a click, or from the bot. It fires once: a sound and a note on screen, a message on your phone.</dd></div>
+      <div><dt data-i18n>Binance vs Bybit</dt><dd data-i18n>Funding on both venues brought to the same 8 hours, the price gap between them and where the open interest sits. The Arb preset lists the widest funding gaps.</dd></div>
+      <div><dt data-i18n>Heatmap</dt><dd data-i18n>The 140 largest pairs on one screen, sized by volume or open interest and coloured by the last 5 minutes, hour or day.</dd></div>
+      <div><dt data-i18n>Drawing tools</dt><dd data-i18n>Trend lines, rays, levels, zones, Fibonacci and a ruler. Drawings are tied to time and price, so they survive a timeframe change and a reload.</dd></div>
+      <div><dt data-i18n>Keyboard first</dt><dd data-i18n>One shortcut finds any pair or command. Number keys switch timeframes, arrows walk the list, and the whole interface speaks English and Russian.</dd></div>
+    </dl>
   </section>
 
   <section class="how" id="how">

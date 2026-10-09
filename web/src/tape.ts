@@ -107,10 +107,16 @@ export class Tape {
 
 const itemKey = (t: TapeItem) => `${t.time}:${t.symbol}:${t.kind}`;
 
-export function tapeRow(t: TapeItem) {
+/** A tape item in words: what happened, how much, and whether it is good or bad news for price. */
+export function tapeLabel(t: TapeItem): { label: string; value: string; tone: 'up' | 'down' | 'hot' } {
   const [label, tone] = KINDS[t.kind];
   const value =
     t.kind === 'VOLUME' ? `×${t.value.toFixed(1)}` : t.kind.startsWith('LIQ') ? usd(t.value) : pct(t.value, 2);
+  return { label, value, tone };
+}
+
+export function tapeRow(t: TapeItem) {
+  const { label, value, tone } = tapeLabel(t);
   return `<li class="tape-row" data-sym="${t.symbol}"><time>${hms(t.time)}</time><span class="s">${base(t.symbol)}</span><span class="badge ${tone}">${label}</span><span class="v ${tone}">${value}</span></li>`;
 }
 

@@ -347,6 +347,8 @@ export const RU: Record<string, string> = {
   'up 24h': 'рост за 24ч',
   'down 24h': 'падение за 24ч',
   'height: volume and move': 'высота: объём и движение',
+  'drag to spin, click a column to open the pair': 'тяни, чтобы вращать; клик по столбику откроет пару',
+  'The most traded pairs right now': 'Самые торгуемые пары сейчас',
   'Everything that moves, as it moves.': 'Всё, что движется, в момент движения.',
   'The tape lists every pump, dump, volume burst and liquidation wave the moment it happens. Stronger events are promoted to alerts, which also go to Telegram.':
     'В ленту попадает каждый памп, дамп, всплеск объёма и волна ликвидаций в тот момент, когда они случаются. Сильные события становятся алертами и уходят ещё и в Telegram.',

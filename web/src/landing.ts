@@ -13,7 +13,7 @@ import { localize, mountLangSwitch, t } from './i18n';
 import { startFeed } from './api';
 import { Market } from './market';
 import type { VoxelPlanet } from './planet';
-import { alertRow, tapeRow } from './tape';
+import { alertRow, tapeLabel, tapeRow } from './tape';
 
 localize();
 mountLangSwitch(document.getElementById('lang')!);
@@ -23,7 +23,7 @@ const market = new Market();
 
 // The hero planet is three.js, by far the heaviest thing on the page. It loads after the text
 // and the live numbers are already on screen; without WebGL a static disc stands in for it.
-const wrap = document.querySelector<HTMLElement>('.planet-wrap')!;
+const wrap = $('planet-anchor');
 let planet: VoxelPlanet | null = null;
 const canvas = $('planet') as HTMLCanvasElement;
 const hasWebgl = (() => {
@@ -34,30 +34,87 @@ const hasWebgl = (() => {
     return false;
   }
 })();
+const withoutPlanet = () => document.querySelector('.hero')!.classList.add('static');
 if (hasWebgl) {
   const tip = $('planet-tip');
+  const layer = $('planet-layer');
   void import('./planet')
     .then(({ VoxelPlanet }) => {
-      planet = new VoxelPlanet(canvas, (coin, x, y) => {
-        if (!coin) {
-          tip.hidden = true;
-          return;
-        }
-        tip.innerHTML = `<b>${base(coin.symbol)}</b>${px(coin.price)} <span class="${tone(coin.ch24h)}">${pct(coin.ch24h)}</span> <span class="mute">${usd(coin.vol24h)}</span>`;
-        tip.style.left = `${x + 14}px`;
-        tip.style.top = `${y + 14}px`;
-        tip.hidden = false;
+      planet = new VoxelPlanet(canvas, {
+        anchor: wrap,
+        layer,
+        onHover: (coin, x, y) => {
+          if (!coin) {
+            tip.hidden = true;
+            return;
+          }
+          tip.innerHTML = `<b>${base(coin.symbol)}</b>${px(coin.price)} <span class="${tone(coin.ch24h)}">${pct(coin.ch24h)}</span> <span class="mute">${usd(coin.vol24h)}</span>`;
+          // keep the note on the side of the pointer that has room for it
+          const left = x > layer.clientWidth - 260;
+          tip.style.transform = `translate3d(${x + (left ? -14 : 14)}px, ${y + 14}px, 0) translateX(${left ? '-100%' : '0'})`;
+          tip.hidden = false;
+        },
+        onPick: (coin) => (location.href = `app/#screener:${coin.symbol}`),
       });
       refreshPlanet();
     })
-    .catch(() => wrap.classList.add('static'));
+    .catch(withoutPlanet);
 } else {
-  wrap.classList.add('static');
+  withoutPlanet();
 }
+
+// what the tape reports also happens on the planet, a few events at a time so it stays readable
+market.newTape.on((items) => {
+  items.slice(0, 3).forEach((item) => {
+    const { label, value, tone: mood } = tapeLabel(item);
+    planet?.pulse(item.symbol, `<b>${base(item.symbol)}</b>${label} <span class="${mood}">${value}</span>`, mood);
+  });
+});
 
 const refreshPlanet = () => planet?.setCoins([...market.rows.values()]);
 market.snapshot.on(refreshPlanet);
 setInterval(refreshPlanet, 5_000);
+
+/** The strip under the hero: the most traded pairs, running. Built once, then only numbers change. */
+const tickerCells = new Map<string, HTMLElement[]>();
+let tickerShown = new Map<string, string>();
+function renderTicker() {
+  const track = $('ticker-track');
+  if (!tickerCells.size) {
+    const top = [...market.rows.values()].sort((a, b) => b.vol24h - a.vol24h).slice(0, 24);
+    if (!top.length) return;
+    const item = (symbol: string) =>
+      `<a href="app/#screener:${symbol}" data-sym="${symbol}"><b>${base(symbol)}</b><span class="p"></span><span class="c"></span></a>`;
+    // a short market is repeated until one run is wider than any screen
+    const run = top.map((r) => item(r.symbol)).join('').repeat(Math.ceil(24 / top.length));
+    // two runs in a row: the track slides by exactly one of them and starts over unseen
+    track.innerHTML = `<div>${run}</div><div aria-hidden="true">${run.replaceAll('<a ', '<a tabindex="-1" ')}</div>`;
+    track.querySelectorAll<HTMLElement>('a').forEach((a) => {
+      const cells = tickerCells.get(a.dataset.sym!) ?? [];
+      cells.push(a);
+      tickerCells.set(a.dataset.sym!, cells);
+    });
+    $('ticker').classList.add('on');
+  }
+  const shown = new Map<string, string>();
+  for (const [symbol, cells] of tickerCells) {
+    const row = market.rows.get(symbol);
+    if (!row) continue;
+    const price = px(row.price);
+    const change = pct(row.ch24h);
+    shown.set(symbol, price + change);
+    if (tickerShown.get(symbol) === price + change) continue;
+    for (const cell of cells) {
+      cell.querySelector('.p')!.textContent = price;
+      const mark = cell.querySelector<HTMLElement>('.c')!;
+      mark.textContent = change;
+      mark.className = `c ${tone(row.ch24h)}`;
+    }
+  }
+  tickerShown = shown;
+}
+market.snapshot.on(renderTicker);
+setInterval(renderTicker, 2_000);
 
 function renderStats() {
   $('s-pairs').textContent = market.rows.size ? String(market.rows.size) : '–';
