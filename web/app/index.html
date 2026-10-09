@@ -67,6 +67,7 @@
           <button type="button" class="btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu"><span class="i" data-icon="indicators"></span><span data-i18n>Indicators</span><span class="count"></span></button>
           <div class="menu ind-menu" id="ind-menu" hidden></div>
         </div>
+        <button type="button" class="btn icon-only" id="shot-btn" data-i18n-attrs="aria-label,title" aria-label="Save the chart as a picture" title="Save the chart as a picture (S)"><span class="i" data-icon="camera"></span></button>
         <button type="button" class="btn icon-only" id="focus-btn" aria-pressed="false" data-i18n-attrs="aria-label,title" aria-label="Chart only" title="Chart only (F)"><span class="i" data-icon="expand"></span></button>
       </div>
     </div>
@@ -218,12 +219,29 @@
   <p class="pal-foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> <span data-i18n>move</span></span><span><kbd>Enter</kbd> <span data-i18n>open</span></span><span><kbd>Esc</kbd> <span data-i18n>close</span></span></p>
 </dialog>
 
+<dialog class="keys" id="keys" data-i18n-attrs="aria-label" aria-label="Keyboard shortcuts">
+  <h2 data-i18n>Keyboard shortcuts</h2>
+  <dl>
+    <div><dt data-i18n>Find a pair, a view or a command</dt><dd><kbd id="keys-mod">Ctrl</kbd><kbd>K</kbd></dd></div>
+    <div><dt data-i18n>Filter the list by symbol</dt><dd><kbd>/</kbd></dd></div>
+    <div><dt data-i18n>Previous and next pair in the list</dt><dd><kbd>&uarr;</kbd><kbd>&darr;</kbd></dd></div>
+    <div><dt data-i18n>Timeframe, from 1m to 1d</dt><dd><kbd>1</kbd><span>&hellip;</span><kbd>6</kbd></dd></div>
+    <div><dt data-i18n>Chart only</dt><dd><kbd>F</kbd></dd></div>
+    <div><dt data-i18n>Save the chart as a picture</dt><dd><kbd>S</kbd></dd></div>
+    <div><dt data-i18n>Price alert at the cursor</dt><dd><kbd>Alt</kbd><span data-i18n>click</span></dd></div>
+    <div><dt data-i18n>Delete the selected drawing</dt><dd><kbd>Del</kbd></dd></div>
+    <div><dt data-i18n>Put the drawing tool down, close a menu</dt><dd><kbd>Esc</kbd></dd></div>
+    <div><dt data-i18n>This list</dt><dd><kbd>?</kbd></dd></div>
+  </dl>
+</dialog>
+
 <footer class="statusbar">
   <span class="conn" id="st-conn">&nbsp;</span>
   <span id="st-source">Binance USDT-M</span>
   <span id="st-pairs">&nbsp;</span>
   <span id="st-age">&nbsp;</span>
   <span class="status-right">
+    <button type="button" class="keys-btn" id="keys-btn"><kbd>?</kbd><span data-i18n>Shortcuts</span></button>
     <span class="sessions" id="sessions"><span data-i18n>Asia</span><span data-i18n>London</span><span data-i18n>New York</span></span>
     <time class="clock" id="clock">00:00:00<span>UTC</span></time>
     <a href="https://www.tradingview.com/" target="_blank" rel="noopener" data-i18n>Charts by TradingView</a>

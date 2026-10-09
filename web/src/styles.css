@@ -602,6 +602,15 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 .clock { color: var(--ink-2); }
 .clock span { color: var(--ink-3); margin-left: 5px; }
 .statusbar a { text-decoration: none; }
+.keys-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 11.5px; transition: color .15s; }
+.keys-btn:hover { color: var(--ink); }
+.keys { width: min(440px, calc(100vw - 24px)); margin: 12dvh auto 0; padding: 18px 20px 12px; background: var(--bg-2); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 12px; box-shadow: 0 24px 70px rgba(0, 0, 0, .6); }
+.keys:focus-visible { outline: none; }
+.keys::backdrop { background: rgba(5, 7, 10, .55); }
+.keys h2 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.keys dl > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 34px; border-top: 1px solid var(--rule); }
+.keys dt { color: var(--ink-2); font-size: 12.5px; }
+.keys dd { display: inline-flex; align-items: center; gap: 4px; flex: none; color: var(--ink-3); font-size: 11.5px; }
 .statusbar a:hover { color: var(--ink); }
 
 /* ---------- motion ---------- */
@@ -616,7 +625,7 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
   @keyframes fadeIn { from { opacity: 0; } }
   .toast { animation: toastIn .25s cubic-bezier(.16, 1, .3, 1); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
-  .palette[open] { animation: palIn .16s cubic-bezier(.16, 1, .3, 1); }
+  .palette[open], .keys[open] { animation: palIn .16s cubic-bezier(.16, 1, .3, 1); }
   @keyframes palIn { from { opacity: 0; transform: translateY(-6px) scale(.985); } }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -637,6 +646,7 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 @media (max-width: 1180px) {
   :root { --list-w: clamp(320px, calc(100px + var(--list-cols) * 68px), 44vw); --side-w: 420px; }
   .cmd-btn .cmd-text, .cmd-btn kbd { display: none; }
+  .keys-btn { display: none; }
   .moves { display: none; }
 }
 

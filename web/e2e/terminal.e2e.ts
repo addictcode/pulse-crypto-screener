@@ -192,3 +192,27 @@ test.describe('on a phone', () => {
     });
   }
 });
+
+test('the chart can be saved as a picture', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/app/');
+  await expect(page.locator('#chart canvas').first()).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.locator('#shot-btn').click();
+
+  expect((await download).suggestedFilename()).toMatch(/^pulse-BTCUSDT-5m-\d{4}-\d{2}-\d{6}\.png$/);
+});
+
+test('a question mark lists the shortcuts', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/app/');
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
+
+  await page.keyboard.press('?');
+  await expect(page.locator('#keys')).toBeVisible();
+  await expect(page.locator('#keys dt')).toHaveCount(10);
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#keys')).toBeHidden();
+});

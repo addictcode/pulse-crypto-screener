@@ -106,6 +106,11 @@ export class DrawLayer {
   private drag: { drawing: Drawing; handle: number | 'body'; from: Px; original: Point[] } | null = null;
   private width = 0;
   private height = 0;
+  /** What is drawn right now, for a picture of the chart. */
+  get image(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
   /** The canvas is known to be clear. */
   private blank = true;
   private colors = { accent: '#4db8ff', amber: '#f0b90b', violet: '#a78bfa', up: '#2ebd85', down: '#f6465d', ink: '#e7eaf0', bg: '#0e1116' };

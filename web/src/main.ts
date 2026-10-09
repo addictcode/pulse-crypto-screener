@@ -98,6 +98,33 @@ const toggleFocus = () => {
 };
 focusButton.addEventListener('click', toggleFocus);
 
+/** Downloads the chart as a PNG; the button shows a tick for a moment so the click is not silent. */
+function saveSnapshot() {
+  const shot = chart.snapshot();
+  if (!shot) return;
+  shot.canvas.toBlob((blob) => {
+    if (!blob) return;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = shot.name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 10_000);
+    const icon = document.querySelector<HTMLElement>('#shot-btn .i')!;
+    icon.innerHTML = ICONS.check;
+    setTimeout(() => (icon.innerHTML = ICONS.camera), 1_600);
+  }, 'image/png');
+}
+document.getElementById('shot-btn')!.addEventListener('click', saveSnapshot);
+
+const keys = document.getElementById('keys') as HTMLDialogElement;
+if (/Mac|iPhone|iPad/.test(navigator.platform)) document.getElementById('keys-mod')!.textContent = '⌘';
+function showKeys() {
+  if (!keys.open) keys.showModal();
+}
+// a click on the dimmed page around the sheet closes it
+keys.addEventListener('click', (e) => e.target === keys && keys.close());
+document.getElementById('keys-btn')!.addEventListener('click', showKeys);
+
 const go = (view: string) => () => (location.hash = `#${view}:${screener.selected}`);
 const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: t('Terminal'), icon: 'view', run: go('screener') },
@@ -113,6 +140,8 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
     hint: String(i + 1),
     run: () => chart.setTimeframe(tf),
   })),
+  { label: t('Save the chart as a picture'), icon: 'camera', hint: 'S', run: saveSnapshot },
+  { label: t('Keyboard shortcuts'), icon: 'keyboard', hint: '?', run: showKeys },
   {
     label: t('Copy a link to this chart'),
     icon: 'link',
@@ -132,6 +161,14 @@ document.addEventListener('keydown', (e) => {
   if (target?.matches('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key.toLowerCase() === 'f') {
     toggleFocus();
+    return;
+  }
+  if (e.key.toLowerCase() === 's') {
+    saveSnapshot();
+    return;
+  }
+  if (e.key === '?') {
+    showKeys();
     return;
   }
   const timeframe = Object.keys(INTERVALS)[Number(e.key) - 1];

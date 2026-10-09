@@ -141,6 +141,42 @@ export class PriceChart {
     void this.load();
   }
 
+  /**
+   * The chart as a picture: every pane, the drawings on top and a caption saying what and when,
+   * so the file still makes sense in a chat a week later.
+   */
+  snapshot(): { canvas: HTMLCanvasElement; name: string } | null {
+    if (!this.chart || !this.symbol) return null;
+    const shot = this.chart.takeScreenshot();
+    const scale = shot.width / Math.max(1, this.el.clientWidth);
+    const head = Math.round(34 * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = shot.width;
+    canvas.height = shot.height + head;
+    const ctx = canvas.getContext('2d')!;
+    const token = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    ctx.fillStyle = token('--bg-0') || '#0b0e13';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(shot, 0, head);
+    ctx.drawImage(this.draw.image, 0, head, shot.width, shot.height);
+
+    const now = new Date();
+    const stamp = now.toISOString().slice(0, 16).replace('T', ' ');
+    const family = '"Inter Variable", system-ui, sans-serif';
+    const pad = 12 * scale;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = token('--ink') || '#e6e9ef';
+    ctx.font = `600 ${14 * scale}px ${family}`;
+    ctx.fillText(this.symbol, pad, head / 2);
+    const afterSymbol = pad + ctx.measureText(this.symbol).width + 10 * scale;
+    ctx.fillStyle = token('--ink-2') || '#9aa3b2';
+    ctx.font = `500 ${12 * scale}px ${family}`;
+    ctx.fillText(`${this.interval}  Binance perpetual`, afterSymbol, head / 2);
+    ctx.textAlign = 'right';
+    ctx.fillText(`Pulse  ${stamp} UTC`, canvas.width - pad, head / 2);
+    return { canvas, name: `pulse-${this.symbol}-${this.interval}-${stamp.replace(/[: ]/g, '')}.png` };
+  }
+
   setTimeframe(interval: string) {
     if (!(interval in INTERVALS) || interval === this.interval) return;
     this.interval = interval;

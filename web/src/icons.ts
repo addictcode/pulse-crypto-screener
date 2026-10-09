@@ -2,16 +2,19 @@
 // ~150 KB of font, and inline SVG takes its colour from the text around it.
 import arrowUpRight from '@phosphor-icons/core/assets/regular/arrow-up-right.svg?raw';
 import bell from '@phosphor-icons/core/assets/regular/bell.svg?raw';
+import camera from '@phosphor-icons/core/assets/regular/camera.svg?raw';
 import caretDownFill from '@phosphor-icons/core/assets/fill/caret-down-fill.svg?raw';
 import caretLeft from '@phosphor-icons/core/assets/regular/caret-left.svg?raw';
 import caretRight from '@phosphor-icons/core/assets/regular/caret-right.svg?raw';
 import caretUpFill from '@phosphor-icons/core/assets/fill/caret-up-fill.svg?raw';
+import check from '@phosphor-icons/core/assets/regular/check.svg?raw';
 import chartLineUp from '@phosphor-icons/core/assets/regular/chart-line-up.svg?raw';
 import columns from '@phosphor-icons/core/assets/regular/columns.svg?raw';
 import command from '@phosphor-icons/core/assets/regular/command.svg?raw';
 import cornersIn from '@phosphor-icons/core/assets/regular/corners-in.svg?raw';
 import cornersOut from '@phosphor-icons/core/assets/regular/corners-out.svg?raw';
 import cursor from '@phosphor-icons/core/assets/regular/cursor.svg?raw';
+import keyboard from '@phosphor-icons/core/assets/regular/keyboard.svg?raw';
 import lineSegment from '@phosphor-icons/core/assets/regular/line-segment.svg?raw';
 import link from '@phosphor-icons/core/assets/regular/link.svg?raw';
 import list from '@phosphor-icons/core/assets/regular/list.svg?raw';
@@ -60,6 +63,9 @@ export const ICONS = {
   plus: icon(plus),
   edit: icon(pencil),
   sliders: icon(sliders),
+  camera: icon(camera),
+  check: icon(check),
+  keyboard: icon(keyboard),
 };
 
 export type IconName = keyof typeof ICONS;
