@@ -20,6 +20,10 @@
 		file_server
 	}
 
+	# the redirect page on GitHub Pages asks this from another origin to learn whether the
+	# full version is up; without the header it cannot tell Pulse from a tunnel error page
+	header /api/status Access-Control-Allow-Origin "*"
+
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"

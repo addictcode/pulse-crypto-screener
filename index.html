@@ -64,8 +64,10 @@
 
   currentAddress()
     .then(async (address) => {
-      // resolves when the host answers at all, rejects when the tunnel is gone
-      await fetch(`${address}/api/status`, { mode: 'no-cors' });
+      // A dead tunnel still answers, with Cloudflare's own error page, so "the host replied" proves
+      // nothing: only Pulse's API, readable from here thanks to its CORS header, counts as alive.
+      const status = await fetch(`${address}/api/status`, { signal: AbortSignal.timeout(6000) });
+      if (!status.ok) throw new Error(String(status.status));
       location.replace(address + '/' + location.hash);
     })
     .catch(openDemo);
