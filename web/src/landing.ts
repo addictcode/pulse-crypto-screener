@@ -1,10 +1,7 @@
-import '@fontsource/chakra-petch/400.css';
-import '@fontsource/chakra-petch/600.css';
-import '@fontsource/chakra-petch/700.css';
+import '@fontsource-variable/sofia-sans-extra-condensed';
+import '@fontsource-variable/inter';
 import '@fontsource/azeret-mono/400.css';
 import '@fontsource/azeret-mono/500.css';
-// Chakra Petch has no Cyrillic; the files are split by unicode range, so only Russian pages fetch this
-import '@fontsource-variable/tektur';
 import './theme.css';
 import './landing.css';
 
@@ -23,7 +20,6 @@ const market = new Market();
 
 // The hero planet is three.js, by far the heaviest thing on the page. It loads after the text
 // and the live numbers are already on screen; without WebGL a static disc stands in for it.
-const wrap = $('planet-anchor');
 let planet: VoxelPlanet | null = null;
 const canvas = $('planet') as HTMLCanvasElement;
 const hasWebgl = (() => {
@@ -34,14 +30,13 @@ const hasWebgl = (() => {
     return false;
   }
 })();
-const withoutPlanet = () => document.querySelector('.hero')!.classList.add('static');
+const withoutPlanet = () => document.body.classList.add('static');
 if (hasWebgl) {
   const tip = $('planet-tip');
   const layer = $('planet-layer');
   void import('./planet')
     .then(({ VoxelPlanet }) => {
       planet = new VoxelPlanet(canvas, {
-        anchor: wrap,
         layer,
         onHover: (coin, x, y) => {
           if (!coin) {
@@ -57,11 +52,61 @@ if (hasWebgl) {
         onPick: (coin) => (location.href = `app/#screener:${coin.symbol}`),
       });
       refreshPlanet();
+      stage();
     })
     .catch(withoutPlanet);
 } else {
   withoutPlanet();
 }
+
+/**
+ * The page is one shot of the planet, and scrolling moves the camera. Each section names where
+ * the planet should be when that section is in the middle of the screen: the hero and the ending
+ * see only its top, as a horizon; the two demos have it beside them; behind the feature list it
+ * steps back and dims. Between sections the view is blended, so the planet travels with the scroll.
+ */
+type View = { x: number; y: number; r: number; glow: number };
+const stops = [...document.querySelectorAll<HTMLElement>('[data-planet]')];
+const scene = $('scene');
+
+function viewOf(kind: string, w: number, h: number): View {
+  const wide = w >= 900;
+  if (kind === 'horizon' || kind === 'ending') {
+    // only the top of the planet is on screen; the ending shows less of it, to leave the words alone
+    const r = Math.max(0.62 * w, 0.7 * h);
+    const sunk = kind === 'ending' ? 0.74 : wide ? 0.65 : 0.4;
+    return { x: w / 2, y: h + r * sunk, r, glow: 1 };
+  }
+  if (kind === 'back' || !wide) return { x: w / 2, y: h / 2, r: wide ? h * 0.4 : w * 0.46, glow: wide ? 0.16 : 0.2 };
+  return { x: w * (kind === 'right' ? 0.74 : 0.26), y: h * 0.52, r: Math.min(h * 0.3, w * 0.2), glow: 1 };
+}
+
+function stage() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const middle = window.scrollY + h / 2;
+  // the hero's mark is the middle of the first screen, so the page opens exactly on its view
+  const marks = stops.map((el, i) => (i === 0 ? h / 2 : el.getBoundingClientRect().top + window.scrollY + el.offsetHeight / 2));
+  let i = 0;
+  while (i < stops.length - 2 && middle > marks[i + 1]) i++;
+  const from = viewOf(stops[i].dataset.planet!, w, h);
+  const to = viewOf(stops[i + 1].dataset.planet!, w, h);
+  const raw = Math.min(1, Math.max(0, (middle - marks[i]) / (marks[i + 1] - marks[i])));
+  const k = raw * raw * (3 - 2 * raw);
+  const mix = (a: number, b: number) => a + (b - a) * k;
+  planet?.setView(mix(from.x, to.x), mix(from.y, to.y), mix(from.r, to.r));
+  scene.style.opacity = mix(from.glow, to.glow).toFixed(3);
+  // how far the first screen has been scrolled away, for the headline that parts as it leaves
+  document.documentElement.style.setProperty('--away', Math.min(1, window.scrollY / h).toFixed(4));
+}
+let staged = 0;
+const restage = () => {
+  cancelAnimationFrame(staged);
+  staged = requestAnimationFrame(stage);
+};
+window.addEventListener('scroll', restage, { passive: true });
+window.addEventListener('resize', restage);
+stage();
 
 // what the tape reports also happens on the planet, a few events at a time so it stays readable
 market.newTape.on((items) => {

@@ -34,7 +34,7 @@ import type { SymbolMetrics } from './types';
 
 const TILES = 1600;
 const MAX_COINS = 180;
-const TILE_SIZE = 0.05;
+const TILE_SIZE = 0.066;
 const FOV = 34;
 const AUTO_SPIN = 0.09; // radians a second
 const MAX_LABELS = 4;
@@ -48,8 +48,6 @@ const SUN = new Vector3(-3.2, 2.3, 3.4).normalize();
 export type Tone = 'up' | 'down' | 'hot';
 
 interface Options {
-  /** The box in the layout the planet is centred on and sized by; the canvas itself is wider. */
-  anchor: HTMLElement;
   /** Laid exactly over the canvas; event labels are positioned inside it. */
   layer: HTMLElement;
   /** x and y are canvas pixels, the same space the layer uses. */
@@ -116,6 +114,7 @@ const HALO_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform vec3 uSun;
   uniform float uLimb;
+  uniform float uGain;
   varying vec3 vNormal;
   varying vec3 vView;
   varying vec3 vWorldNormal;
@@ -123,7 +122,7 @@ const HALO_FRAGMENT = /* glsl */ `
     float depth = clamp(-dot(vNormal, vView) / uLimb, 0.0, 1.0);
     // the shell is seen from inside; mirror the normal to light it like the face in front
     float lit = 0.3 + 0.7 * smoothstep(-0.55, 0.75, dot(vec3(vWorldNormal.xy, -vWorldNormal.z), uSun));
-    gl_FragColor = vec4(uColor * pow(depth, 4.2) * lit * 0.62, 0.0);
+    gl_FragColor = vec4(uColor * pow(depth, 4.2) * lit * 0.62 * uGain, 0.0);
     #include <colorspace_fragment>
   }
 `;
@@ -132,13 +131,14 @@ const HALO_FRAGMENT = /* glsl */ `
 const RIM_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform vec3 uSun;
+  uniform float uGain;
   varying vec3 vNormal;
   varying vec3 vView;
   varying vec3 vWorldNormal;
   void main() {
     float edge = pow(1.0 - clamp(dot(vNormal, vView), 0.0, 1.0), 3.2);
     float lit = 0.25 + 0.75 * smoothstep(-0.35, 0.8, dot(vWorldNormal, uSun));
-    gl_FragColor = vec4(uColor * edge * lit * 0.6, 0.0);
+    gl_FragColor = vec4(uColor * edge * lit * 0.6 * uGain, 0.0);
     #include <colorspace_fragment>
   }
 `;
@@ -220,6 +220,8 @@ export class VoxelPlanet {
   private readonly columnColor = new InstancedBufferAttribute(new Float32Array(MAX_COINS * 3), 3);
   private readonly columnFlash = new InstancedBufferAttribute(new Float32Array(MAX_COINS), 1);
   private readonly tips: Points;
+  private halo!: ShaderMaterial;
+  private rim!: ShaderMaterial;
   private readonly satellite = new Group();
   private readonly pulses: { mesh: Mesh; material: MeshBasicMaterial; born: number }[] = [];
   private readonly points = lattice(TILES);
@@ -244,8 +246,11 @@ export class VoxelPlanet {
   private intro = this.reducedMotion ? 1 : 0;
   private started = false;
   private drag: { x: number; y: number; moved: number } | null = null;
-  /** Planet centre and body radius in canvas pixels, for cursor and label placement. */
+  /** Where the planet is right now: centre and body radius in canvas pixels. */
   private readonly disc = { x: 0, y: 0, r: 1 };
+  /** Where the page wants it; the planet glides there instead of jumping with every scroll event. */
+  private readonly goal = { x: 0, y: 0, r: 1 };
+  private placed = false;
 
   constructor(canvas: HTMLCanvasElement, options: Options) {
     this.canvas = canvas;
@@ -270,7 +275,6 @@ export class VoxelPlanet {
     this.buildPulses();
 
     new ResizeObserver(() => this.resize()).observe(canvas);
-    new ResizeObserver(() => this.resize()).observe(options.anchor);
     new IntersectionObserver(([entry]) => (this.visible = entry.isIntersecting)).observe(canvas);
     this.bindPointer();
     this.resize();
@@ -328,7 +332,7 @@ export class VoxelPlanet {
     });
     this.world.add(tiles);
 
-    const uniforms = () => ({ uColor: { value: new Color('#3ef0ff') }, uSun: { value: SUN }, uLimb: { value: 1 } });
+    const uniforms = () => ({ uColor: { value: new Color('#3ef0ff') }, uSun: { value: SUN }, uLimb: { value: 1 }, uGain: { value: 1 } });
     const halo = new Mesh(
       new SphereGeometry(1.3, 64, 48),
       new ShaderMaterial({
@@ -356,6 +360,8 @@ export class VoxelPlanet {
     );
     // the shells do not turn with the surface: the lit side stays where the sun is
     this.scene.add(halo, rim);
+    this.halo = halo.material;
+    this.rim = rim.material;
   }
 
   private buildColumns(): InstancedMesh {
@@ -557,28 +563,45 @@ export class VoxelPlanet {
     this.options.onHover(this.hovered?.row ?? null, x, y);
   }
 
-  /** Sizes the planet by the anchor box and moves the view so it sits in that box's centre. */
+  /**
+   * Puts the planet somewhere on the canvas: centre and body radius in pixels. The centre may be
+   * far outside the canvas, which is how the hero shows only the top of it as a horizon.
+   */
+  setView(x: number, y: number, r: number) {
+    Object.assign(this.goal, { x, y, r: Math.max(40, r) });
+    if (!this.placed || this.reducedMotion) Object.assign(this.disc, this.goal);
+    this.placed = true;
+  }
+
   private resize() {
     const { clientWidth: w, clientHeight: h } = this.canvas;
     if (!w || !h) return;
-    const canvasBox = this.canvas.getBoundingClientRect();
-    const anchor = this.options.anchor.getBoundingClientRect();
-    const radius = Math.max(60, Math.min(anchor.width, anchor.height) * 0.35);
-    this.disc.x = anchor.left - canvasBox.left + anchor.width / 2;
-    this.disc.y = anchor.top - canvasBox.top + anchor.height / 2;
-    this.disc.r = radius;
-
     this.renderer.setSize(w, h, false);
-    const distance = h / (2 * Math.tan((FOV * Math.PI) / 360) * radius);
-    this.camera.position.set(0, 0, distance);
-    this.camera.aspect = w / h;
-    this.camera.setViewOffset(w, h, w / 2 - this.disc.x, h / 2 - this.disc.y, w, h);
-    this.camera.updateProjectionMatrix();
-
     const scale = (this.renderer.getPixelRatio() * h) / (2 * Math.tan((FOV * Math.PI) / 360));
     // stars keep their pixel size whatever the distance, column lights shrink with the planet
     (this.stars.material as ShaderMaterial).uniforms.uScale.value = this.renderer.getPixelRatio() * 52;
     (this.tips.material as ShaderMaterial).uniforms.uScale.value = scale * 0.1;
+  }
+
+  /** The camera backs away until the planet is the asked size, then the view is shifted to its centre. */
+  private frameCamera(dt: number) {
+    const { clientWidth: w, clientHeight: h } = this.canvas;
+    if (!w || !h) return;
+    const ease = 1 - Math.exp(-dt * 7);
+    this.disc.x += (this.goal.x - this.disc.x) * ease;
+    this.disc.y += (this.goal.y - this.disc.y) * ease;
+    this.disc.r += (this.goal.r - this.disc.r) * ease;
+    // Seen from close by, a sphere's outline is wider than its radius drawn at that distance;
+    // this is the distance at which the outline itself is disc.r pixels.
+    const focal = h / (2 * Math.tan((FOV * Math.PI) / 360));
+    this.camera.position.set(0, 0, Math.sqrt(1 + (focal / this.disc.r) ** 2));
+    // up close the atmosphere would fill the screen with light, so it thins as the planet grows
+    const gain = Math.min(1, 200 / this.disc.r);
+    this.halo.uniforms.uGain.value = gain;
+    this.rim.uniforms.uGain.value = Math.max(0.35, gain);
+    this.camera.aspect = w / h;
+    this.camera.setViewOffset(w, h, w / 2 - this.disc.x, h / 2 - this.disc.y, w, h);
+    this.camera.updateProjectionMatrix();
   }
 
   private animate(dt: number) {
@@ -606,7 +629,7 @@ export class VoxelPlanet {
       const punch = coin.kick * coin.kick;
       const height = Math.max(0.0001, coin.height * eased * (1 + punch * 0.55) + punch * 0.05);
       const point = this.points[coin.tile];
-      this.place(point, 1.02 + height / 2, TILE_SIZE * 0.82, height);
+      this.place(point, 1.02 + height / 2, TILE_SIZE * 0.6, height);
       this.columns.setMatrixAt(i, this.dummy.matrix);
       this.columnFlash.setX(i, punch + (coin === this.hovered ? 0.5 : 0));
       tipPosition.setXYZ(i, point.x * (1.02 + height), point.y * (1.02 + height), point.z * (1.02 + height));
@@ -662,6 +685,7 @@ export class VoxelPlanet {
     this.last = now;
     if (!this.visible || document.hidden) return;
     this.clock += dt;
+    this.frameCamera(dt);
     this.animate(dt);
     this.renderer.render(this.scene, this.camera);
     if (this.labels.length) this.placeLabels();

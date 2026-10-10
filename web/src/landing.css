@@ -1,42 +1,39 @@
-/* Landing page. Shares colours, fonts and the space background with the terminal (theme.css). */
+/* Landing page. One long shot of the planet: it stays on screen for the whole page and the
+   scroll moves the camera (see stage() in landing.ts). Colours come from theme.css. */
 
-/* Chakra Petch and Azeret Mono are Latin only. In Russian the same squared, technical voice
-   comes from Tektur, instead of whatever the system would fall back to. */
-html[lang="ru"] {
-  --f-display: "Tektur Variable", system-ui, sans-serif;
-  --f-ui: "Tektur Variable", system-ui, sans-serif;
-  --f-num: "Azeret Mono", "Tektur Variable", ui-monospace, monospace;
+.landing {
+  /* poster type for the big lines, a plain grotesque for reading, mono for anything measured;
+     all three have Cyrillic, so both languages share one voice */
+  --f-display: "Sofia Sans Extra Condensed Variable", "Arial Narrow", sans-serif;
+  --f-ui: "Inter Variable", system-ui, sans-serif;
+  --f-num: "Azeret Mono", ui-monospace, monospace;
+  --gutter: clamp(16px, 4vw, 64px);
+  /* 0 at the top of the page, 1 once the first screen has been scrolled away */
+  --away: 0;
+  overflow-x: hidden;
+  font-family: var(--f-ui);
 }
-html[lang="ru"] .hero h1 { letter-spacing: 0; }
+.landing ::selection { background: var(--accent); color: #02121a; }
 
-.landing { overflow-x: hidden; }
-.landing main, .nav, .foot { position: relative; z-index: 1; }
-/* the hero scene runs up behind the navigation, which must stay clickable above it */
-.nav { z-index: 2; }
+/* Stacking, bottom to top: the headline, the planet in front of it, then everything to read or
+   press. main gets no stacking context of its own, or the three could not interleave. */
+.scene { position: fixed; z-index: 1; inset: 0; transition: opacity .25s linear; }
+.scene canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
+.planet-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.nav, .foot { position: relative; z-index: 3; }
+.landing main { position: static; }
+.mega { position: relative; z-index: 0; }
+.hero-foot, .ticker, .band-body, .features, .how, .final .cta { position: relative; z-index: 2; }
+.static .scene { display: none; }
+
 .mono { font: 11.5px var(--f-num); }
 
-.nav {
-  max-width: 1240px;
-  margin: 0 auto;
-  height: 72px;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-.nav nav { display: flex; gap: 26px; margin-left: auto; }
-.nav { gap: 20px; }
-.nav nav { margin-right: 12px; }
-.nav nav a {
-  color: var(--ink-2);
-  text-decoration: none;
-  font: 600 12px var(--f-ui);
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
+.nav { height: 72px; padding: 0 var(--gutter); display: flex; align-items: center; gap: 20px; }
+.nav nav { display: flex; gap: 26px; margin-left: auto; margin-right: 12px; }
+.nav nav a { color: var(--ink-2); text-decoration: none; font: 600 12px var(--f-ui); letter-spacing: .12em; text-transform: uppercase; transition: color .15s; }
 .nav nav a:hover { color: var(--ink); }
 .lang { display: inline-flex; border: 1px solid var(--rule-strong); }
-.lang button { height: 34px; padding: 0 10px; color: var(--ink-3); font: 600 11.5px var(--f-ui); letter-spacing: .12em; transition: color .15s, background .15s; }
+.lang button { height: 34px; padding: 0 10px; color: var(--ink-3); font: 600 11.5px var(--f-ui); letter-spacing: .1em; transition: color .15s, background .15s; }
 .lang button:hover { color: var(--ink); }
 .lang button[aria-pressed="true"] { color: var(--bg-0); background: var(--ink); }
 
@@ -44,12 +41,12 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .cta {
   display: inline-flex;
   align-items: center;
-  height: 46px;
-  padding: 0 24px;
+  height: 48px;
+  padding: 0 26px;
   background: var(--accent);
   color: #02121a;
   font: 700 13px var(--f-ui);
-  letter-spacing: .14em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
@@ -62,91 +59,73 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .ghost {
   display: inline-flex;
   align-items: center;
-  height: 46px;
+  height: 48px;
   padding: 0 20px;
   color: var(--ink);
+  background: rgba(3, 5, 10, .5);
   border: 1px solid var(--rule-strong);
   font: 600 13px var(--f-ui);
-  letter-spacing: .1em;
+  letter-spacing: .08em;
   text-transform: uppercase;
   text-decoration: none;
+  transition: border-color .15s;
 }
 .ghost:hover { border-color: var(--accent-soft); }
 
-.hero {
-  position: relative;
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 24px 24px 64px;
-  /* fill the first screen, but on very tall monitors do not float the content in emptiness */
-  min-height: min(calc(100dvh - 72px), 980px);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  align-items: center;
-  gap: 24px;
-}
-.hero h1 {
-  font: 700 clamp(40px, 5.2vw, 68px)/1.02 var(--f-display);
-  letter-spacing: -0.01em;
-}
-.hero h1 em { font-style: normal; color: var(--accent); text-shadow: 0 0 28px rgba(62, 240, 255, .35); }
-.lede { margin-top: 22px; max-width: 46ch; color: var(--ink-2); font-size: 17px; line-height: 1.55; }
-.actions { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
-.stats {
-  margin-top: 48px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--rule);
-}
-.stats div { padding: 14px 14px 0 0; }
-.stats dt { color: var(--ink-3); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; }
-.stats dd { font: 500 22px var(--f-num); margin-top: 6px; font-variant-numeric: tabular-nums; }
+/* ---------- first screen: three lines of poster type with the planet rising in front ---------- */
+.hero { position: relative; height: calc(100svh - 72px); min-height: 560px; padding: 0 var(--gutter); display: flex; flex-direction: column; }
+.mega { font: 900 var(--mega) / .8 var(--f-display); text-transform: uppercase; letter-spacing: -.012em; color: var(--ink); pointer-events: none; }
+/* as tall as the screen allows: the lines must clear the navigation and still leave the lower
+   third to the planet */
+.hero .mega { --mega: min(13.4vw, 25svh); margin-top: clamp(4px, 2svh, 28px); opacity: calc(1 - var(--away) * 1.5); }
+html[lang="ru"] .hero .mega { --mega: min(12.2vw, 25svh); }
+.mega span { display: block; white-space: nowrap; will-change: transform; }
+/* the lines part as the page scrolls away: outer ones left, the hollow one right */
+.hero .mega span:nth-child(1) { transform: translate3d(calc(var(--away) * -9vw), 0, 0); }
+.hero .mega span:nth-child(2) { transform: translate3d(calc(var(--away) * 14vw), 0, 0); }
+.hero .mega span:nth-child(3) { transform: translate3d(calc(var(--away) * -5vw), 0, 0); }
+.mega .hollow { color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--ink) 62%, transparent); }
+.mega em { font-style: normal; color: var(--accent); }
 
-/* The scene is wider than the hero: stars and the glow around the planet run to the edges of
-   the window and up behind the navigation, then dissolve before the next section. The planet
-   itself is centred on .planet-wrap, which only holds its place in the layout. */
-.scene {
-  position: absolute;
-  z-index: 0;
-  top: -72px;
-  bottom: -40px;
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
-  -webkit-mask-image: linear-gradient(#000 80%, transparent);
-  mask-image: linear-gradient(#000 80%, transparent);
-}
-.scene canvas { width: 100%; height: 100%; display: block; touch-action: pan-y; }
-.planet-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.hero-copy { position: relative; z-index: 1; }
-.planet-wrap { position: relative; z-index: 1; aspect-ratio: 1; width: 100%; max-height: 82dvh; justify-self: center; pointer-events: none; }
-.hero.static .scene { display: none; }
-.hero.static .planet-wrap::before {
+/* the planet sinks into darkness along the bottom edge, which is where the words sit */
+.hero::after {
   content: "";
   position: absolute;
-  inset: 14%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #16405f, #050a14 68%);
-  box-shadow: 0 0 90px 10px rgba(62, 240, 255, .16), inset -30px -30px 80px rgba(0, 0, 0, .6);
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46%;
+  background: linear-gradient(to top, var(--bg-0) 4%, rgba(3, 5, 10, .78) 42%, transparent);
+  pointer-events: none;
 }
-.hero.static .hint { display: none; }
-.planet-note { position: absolute; left: 0; right: 0; top: 100%; margin-top: -14px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 16px; font: 11px var(--f-num); color: var(--ink-2); }
-.planet-note .hint { flex-basis: 100%; justify-content: center; color: var(--ink-3); }
+.hero-foot {
+  z-index: 3;
+  margin-top: auto;
+  padding-bottom: clamp(20px, 4svh, 44px);
+  display: grid;
+  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  align-items: end;
+  gap: 32px;
+  pointer-events: none;
+}
+.hero-foot a, .hero-foot .stats { pointer-events: auto; }
+.lede { max-width: 46ch; color: var(--ink); font-size: clamp(15px, 1.25vw, 18px); line-height: 1.55; text-wrap: pretty; }
+.actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.hero-data { justify-self: end; display: grid; gap: 12px; justify-items: end; }
+.stats { display: grid; grid-template-columns: repeat(4, auto); gap: 0 clamp(18px, 2.6vw, 44px); }
+.stats > div { display: flex; flex-direction: column; justify-content: flex-end; }
+.stats dt { color: var(--ink-2); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.stats dd { font: 500 clamp(18px, 1.7vw, 24px) var(--f-num); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.planet-note { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 14px; font: 11px var(--f-num); color: var(--ink-2); }
 .planet-note > span { display: inline-flex; align-items: center; gap: 6px; }
+.planet-note .hint { color: var(--ink-3); }
+.static .hint { display: none; }
 .sw { width: 8px; height: 8px; background: currentColor; }
 .sw.up { color: var(--up); }
 .sw.down { color: var(--down); }
-.planet-tip {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 2;
-  padding: 8px 11px;
-  background: rgba(7, 12, 22, .92);
-  border: 1px solid var(--rule-strong);
-  font: 11.5px/1.5 var(--f-num);
-  white-space: nowrap;
-}
+
+.planet-tip { position: absolute; left: 0; top: 0; z-index: 2; padding: 8px 11px; background: rgba(7, 12, 22, .92); border: 1px solid var(--rule-strong); font: 11.5px/1.5 var(--f-num); white-space: nowrap; }
 .planet-tip b { font: 700 13px var(--f-ui); margin-right: 8px; }
 
 /* an event on the planet: a pin on the column, a short lead and a note beside it */
@@ -174,18 +153,7 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .planet-label .card b { font: 700 12.5px var(--f-ui); color: var(--ink); margin-right: 7px; }
 
 /* the running strip of the most traded pairs */
-.ticker {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  height: 44px;
-  border-block: 1px solid var(--rule-soft);
-  background: rgba(3, 5, 10, .55);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  opacity: 0;
-  transition: opacity .6s;
-}
+.ticker { overflow: hidden; height: 44px; border-block: 1px solid var(--rule-soft); background: rgba(3, 5, 10, .82); opacity: 0; transition: opacity .6s; }
 .ticker.on { opacity: 1; }
 .ticker-track { display: flex; width: max-content; height: 100%; }
 .ticker-track > div { display: flex; }
@@ -199,39 +167,23 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
   @keyframes ticker { to { transform: translateX(-50%); } }
 }
 
-.band {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 72px 24px;
-  display: grid;
-  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
-  gap: 56px;
-  align-items: center;
-}
-/* mirrored: the frame keeps the wide column, the copy the narrow one */
-.band.reverse { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
-.band.reverse .band-copy { order: 2; }
-.band h2, .features h2, .how h2, .final h2 {
-  font: 700 clamp(28px, 3.2vw, 40px)/1.1 var(--f-display);
-}
-.band-copy p { margin-top: 16px; color: var(--ink-2); font-size: 16px; line-height: 1.6; max-width: 48ch; }
+/* ---------- the two demos: words and a live panel on one side, the planet on the other ---------- */
+.band { min-height: 100svh; padding: 96px var(--gutter); display: flex; align-items: center; pointer-events: none; }
+.band-body { width: min(600px, 47%); pointer-events: auto; }
+.band.flip { justify-content: flex-end; }
+.band h2, .features h2, .how h2 { font: 900 clamp(46px, 6.6vw, 108px) / .86 var(--f-display); text-transform: uppercase; letter-spacing: -.008em; text-wrap: balance; }
+.band-body > p { margin: 20px 0 28px; color: var(--ink-2); font-size: 16px; line-height: 1.6; max-width: 50ch; text-wrap: pretty; }
 
-.hud {
-  position: relative;
-  background: var(--bg-1);
-  border: 1px solid var(--rule);
-  box-shadow: inset 0 1px 0 rgba(62, 240, 255, .07), 0 30px 80px rgba(0, 0, 0, .45);
-}
+.hud { position: relative; background: rgba(7, 12, 22, .9); border: 1px solid var(--rule); box-shadow: inset 0 1px 0 rgba(62, 240, 255, .07), 0 30px 80px rgba(0, 0, 0, .45); }
 .hud::before, .hud::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; }
 .hud::before { top: -1px; left: -1px; border-top: 1px solid var(--accent); border-left: 1px solid var(--accent); }
 .hud::after { bottom: -1px; right: -1px; border-bottom: 1px solid var(--accent); border-right: 1px solid var(--accent); }
 .hud-head { display: flex; justify-content: space-between; align-items: center; height: 42px; padding: 0 16px; border-bottom: 1px solid var(--rule-soft); }
-.p-title { font: 600 12px/1 var(--f-display); letter-spacing: .16em; text-transform: uppercase; }
-.p-title::before { content: "// "; color: var(--accent); }
+.p-title { font: 600 11.5px/1 var(--f-ui); letter-spacing: .14em; text-transform: uppercase; }
 .live-tape .tape-list { list-style: none; padding: 8px 16px 12px; height: calc(26px * 11 + 20px); overflow: hidden; }
 
 /* tape rows and badges, same as in the terminal */
-.tape-row { display: grid; grid-template-columns: 70px 92px 118px minmax(0, 1fr); align-items: center; height: 26px; font: 11.5px var(--f-num); }
+.tape-row { display: grid; grid-template-columns: 70px 76px 112px minmax(0, 1fr); align-items: center; height: 26px; font: 11.5px var(--f-num); }
 .tape-row time { color: var(--ink-3); }
 .tape-row .s { font: 600 12.5px var(--f-ui); }
 .tape-row .v { text-align: right; }
@@ -240,9 +192,9 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .badge {
   justify-self: start;
   font: 600 10.5px/1 var(--f-ui);
-  letter-spacing: .1em;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  padding: 4px 7px 3px;
+  padding: 4px 7px;
   color: var(--tone);
   background: color-mix(in srgb, var(--tone) 12%, transparent);
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
@@ -270,17 +222,18 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .mini td.r { text-align: right; }
 .mini .bar { display: inline-block; height: 6px; vertical-align: middle; }
 
-.features { max-width: 1240px; margin: 0 auto; padding: 72px 24px; }
-.bento { margin-top: 32px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.cell { position: relative; padding: 26px; background: var(--bg-1); border: 1px solid var(--rule); min-height: 200px; }
+/* ---------- what is inside: the planet steps back and dims behind these ---------- */
+.features, .how { max-width: 1320px; margin: 0 auto; padding: 96px var(--gutter); }
+.bento { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cell { position: relative; padding: 26px; background: rgba(7, 12, 22, .9); border: 1px solid var(--rule); min-height: 200px; }
 .cell.wide { grid-column: span 2; }
-.cell.accent { background: linear-gradient(135deg, rgba(62, 240, 255, .1), rgba(157, 255, 92, .05) 60%, var(--bg-1)); }
+.cell.accent { background: linear-gradient(135deg, rgba(14, 44, 56, .94), rgba(12, 28, 26, .94) 60%, rgba(7, 12, 22, .94)); }
 .cell.tg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
 .msg { display: grid; gap: 6px; padding: 14px 16px; background: rgba(3, 5, 10, .55); border: 1px solid var(--rule-strong); border-radius: 14px 14px 14px 4px; font-size: 13.5px; line-height: 1.5; }
 .msg b { font-weight: 700; color: var(--ink); }
 .msg span { color: var(--ink-2); }
 .msg i { color: var(--ink-3); font-size: 12.5px; }
-.cell h3 { font: 700 18px var(--f-display); letter-spacing: .04em; }
+.cell h3 { font: 700 17px var(--f-ui); letter-spacing: -.005em; }
 .cell p { margin-top: 10px; color: var(--ink-2); font-size: 14.5px; line-height: 1.6; max-width: 52ch; }
 .cell .mini { margin-top: 16px; }
 .strip { display: block; width: 100%; height: 64px; margin-top: 18px; }
@@ -291,13 +244,12 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
 .cell .mini td { padding: 0 12px 0 0; height: 28px; }
 
 /* the rest of the instruments as a spec sheet: name on the left, what it does beside it */
-.spec { margin-top: 44px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; border-top: 1px solid var(--rule); }
+.spec { margin-top: 44px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; border-top: 1px solid var(--rule); background: rgba(3, 5, 10, .72); }
 .spec > div { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--rule); }
-.spec dt { font: 700 15px/1.35 var(--f-display); letter-spacing: .04em; }
+.spec dt { font: 700 15px/1.4 var(--f-ui); }
 .spec dd { color: var(--ink-2); font-size: 14.5px; line-height: 1.6; }
 
-.how { max-width: 1240px; margin: 0 auto; padding: 72px 24px; }
-.pipeline { list-style: none; margin-top: 32px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; counter-reset: step; }
+.pipeline { list-style: none; margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; counter-reset: step; }
 .pipeline li { position: relative; padding: 24px 28px 0 0; border-top: 1px solid var(--rule-strong); }
 .pipeline li::before {
   counter-increment: step;
@@ -310,51 +262,67 @@ html[lang="ru"] .hero h1 { letter-spacing: 0; }
   font: 600 13px var(--f-num);
   color: var(--accent);
 }
-.pipeline b { display: block; font: 700 18px var(--f-display); }
+.pipeline b { display: block; font: 700 18px var(--f-ui); }
 .pipeline span { display: block; margin-top: 10px; color: var(--ink-2); font-size: 14.5px; line-height: 1.6; max-width: 36ch; }
 
-.final { max-width: 1240px; margin: 0 auto; padding: 96px 24px 120px; text-align: center; }
-.final .cta { margin-top: 28px; }
+/* ---------- the ending mirrors the opening: big words, the horizon again ---------- */
+.final { position: relative; min-height: 100svh; padding: 12svh var(--gutter) 0; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+.final .mega { --mega: min(12.6vw, 24svh); text-wrap: balance; }
+html[lang="ru"] .final .mega { --mega: min(10.6vw, 22svh); }
+.final .cta { margin-top: 36px; pointer-events: auto; }
 
 .foot {
-  /* same text edges as every section above: the rule ends where the content does */
-  width: min(1192px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 28px 0 40px;
+  /* laid over the bottom of the ending; a fixed height keeps the page from ending below it */
+  height: 84px;
+  margin-top: -84px;
+  padding: 0 var(--gutter) 24px;
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-size: 12.5px;
+  background: linear-gradient(to top, var(--bg-0) 30%, transparent);
 }
 .foot a { text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
 
+@media (prefers-reduced-motion: reduce) {
+  .hero .mega { opacity: 1; }
+  .hero .mega span { transform: none !important; }
+}
+
 @media (max-width: 900px) {
-  .nav { padding: 0 16px; gap: 12px; height: 64px; }
+  .nav { height: 64px; gap: 12px; }
   .nav nav { display: none; }
   .nav .lang { margin-left: auto; }
   .nav .lang button { height: 32px; padding: 0 8px; }
   .cta.small { padding: 0 12px; font-size: 10.5px; letter-spacing: .08em; }
-  .planet-note { margin-top: 0; gap: 4px 14px; }
-  .planet-wrap { margin-bottom: 52px; }
-  .scene { top: -64px; }
+  .hero { height: calc(100svh - 64px); }
+  .hero .mega { --mega: min(16vw, 19svh); margin-top: 3svh; }
+  html[lang="ru"] .hero .mega { --mega: min(14vw, 19svh); }
+  .hero::after { height: 58%; }
+  .hero-foot { grid-template-columns: 1fr; gap: 18px; padding-bottom: 46px; }
+  .hero-data { justify-self: stretch; justify-items: start; }
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 12px; width: 100%; }
+  .stats dt { font-size: 9.5px; white-space: normal; }
+  .stats dd { font-size: 15px; }
+  .planet-note { display: none; }
+  .actions { margin-top: 16px; }
+  .cta, .ghost { height: 44px; padding: 0 18px; font-size: 12px; }
+  .band { min-height: 0; padding: 64px var(--gutter); }
+  .band-body { width: 100%; }
+  .band h2, .features h2, .how h2 { font-size: clamp(44px, 14vw, 72px); }
+  .cell.tg { grid-template-columns: 1fr; gap: 18px; }
+  .bento { grid-template-columns: 1fr; }
+  .cell.wide { grid-column: auto; }
   .spec { grid-template-columns: 1fr; margin-top: 28px; }
   .spec > div { grid-template-columns: 1fr; gap: 6px; padding: 16px 0; }
   .ticker a { padding: 0 16px; }
-  .hero { padding-left: 16px; padding-right: 16px; }
-  .cell.tg { grid-template-columns: 1fr; gap: 18px; }
-  .final { padding: 64px 16px 80px; }
-  .foot { width: calc(100% - 32px); }
-  .hero { grid-template-columns: 1fr; min-height: 0; padding-top: 8px; }
-  .planet-wrap { order: -1; max-width: 520px; }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .band, .band.reverse { grid-template-columns: 1fr; gap: 28px; padding: 48px 16px; }
-  .band.reverse .band-copy { order: 0; }
-  .bento { grid-template-columns: 1fr; }
-  .cell.wide { grid-column: auto; }
   .pipeline { grid-template-columns: 1fr; gap: 28px; }
-  .features, .how { padding: 48px 16px; }
-  .tape-row { grid-template-columns: 62px 76px 104px minmax(0, 1fr); }
-  .foot { flex-direction: column; }
+  .features, .how { padding: 64px var(--gutter); }
+  .tape-row { grid-template-columns: 62px 62px 104px minmax(0, 1fr); }
+  .final { padding-top: 8svh; }
+  .final .mega { --mega: min(19vw, 17svh); }
+  html[lang="ru"] .final .mega { --mega: min(15vw, 15svh); }
+  .foot { flex-direction: column; align-items: flex-start; justify-content: flex-end; height: 120px; margin-top: -120px; gap: 8px; }
 }
