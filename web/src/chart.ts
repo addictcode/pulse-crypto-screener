@@ -27,7 +27,8 @@ import { Studies, type BacktestLine } from './studies';
 import type { CandleDto, Liquidation, Signal } from './types';
 
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
-const HISTORY = 300;
+/** Enough for a 200-bar average to settle and still leave strategies hundreds of bars to trade. */
+const HISTORY = 1000;
 export const CHART_FONT = '"Inter Variable", system-ui, sans-serif';
 
 /** The drawing toolbar, top to bottom. */
