@@ -413,6 +413,8 @@ export interface Trade {
   /** Result in R, the stop distance: +1.4 is 1.4 times what was risked, -1 is a full stop. */
   r: number;
   open: boolean;
+  /** Half was closed at one R and the stop now stands at the entry. */
+  banked?: boolean;
 }
 
 export interface BacktestStats {
@@ -454,22 +456,32 @@ export interface Plan {
  * bar checks the stop before the target (the pessimistic order when one bar touches both),
  * and a trade that runs out of time closes at market. Results are in R, so a timed-out trade
  * counts for what it really made, not as a full win or loss. `fee` is the exchange's cut per
- * side as a fraction of the position; it is taken off every result, in R.
+ * side as a fraction of the position; it is taken off every result, in R. With `scaleOut` half
+ * of the position is closed one R in profit and the stop of the rest moves to the entry: fewer
+ * losing trades, smaller winners.
  */
-export function walk(bars: Bar[], planAt: (i: number) => Plan | null, maxBars: number, fee = 0) {
+export function walk(bars: Bar[], planAt: (i: number) => Plan | null, maxBars: number, fee = 0, scaleOut = false) {
   const trades: Trade[] = [];
   let pos: Trade | null = null;
+  let risk = 0;
   const result = (p: Trade, exit: number) => {
-    const risk = Math.abs(p.entry - p.stop);
-    return ((exit - p.entry) * p.dir) / risk - (2 * fee * p.entry) / risk;
+    const rest = p.banked ? 0.5 : 1;
+    return (p.banked ? 0.5 : 0) + (rest * (exit - p.entry) * p.dir) / risk - (2 * fee * p.entry) / risk;
   };
   for (let i = 0; i < bars.length; i++) {
     if (pos && i > pos.entryIndex) {
       const b = bars[i];
       let exit: number | null = null;
       if (pos.dir === 1 ? b.low <= pos.stop : b.high >= pos.stop) exit = pos.stop;
-      else if (pos.dir === 1 ? b.high >= pos.target : b.low <= pos.target) exit = pos.target;
-      else if (i - pos.entryIndex >= maxBars) exit = b.close;
+      else {
+        const oneR = pos.entry + pos.dir * risk;
+        if (scaleOut && !pos.banked && (pos.dir === 1 ? b.high >= oneR : b.low <= oneR)) {
+          pos.banked = true;
+          pos.stop = pos.entry;
+        }
+        if (pos.dir === 1 ? b.high >= pos.target : b.low <= pos.target) exit = pos.target;
+        else if (i - pos.entryIndex >= maxBars) exit = b.close;
+      }
       if (exit !== null) {
         trades.push({ ...pos, exitIndex: i, r: result(pos, exit), open: false });
         pos = null;
@@ -480,6 +492,7 @@ export function walk(bars: Bar[], planAt: (i: number) => Plan | null, maxBars: n
     const plan = planAt(i);
     if (!plan) continue;
     pos = { ...plan, entryIndex: i, exitIndex: bars.length - 1, entry: bars[i].close, r: 0, open: true };
+    risk = Math.abs(pos.entry - pos.stop);
   }
   if (pos) pos.r = result(pos, bars[bars.length - 1].close);
   return { trades, open: pos };
@@ -591,9 +604,10 @@ export const SETUP = {
   slow: 200,
   /** The range price has to leave, in bars. */
   range: 20,
-  /** How recently volatility must have been coiled, in bars. */
-  coil: 6,
   volume: 1.5,
+  /** Open interest must have grown by this share over this many bars: new money, not a squeeze. */
+  oiBars: 12,
+  oiRise: 0.01,
   /** Bars whose extreme the stop hides behind, and the room it gets, in ATR. */
   swing: 5,
   minStop: 1.2,
@@ -606,15 +620,21 @@ export const SETUP = {
   fee: 0.0005,
 };
 
+/** Exchange statistics on the chart's own bars; null where the exchange has no reading. */
+export interface Flow {
+  /** Open interest in USD. */
+  oi: Line;
+}
+
 /** What the setup needs, one answer per condition, for the bar asked about. */
 export interface SetupState {
   /** 1 when the trend is up, -1 when down, 0 when there is none to trade with. */
   trend: number;
-  /** Volatility was squeezed within the last few bars. */
-  coil: boolean;
   /** The bar closed outside the recent range, in the direction of the trend. */
   breakout: boolean;
   volume: boolean;
+  /** Open interest is growing: the move is made by new positions. */
+  money: boolean;
   /** The stop is far enough for fees not to eat the trade. */
   room: boolean;
 }
@@ -624,30 +644,31 @@ export interface SetupResult extends StrategyResult {
   state: SetupState | null;
   /** Running total in R after each closed trade. */
   equity: number[];
+  /** Open interest history has not arrived, so the strategy cannot run yet. */
+  needsFlow: boolean;
+  /** Bars the record covers: only those the exchange has open interest for. */
+  covered: number;
+  /** Half of every trade was banked at one R. */
+  scaled: boolean;
 }
 
 /**
- * Pulse Setups: join a trend as it leaves a coil. The trend is the 50 EMA above (below) the 200
- * with price on the same side; the coil is Bollinger bands inside the Keltner channel a few bars
- * back; the entry is a close outside the 20-bar range on a burst of volume. The stop goes behind
- * the last swing, the target three times as far the other way, so one win pays for three losses
- * and the win rate needed to break even is 25%. Results are after fees.
+ * Pulse Setups: join a trend when it breaks out on new money. The trend is the 50 EMA above
+ * (below) the 200 with price on the same side; the entry is a close outside the 20-bar range on
+ * a burst of volume while open interest is growing, which tells a breakout that positions are
+ * being opened into from one that is only shorts (longs) closing. The stop goes behind the last
+ * swing, the target three times as far the other way. Results are after fees.
  */
-export function setupsStrategy(bars: Bar[]): SetupResult {
-  const { mid, slow, coil, swing, minStop, maxStop, minRisk, rr, maxBars, fee } = SETUP;
-  if (bars.length < slow + 30) return { trades: [], open: null, stats: null, tooFew: true, state: null, equity: [] };
+export function setupsStrategy(bars: Bar[], flow: Flow | null = null, scaleOut = false): SetupResult {
+  const { mid, slow, swing, minStop, maxStop, minRisk, rr, maxBars, fee, oiBars, oiRise } = SETUP;
+  const empty = { trades: [], open: null, stats: null, state: null, equity: [], covered: 0, scaled: scaleOut };
+  if (bars.length < slow + 30) return { ...empty, tooFew: true, needsFlow: false };
+  if (!flow || !flow.oi.some((v) => v !== null)) return { ...empty, tooFew: false, needsFlow: true };
   const closes = bars.map((b) => b.close);
   const e50 = ema(closes, mid);
   const e200 = ema(closes, slow);
   const unit = atr(bars, 14);
-  const channel = atr(bars, 20);
-  const bands = bollinger(closes, 20, 2);
   const volumeAvg = sma(bars.map((b) => b.volume), 20);
-  const squeezed = bars.map((_, i) => {
-    const m = bands.mid[i];
-    if (m === null || channel[i] === null) return false;
-    return bands.upper[i]! < m + 1.5 * channel[i]! && bands.lower[i]! > m - 1.5 * channel[i]!;
-  });
 
   /** The stop distance for an entry on bar i in direction dir, before the fee check. */
   const riskAt = (i: number, dir: number) => {
@@ -658,9 +679,16 @@ export function setupsStrategy(bars: Bar[]): SetupResult {
     const behind = Math.abs(closes[i] - extreme) + 0.2 * unit[i]!;
     return Math.min(Math.max(behind, minStop * unit[i]!), maxStop * unit[i]!);
   };
+  const change = (line: Line, i: number, back: number) => {
+    const now = line[i];
+    const then = line[i - back];
+    return now === null || then === null || then === undefined || then === 0 ? null : now / then - 1;
+  };
 
   const stateAt = (i: number): SetupState | null => {
     if (i < slow + 10 || e200[i] === null || unit[i] === null || volumeAvg[i] === null) return null;
+    const grown = change(flow.oi, i, oiBars);
+    if (grown === null) return null; // before the exchange's statistics begin
     const up = e50[i]! > e200[i]! && closes[i] > e200[i]!;
     const down = e50[i]! < e200[i]! && closes[i] < e200[i]!;
     const trend = up ? 1 : down ? -1 : 0;
@@ -672,28 +700,33 @@ export function setupsStrategy(bars: Bar[]): SetupResult {
     }
     return {
       trend,
-      coil: squeezed.slice(Math.max(0, i - coil), i).some(Boolean),
       breakout: trend === 1 ? closes[i] > high : trend === -1 ? closes[i] < low : false,
       volume: bars[i].volume >= volumeAvg[i]! * SETUP.volume,
+      money: grown > oiRise,
       room: trend !== 0 && riskAt(i, trend) / closes[i] >= minRisk,
     };
   };
 
   const planAt = (i: number): Plan | null => {
     const s = stateAt(i);
-    if (!s || !s.trend || !s.coil || !s.breakout || !s.volume || !s.room) return null;
+    if (!s || !s.trend || !s.breakout || !s.volume || !s.money || !s.room) return null;
     const risk = riskAt(i, s.trend);
     return { dir: s.trend, stop: closes[i] - s.trend * risk, target: closes[i] + s.trend * risk * rr };
   };
 
-  const { trades, open } = walk(bars, planAt, maxBars, fee);
+  const { trades, open } = walk(bars, planAt, maxBars, fee, scaleOut);
   let total = 0;
+  let covered = 0;
+  for (let i = slow + 10; i < bars.length; i++) if (flow.oi[i] !== null && flow.oi[i - oiBars] !== null && flow.oi[i - oiBars] !== undefined) covered++;
   return {
     trades,
     open,
     stats: statsOf(trades, { stopAtr: 1, targetAtr: rr, maxBars }),
     tooFew: false,
+    needsFlow: false,
     state: stateAt(bars.length - 1),
     equity: trades.map((t) => (total += t.r)),
+    covered,
+    scaled: scaleOut,
   };
 }

@@ -180,7 +180,13 @@ describe('fees and Pulse Setups', () => {
   }
 
   it('aims three times as far as it risks, with the stop on the losing side', () => {
-    const { trades, open, stats, equity } = setupsStrategy(coilingTrend());
+    const bars = coilingTrend();
+    // open interest that keeps growing
+    const flow = { oi: bars.map((_, i) => 1e9 * 1.002 ** i) };
+    expect(setupsStrategy(bars).needsFlow).toBe(true);
+    // flat open interest: breakouts nobody is opening positions into are not taken
+    expect(setupsStrategy(bars, { oi: bars.map(() => 1e9) }).trades).toHaveLength(0);
+    const { trades, open, stats, equity } = setupsStrategy(bars, flow);
     const all = open ? [...trades, open] : trades;
     expect(all.length).toBeGreaterThan(3);
     for (const trade of all) {
@@ -192,5 +198,14 @@ describe('fees and Pulse Setups', () => {
     expect(stats!.breakEven).toBeCloseTo(25, 9);
     expect(equity).toHaveLength(trades.length);
     expect(equity.at(-1)).toBeCloseTo(stats!.netR, 9);
+  });
+
+  it('banks half at one R and cannot lose what is left', () => {
+    // long from 100, stop 99, target 103: price reaches 101, then falls back through the entry
+    const bars = [bar(0, 100, 100, 100, 100), bar(1, 100, 101.2, 99.8, 101), bar(2, 101, 101, 99.5, 99.6)];
+    const plan = (i: number) => (i === 0 ? { dir: 1, stop: 99, target: 103 } : null);
+    expect(walk(bars, plan, 10, 0, true).trades[0].r).toBeCloseTo(0.5, 9);
+    // without scaling out the same trade is still open and under water
+    expect(walk(bars, plan, 10).open!.r).toBeCloseTo(-0.4, 9);
   });
 });

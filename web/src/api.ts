@@ -30,7 +30,7 @@ export async function candles(symbol: string, interval: string, limit: number): 
 const STATISTIC_PERIOD: Record<string, string> = { '1m': '5m', '5m': '5m', '15m': '15m', '1h': '1h', '4h': '4h', '1d': '1d' };
 
 /** Open interest, long/short ratios and funding over time, for the panes under the chart. */
-export async function positioning(symbol: string, interval: string, limit = 300): Promise<Positioning> {
+export async function positioning(symbol: string, interval: string, limit = 500): Promise<Positioning> {
   const period = STATISTIC_PERIOD[interval] ?? '5m';
   if (!STANDALONE) return getJson(`/api/positioning?symbol=${encodeURIComponent(symbol)}&period=${period}&limit=${limit}`);
   return (await import('./lite/positioning')).positioningFromBinance(symbol, period, limit);

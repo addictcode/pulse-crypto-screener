@@ -30,6 +30,7 @@ import {
   rsi,
   rsi2Strategy,
   setupsStrategy,
+  type Flow,
   smartTrail,
   squeezeStrategy,
   structure,
@@ -72,7 +73,7 @@ export const STUDIES: StudyInfo[] = [
   { id: 'rsi', name: 'RSI 14', hint: 'own pane', group: 'Oscillators' },
   { id: 'macd', name: 'MACD 12, 26, 9', hint: 'own pane', group: 'Oscillators' },
   { id: 'hw', name: 'HyperWave + money flow', hint: 'momentum, turning points', group: 'Oscillators' },
-  { id: 'setups', name: 'Pulse Setups', hint: 'trade plan: entry, stop, 3R target, after fees', group: 'Strategies' },
+  { id: 'setups', name: 'Pulse Setups', hint: 'trade plan from price and open interest, 3R target, after fees', group: 'Strategies' },
   { id: 'rsi2', name: 'RSI-2 pullback', hint: 'entries, stop, target, backtest', group: 'Strategies' },
   { id: 'squeeze', name: 'Squeeze breakout', hint: 'entries, stop, target, backtest', group: 'Strategies' },
   { id: 'oi', name: 'Open interest', hint: 'in USD, over time', group: 'Positioning' },
@@ -101,6 +102,12 @@ export function alignPoints(times: number[], points: Point[], fill: boolean): Li
     out[i] = fill ? last : inside;
   }
   return out;
+}
+
+/** Open interest on the chart's bars, for Pulse Setups. */
+export function flowOn(bars: Bar[], data: Positioning | null): Flow | null {
+  if (!data || !data.openInterest.length) return null;
+  return { oi: alignPoints(bars.map((b) => b.time), data.openInterest, true) };
 }
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -258,6 +265,7 @@ export class Studies {
   private bars: Bar[] = [];
   private lastLive = 0;
   private positioning: Positioning | null = null;
+  private scaleOut = false;
 
   constructor(chart: IChartApi, candles: ISeriesApi<'Candlestick'>, onBacktest: (lines: BacktestLine[]) => void) {
     this.chart = chart;
@@ -287,11 +295,18 @@ export class Studies {
 
   /** True when a pane needs the exchange's statistics, which the chart then has to fetch. */
   get wantsPositioning() {
-    return POSITIONING.some((id) => this.enabled.has(id));
+    // Pulse Setups reads open interest too
+    return this.enabled.has('setups') || POSITIONING.some((id) => this.enabled.has(id));
   }
 
   setPositioning(positioning: Positioning | null) {
     this.positioning = positioning;
+    this.compute();
+  }
+
+  /** Whether Pulse Setups banks half of a trade at one R. */
+  setScaleOut(on: boolean) {
+    this.scaleOut = on;
     this.compute();
   }
 
@@ -534,7 +549,7 @@ export class Studies {
     }
 
     const strategies: Array<[StudyId, string, (b: Bar[]) => StrategyResult, string, string]> = [
-      ['setups', 'Pulse Setups', setupsStrategy, 'Long', 'Short'],
+      ['setups', 'Pulse Setups', (b) => setupsStrategy(b, flowOn(b, this.positioning), this.scaleOut), 'Long', 'Short'],
       ['rsi2', 'RSI-2', rsi2Strategy, 'Long', 'Short'],
       ['squeeze', 'Squeeze', squeezeStrategy, 'Break', 'Break'],
     ];

@@ -23,7 +23,7 @@ import { IndicatorMenu, renderBacktest } from './indicator-menu';
 import { setupsStrategy, type Trade } from './indicators';
 import type { Market } from './market';
 import { load, save } from './storage';
-import { Studies, type BacktestLine } from './studies';
+import { flowOn, Studies, type BacktestLine } from './studies';
 import type { CandleDto, Liquidation, Signal } from './types';
 
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
@@ -115,6 +115,12 @@ export class PriceChart {
       if (Number.isFinite(value) && value > 0) save('planRisk', value);
       this.renderSize();
     });
+    const scale = document.getElementById('plan-scale') as HTMLInputElement;
+    scale.checked = load('planScale', false);
+    scale.addEventListener('change', () => {
+      save('planScale', scale.checked);
+      this.studies?.setScaleOut(scale.checked);
+    });
     document.getElementById('plan-scan')!.addEventListener('click', () => void this.scan());
     document.getElementById('plan-found')!.addEventListener('click', (e) => {
       const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-sym]');
@@ -187,8 +193,8 @@ export class PriceChart {
 
   /**
    * Runs Pulse Setups over the most traded pairs on the current timeframe and lists the ones with
-   * a trade open, newest first. A few requests at a time: the candles come from the same API as
-   * the chart's own.
+   * a trade open, newest first. A few pairs at a time: candles and exchange statistics come from
+   * the same API as the chart's own.
    */
   private async scan() {
     if (this.scanning) return;
@@ -204,8 +210,8 @@ export class PriceChart {
       const symbol = symbols.shift();
       if (!symbol) return;
       try {
-        const bars = await candles(symbol, interval, HISTORY);
-        const open = setupsStrategy(bars).open;
+        const [bars, flow] = await Promise.all([candles(symbol, interval, HISTORY), positioning(symbol, interval)]);
+        const open = setupsStrategy(bars, flowOn(bars, flow), load('planScale', false)).open;
         if (open) hits.push({ symbol, trade: open, age: bars.length - 1 - open.entryIndex });
       } catch {
         // one pair that did not load is not worth failing the scan for
@@ -394,6 +400,7 @@ export class PriceChart {
     this.times = data.map((c) => c.time);
     this.draw.attach(this.chart, this.candles, () => this.times, INTERVALS[this.interval], () => this.history);
     this.studies = new Studies(this.chart, this.candles, (lines) => this.onBacktest(lines));
+    this.studies.setScaleOut(load('planScale', false));
     this.studies.setEnabled(this.menu.enabled);
     this.studies.setBars(this.history);
     void this.loadPositioning();

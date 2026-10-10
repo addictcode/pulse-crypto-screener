@@ -87,15 +87,17 @@ function renderPlan(r: SetupResult): string {
       <span>${t('Entry')} <b>${px(o.entry)}</b></span>
       <span>${t('Stop')} <b>${px(o.stop)}</b> <i class="down">${pct(o.entry, o.stop)}</i></span>
       <span>${t('Target')} <b>${px(o.target)}</b> <i class="up">${pct(o.entry, o.target)}</i></span>
-      <span class="mute">${t('{n} to 1', { n: 3 })}</span>
+      <span class="mute">${o.banked ? t('half banked at 1R, stop at entry') : t('{n} to 1', { n: 3 })}</span>
       <span class="${o.r >= 0 ? 'up' : 'down'} open">${t('now')} ${o.r >= 0 ? '+' : ''}${o.r.toFixed(2)}R</span>`;
+  } else if (r.needsFlow) {
+    head = `<span class="mute">${t('Waiting for open interest history from the exchange')}</span>`;
   } else if (r.state) {
     const s = r.state;
     const checks: Array<[string, boolean]> = [
       [s.trend === 1 ? t('trend up') : s.trend === -1 ? t('trend down') : t('no trend'), s.trend !== 0],
-      [t('coil'), s.coil],
       [t('breakout'), s.breakout],
       [t('volume'), s.volume],
+      [t('open interest growing'), s.money],
       [t('room for fees'), s.room],
     ];
     head = `<span class="mute">${t('No trade. Waiting for')}</span>${checks
@@ -108,9 +110,10 @@ function renderPlan(r: SetupResult): string {
   const record = !s
     ? `<span class="mute">${t('no closed trades on these candles yet')}</span>`
     : `<span>${t('{n} trades', { n: s.trades })}</span>
-      <span class="${s.winRate >= s.breakEven ? 'up' : 'down'}">${t('{n}% win', { n: s.winRate.toFixed(0) })}</span>
-      <span class="mute">${t('break-even {n}%', { n: s.breakEven.toFixed(0) })}</span>
+      <span class="${r.scaled || s.winRate >= s.breakEven ? 'up' : 'down'}">${t('{n}% win', { n: s.winRate.toFixed(0) })}</span>
+      ${r.scaled ? '' : `<span class="mute">${t('break-even {n}%', { n: s.breakEven.toFixed(0) })}</span>`}
       <span class="${s.netR >= 0 ? 'up' : 'down'}">${s.netR >= 0 ? '+' : ''}${s.netR.toFixed(1)}R ${t('after fees')}</span>
+      <span class="mute">${t('over {n} candles', { n: r.covered })}</span>
       <span class="mute">${t('worst run −{n}R', { n: s.drawdown.toFixed(1) })}</span>
       <span class="plan-verdict">${s.trades < 8 ? t('too few trades to judge') : s.netR > 0 ? t('has paid on this chart') : t('has not paid on this chart')}</span>`;
   return `<div class="plan"><p><b>Pulse Setups</b>${head}</p><p class="plan-record" title="${t('Every past setup on these candles, one position at a time, stop checked before target')}">${record}</p></div>`;
