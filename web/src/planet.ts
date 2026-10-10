@@ -42,7 +42,7 @@ const LABEL_LIFE = 5200;
 const PULSES = 10;
 const UP = new Color('#9dff5c');
 const DOWN = new Color('#ff4f7b');
-const FLAT = new Color('#3ef0ff');
+const FLAT = new Color('#c9ced4');
 const SUN = new Vector3(-3.2, 2.3, 3.4).normalize();
 
 export type Tone = 'up' | 'down' | 'hot';
@@ -261,8 +261,8 @@ export class VoxelPlanet {
     this.tilt.add(this.world);
     this.scene.add(this.tilt);
 
-    this.scene.add(new AmbientLight('#5f86ff', 0.22));
-    const sun = new DirectionalLight('#d6fbff', 3.1);
+    this.scene.add(new AmbientLight('#8a94a8', 0.24));
+    const sun = new DirectionalLight('#fff0d6', 3.1);
     sun.position.copy(SUN).multiplyScalar(6);
     this.scene.add(sun);
 
@@ -318,7 +318,7 @@ export class VoxelPlanet {
 
   /** Solid core, voxel terrain of uneven height, and the two atmosphere shells. */
   private buildBody() {
-    this.world.add(new Mesh(new SphereGeometry(0.988, 48, 32), new MeshLambertMaterial({ color: '#050b17' })));
+    this.world.add(new Mesh(new SphereGeometry(0.988, 48, 32), new MeshLambertMaterial({ color: '#07080a' })));
 
     const tiles = new InstancedMesh(new BoxGeometry(1, 1, 1), new MeshLambertMaterial(), TILES);
     const tint = new Color();
@@ -328,11 +328,11 @@ export class VoxelPlanet {
       const depth = 0.016 + land * 0.034 + hash(i) * 0.02;
       this.place(p, 1 + depth / 2 - 0.012, TILE_SIZE, depth);
       tiles.setMatrixAt(i, this.dummy.matrix);
-      tiles.setColorAt(i, tint.setHSL(0.61 - land * 0.05, 0.55 + land * 0.15, 0.05 + land * 0.055 + hash(i + 0.3) * 0.03));
+      tiles.setColorAt(i, tint.setHSL(0.6 - land * 0.04, 0.16 + land * 0.1, 0.055 + land * 0.06 + hash(i + 0.3) * 0.03));
     });
     this.world.add(tiles);
 
-    const uniforms = () => ({ uColor: { value: new Color('#3ef0ff') }, uSun: { value: SUN }, uLimb: { value: 1 }, uGain: { value: 1 } });
+    const uniforms = () => ({ uColor: { value: new Color('#ffb000') }, uSun: { value: SUN }, uLimb: { value: 1 }, uGain: { value: 1 } });
     const halo = new Mesh(
       new SphereGeometry(1.3, 64, 48),
       new ShaderMaterial({
@@ -395,12 +395,12 @@ export class VoxelPlanet {
     const line = (radius: number, opacity: number) =>
       new LineLoop(
         new BufferGeometry().setFromPoints(ring(radius, 220)),
-        new LineBasicMaterial({ color: '#3ef0ff', transparent: true, opacity }),
+        new LineBasicMaterial({ color: '#ffb000', transparent: true, opacity }),
       );
     const inner = new Group();
     inner.rotation.set(Math.PI / 2.25, 0.18, 0);
     inner.add(line(1.72, 0.26));
-    const body = new Mesh(new BoxGeometry(0.034, 0.034, 0.034), new MeshBasicMaterial({ color: '#dffcff' }));
+    const body = new Mesh(new BoxGeometry(0.034, 0.034, 0.034), new MeshBasicMaterial({ color: '#fff3d6' }));
     body.position.x = 1.72;
     this.satellite.add(body);
     inner.add(this.satellite);

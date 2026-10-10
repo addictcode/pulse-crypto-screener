@@ -1,7 +1,6 @@
-import '@fontsource-variable/sofia-sans-extra-condensed';
-import '@fontsource-variable/inter';
-import '@fontsource/azeret-mono/400.css';
-import '@fontsource/azeret-mono/500.css';
+// the width axis is what lets the big lines run condensed
+import '@fontsource-variable/martian-mono/wdth.css';
+import '@fontsource-variable/jetbrains-mono';
 import './theme.css';
 import './landing.css';
 
@@ -74,7 +73,7 @@ function viewOf(kind: string, w: number, h: number): View {
   if (kind === 'horizon' || kind === 'ending') {
     // only the top of the planet is on screen; the ending shows less of it, to leave the words alone
     const r = Math.max(0.62 * w, 0.7 * h);
-    const sunk = kind === 'ending' ? 0.74 : wide ? 0.65 : 0.4;
+    const sunk = kind === 'ending' ? 0.74 : wide ? 0.65 : 0.3;
     return { x: w / 2, y: h + r * sunk, r, glow: 1 };
   }
   if (kind === 'back' || !wide) return { x: w / 2, y: h / 2, r: wide ? h * 0.4 : w * 0.46, glow: wide ? 0.16 : 0.2 };

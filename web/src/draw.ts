@@ -132,7 +132,7 @@ export class DrawLayer {
 
   /** The canvas is known to be clear. */
   private blank = true;
-  private colors = { accent: '#4db8ff', amber: '#f0b90b', violet: '#a78bfa', up: '#2ebd85', down: '#f6465d', ink: '#e7eaf0', bg: '#0e1116' };
+  private colors = { accent: '#ffb000', amber: '#ffe066', violet: '#a78bfa', up: '#2ebd85', down: '#f6465d', ink: '#e7eaf0', bg: '#0e1116' };
 
   constructor(wrap: HTMLElement, onChange: () => void) {
     this.wrap = wrap;

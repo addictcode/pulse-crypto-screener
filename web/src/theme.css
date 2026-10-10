@@ -1,31 +1,31 @@
-/* Pulse theme shared by the landing page and the terminal: deep space, cyan instruments,
-   acid green for up, hot pink for down. One accent (cyan) for "look here". */
+/* Pulse theme shared by the landing page and the terminal: near-black, amber phosphor
+   for instruments, acid green for up, hot pink for down. One accent (amber) for "look here". */
 
 :root {
-  --bg-0: #03050a;
-  --bg-1: #070c16;
-  --bg-2: #0d1626;
-  --bg-sel: rgba(62, 240, 255, .07);
-  --rule: #14223a;
-  --rule-soft: #0f1a2c;
-  --rule-strong: #23405f;
+  --bg-0: #050607;
+  --bg-1: #0a0b0d;
+  --bg-2: #121417;
+  --bg-sel: rgba(255, 176, 0, .07);
+  --rule: #1c1f24;
+  --rule-soft: #15171b;
+  --rule-strong: #343840;
 
-  --ink: #dff7ff;
-  --ink-2: #93b4c8;
-  --ink-3: #6b8ba3;
+  --ink: #eceef0;
+  --ink-2: #a4aab2;
+  --ink-3: #7b828b;
 
   --up: #9dff5c;
   --down: #ff4f7b;
-  --accent: #3ef0ff;
-  --accent-soft: rgba(62, 240, 255, .45);
+  --accent: #ffb000;
+  --accent-soft: rgba(255, 176, 0, .45);
   /* indicator lines; hex, the chart code derives translucent variants from them */
   --ind-amber: #ffc94d;
   --ind-violet: #b48cff;
   --ind-orange: #ff9a3c;
 
-  --f-display: "Chakra Petch", system-ui, sans-serif;
-  --f-ui: "Chakra Petch", system-ui, sans-serif;
-  --f-num: "Azeret Mono", ui-monospace, monospace;
+  --f-display: "Martian Mono Variable", ui-monospace, monospace;
+  --f-ui: "JetBrains Mono Variable", ui-monospace, monospace;
+  --f-num: "JetBrains Mono Variable", ui-monospace, monospace;
 
   color-scheme: dark;
 }
@@ -38,7 +38,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   background:
-    radial-gradient(1100px 600px at 78% -12%, rgba(62, 240, 255, .07), transparent 62%),
+    radial-gradient(1100px 600px at 78% -12%, rgba(255, 176, 0, .07), transparent 62%),
     radial-gradient(900px 520px at -8% 112%, rgba(157, 255, 92, .045), transparent 60%),
     var(--bg-0);
   background-attachment: fixed;

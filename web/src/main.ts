@@ -1,5 +1,6 @@
 import '@fontsource-variable/inter';
-import '@fontsource/chakra-petch/700.css';
+import '@fontsource-variable/martian-mono';
+import '@fontsource-variable/jetbrains-mono';
 import './styles.css';
 
 import { Alerts } from './alerts';

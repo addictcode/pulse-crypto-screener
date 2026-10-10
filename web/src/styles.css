@@ -6,7 +6,7 @@
   --bg-1: #0e1116;
   --bg-2: #151a22;
   --bg-3: #1c222d;
-  --bg-sel: rgba(77, 184, 255, .09);
+  --bg-sel: rgba(255, 176, 0, .08);
   --rule: #1a1f29;
   --rule-soft: #141820;
   --rule-strong: #2b3341;
@@ -17,16 +17,18 @@
 
   --up: #2ebd85;
   --down: #f6465d;
-  --accent: #4db8ff;
-  --accent-soft: rgba(77, 184, 255, .45);
+  --accent: #ffb000;
+  --accent-soft: rgba(255, 176, 0, .45);
   /* indicator lines; hex, the chart code derives translucent variants from them */
-  --ind-amber: #f0b90b;
+  --ind-amber: #ffe066;
   --ind-violet: #a78bfa;
   --ind-orange: #ff9a3c;
+  /* the accent is amber now; lines that used to borrow it keep a colour of their own */
+  --ind-blue: #4db8ff;
 
   --f-ui: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-num: var(--f-ui);
-  --f-display: "Chakra Petch", var(--f-ui);
+  --f-num: "JetBrains Mono Variable", ui-monospace, monospace;
+  --f-display: "Martian Mono Variable", var(--f-ui);
 
   --top-h: 44px;
   --status-h: 26px;

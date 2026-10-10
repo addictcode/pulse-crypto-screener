@@ -268,7 +268,7 @@ export class Studies {
     this.palette = {
       up: css('--up'),
       down: css('--down'),
-      accent: css('--accent'),
+      accent: css('--ind-blue'),
       amber: css('--ind-amber'),
       violet: css('--ind-violet'),
       orange: css('--ind-orange'),
