@@ -449,6 +449,8 @@ export const RU: Record<string, string> = {
   'Timeframe, from 1m to 1d': 'Таймфрейм, от 1м до 1д',
   'Price alert at the cursor': 'Ценовой алерт под курсором',
   'Delete the selected drawing': 'Удалить выбранное построение',
+  'Undo the last change to drawings': 'Отменить последнее изменение построений',
+  'Place a point freely, without sticking to candles': 'Поставить точку свободно, без прилипания к свечам',
   'Put the drawing tool down, close a menu': 'Отложить инструмент рисования, закрыть меню',
   'This list': 'Этот список',
   'click': 'клик',

@@ -211,7 +211,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(10);
+  await expect(page.locator('#keys dt')).toHaveCount(12);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
@@ -229,4 +229,29 @@ test('Pulse Setups shows its plan tools and scans the market', async ({ page }) 
   await page.locator('#plan-scan').click();
   // the fake market is flat: nothing to trade, and the scan has to say so rather than stay silent
   await expect(page.locator('#plan-found')).toContainText('No open setups on 5m');
+});
+
+test('a line can be drawn in one drag, undone and removed with a right click', async ({ page }) => {
+  await openTerminal(page);
+  const box = (await page.locator('#chart').boundingBox())!;
+  const at = (fx: number, fy: number) => [box.x + box.width * fx, box.y + box.height * fy] as const;
+  const stored = () => page.evaluate(() => (JSON.parse(localStorage.getItem('pulse.draw.BTCUSDT') ?? '[]') as unknown[]).length);
+
+  await page.locator('#tools [data-tool="trend"]').click();
+  await page.mouse.move(...at(0.3, 0.3));
+  await page.mouse.down();
+  await page.mouse.move(...at(0.5, 0.45), { steps: 6 });
+  await page.mouse.up();
+  // one gesture is one drawing: nothing is left hanging on the cursor
+  await expect.poll(stored).toBe(1);
+  await expect(page.locator('#tools [data-tool="trend"]')).toHaveAttribute('aria-pressed', 'false');
+
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect.poll(stored).toBe(0);
+
+  await page.locator('#tools [data-tool="hline"]').click();
+  await page.mouse.click(...at(0.4, 0.4));
+  await expect.poll(stored).toBe(1);
+  await page.mouse.click(...at(0.6, 0.4), { button: 'right' });
+  await expect.poll(stored).toBe(0);
 });

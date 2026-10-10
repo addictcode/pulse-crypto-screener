@@ -26,6 +26,19 @@ interface Px {
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
 const HIT = 6;
 const HANDLE = 9;
+/** How close to a candle's open, high, low or close a point has to be to stick to it. */
+const MAGNET = 8;
+/** A press that travels this far before release is a drag, and the drawing ends where it ends. */
+const DRAG = 8;
+const UNDO_DEPTH = 40;
+
+interface Candle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
 
 /**
  * Where a moment in time sits on the bar axis, as a fractional bar index. Times before the first
@@ -96,6 +109,7 @@ export class DrawLayer {
   private chart: IChartApi | null = null;
   private series: ISeriesApi<'Candlestick'> | null = null;
   private times: () => number[] = () => [];
+  private bars: () => Candle[] = () => [];
   private step = 60;
 
   private symbol = '';
@@ -104,6 +118,11 @@ export class DrawLayer {
   private draft: Drawing | null = null;
   private selectedId: number | null = null;
   private drag: { drawing: Drawing; handle: number | 'body'; from: Px; original: Point[] } | null = null;
+  /** Where the pointer went down while placing a drawing, to tell a click from a drag. */
+  private pressed: Px | null = null;
+  /** Earlier states of this pair's drawings, newest last, for Ctrl+Z. */
+  private undoStack: string[] = [];
+  private saved = '[]';
   private width = 0;
   private height = 0;
   /** What is drawn right now, for a picture of the chart. */
@@ -122,8 +141,16 @@ export class DrawLayer {
     // capture phase: a click that draws or drags must not also pan the chart underneath
     wrap.addEventListener('pointerdown', (e) => this.onDown(e), true);
     wrap.addEventListener('pointermove', (e) => this.onMove(e), true);
-    wrap.addEventListener('pointerup', () => this.onUp(), true);
-    wrap.addEventListener('pointercancel', () => this.onUp(), true);
+    wrap.addEventListener('pointerup', (e) => this.onUp(e), true);
+    wrap.addEventListener('pointercancel', () => this.onUp(null), true);
+    // right click on a drawing removes it, anywhere else the browser's menu stays
+    wrap.addEventListener('contextmenu', (e) => {
+      const hit = this.activeTool ? null : this.hitDrawing(this.local(e));
+      if (!hit) return;
+      e.preventDefault();
+      this.selectedId = hit.id;
+      this.deleteSelected();
+    });
     window.addEventListener('keydown', (e) => this.onKey(e));
     // every frame, because the chart pans and rescales under the drawings without telling anyone;
     // changes made here also repaint at once, so nothing waits for the next frame
@@ -135,10 +162,11 @@ export class DrawLayer {
   }
 
   /** Called every time the chart is rebuilt (new pair or timeframe). */
-  attach(chart: IChartApi, series: ISeriesApi<'Candlestick'>, times: () => number[], step: number) {
+  attach(chart: IChartApi, series: ISeriesApi<'Candlestick'>, times: () => number[], step: number, bars: () => Candle[] = () => []) {
     this.chart = chart;
     this.series = series;
     this.times = times;
+    this.bars = bars;
     this.step = step;
     this.colors = {
       accent: css('--accent'), amber: css('--ind-amber'), violet: css('--ind-violet'),
@@ -159,6 +187,8 @@ export class DrawLayer {
     if (symbol === this.symbol) return;
     this.symbol = symbol;
     this.drawings = load<Drawing[]>(`draw.${symbol}`, []).filter((d) => d && Array.isArray(d.points) && d.points.length);
+    this.saved = JSON.stringify(this.drawings);
+    this.undoStack = [];
     this.selectedId = null;
     this.draft = null;
     this.drag = null;
@@ -180,6 +210,7 @@ export class DrawLayer {
   setTool(tool: ToolId | null) {
     this.activeTool = tool;
     this.draft = null;
+    this.wrap.style.cursor = '';
     this.wrap.classList.toggle('drawing', tool !== null);
     this.onChange();
   }
@@ -198,6 +229,25 @@ export class DrawLayer {
   }
 
   private commit() {
+    const now = JSON.stringify(this.drawings);
+    if (now !== this.saved) {
+      this.undoStack.push(this.saved);
+      if (this.undoStack.length > UNDO_DEPTH) this.undoStack.shift();
+      this.saved = now;
+    }
+    if (this.symbol) save(`draw.${this.symbol}`, this.drawings);
+    this.onChange();
+    this.render();
+  }
+
+  /** Steps back to how this pair's drawings were before the last change. */
+  undo() {
+    const earlier = this.undoStack.pop();
+    if (earlier === undefined) return;
+    this.drawings = JSON.parse(earlier) as Drawing[];
+    this.saved = earlier;
+    this.selectedId = null;
+    this.draft = null;
     if (this.symbol) save(`draw.${this.symbol}`, this.drawings);
     this.onChange();
     this.render();
@@ -214,13 +264,32 @@ export class DrawLayer {
     return this.series?.priceToCoordinate(price) ?? null;
   }
 
-  private pointAt(at: Px): Point | null {
+  /**
+   * The time and price under a pixel. With `magnet` the point sticks to the nearest open, high,
+   * low or close of the candle it is over when that is a few pixels away, so a line can start
+   * exactly on a wick instead of roughly near it.
+   */
+  private pointAt(at: Px, magnet = false): Point | null {
     if (!this.chart || !this.series) return null;
     const logical = this.chart.timeScale().coordinateToLogical(at.x);
     const price = this.series.coordinateToPrice(at.y);
     if (logical === null || price === null) return null;
     const time = timeAt(this.times(), this.step, logical);
-    return time === null ? null : { t: time, p: price };
+    if (time === null) return null;
+    const bar = magnet ? this.bars()[Math.round(logical)] : undefined;
+    if (bar) {
+      let best: number | null = null;
+      let gap = MAGNET;
+      for (const level of [bar.high, bar.low, bar.open, bar.close]) {
+        const y = this.y(level);
+        if (y !== null && Math.abs(y - at.y) < gap) {
+          gap = Math.abs(y - at.y);
+          best = level;
+        }
+      }
+      if (best !== null) return { t: bar.time, p: best };
+    }
+    return { t: time, p: price };
   }
 
   private pixels(d: Drawing): Px[] | null {
@@ -264,7 +333,9 @@ export class DrawLayer {
     if (this.activeTool) {
       e.preventDefault();
       e.stopPropagation();
-      this.place(at);
+      this.pressed = at;
+      this.wrap.setPointerCapture(e.pointerId);
+      this.place(at, !(e.ctrlKey || e.metaKey));
       return;
     }
     const handle = this.hitHandle(at);
@@ -282,8 +353,8 @@ export class DrawLayer {
     }
   }
 
-  private place(at: Px) {
-    const point = this.pointAt(at);
+  private place(at: Px, magnet: boolean) {
+    const point = this.pointAt(at, magnet);
     if (!point || !this.activeTool) return;
     if (this.activeTool === 'hline') {
       this.finish({ id: 0, type: 'hline', points: [point] });
@@ -306,9 +377,15 @@ export class DrawLayer {
   }
 
   private onMove(e: PointerEvent) {
-    if (!this.draft && !this.drag) return;
     const at = this.local(e);
-    const point = this.pointAt(at);
+    if (!this.draft && !this.drag) {
+      // nothing in hand: the cursor says what a press here would do
+      if (!this.activeTool && this.drawings.length) {
+        this.wrap.style.cursor = this.hitHandle(at) ? 'grab' : this.hitDrawing(at) ? 'pointer' : '';
+      }
+      return;
+    }
+    const point = this.pointAt(at, Boolean(this.draft || this.drag?.handle !== 'body') && !(e.ctrlKey || e.metaKey));
     if (!point) return;
     if (this.draft) {
       this.draft.points[1] = point;
@@ -329,7 +406,17 @@ export class DrawLayer {
     this.render();
   }
 
-  private onUp() {
+  private onUp(e: PointerEvent | null) {
+    const pressed = this.pressed;
+    this.pressed = null;
+    if (this.draft && pressed && e) {
+      // pressed, pulled and let go: the drawing ends here; a plain click waits for the second one
+      const at = this.local(e);
+      if (Math.hypot(at.x - pressed.x, at.y - pressed.y) >= DRAG) {
+        this.place(at, !(e.ctrlKey || e.metaKey));
+        return;
+      }
+    }
     if (!this.drag) return;
     this.drag = null;
     this.commit();
@@ -340,6 +427,10 @@ export class DrawLayer {
     if (target?.matches('input, select, textarea')) return;
     if (e.key === 'Escape' && (this.activeTool || this.draft)) {
       this.setTool(null);
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && this.undoStack.length) {
+      e.preventDefault();
+      this.undo();
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && this.selectedId !== null) {
       e.preventDefault();

@@ -118,7 +118,7 @@ document.getElementById('shot-btn')!.addEventListener('click', saveSnapshot);
 chart.onPick = (symbol) => selectSymbol(symbol);
 
 const keys = document.getElementById('keys') as HTMLDialogElement;
-if (/Mac|iPhone|iPad/.test(navigator.platform)) document.getElementById('keys-mod')!.textContent = '⌘';
+if (/Mac|iPhone|iPad/.test(navigator.platform)) keys.querySelectorAll('.keys-mod').forEach((key) => (key.textContent = '⌘'));
 function showKeys() {
   if (!keys.open) keys.showModal();
 }

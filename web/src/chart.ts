@@ -392,7 +392,7 @@ export class PriceChart {
 
     this.history = data.map((c) => ({ ...c }));
     this.times = data.map((c) => c.time);
-    this.draw.attach(this.chart, this.candles, () => this.times, INTERVALS[this.interval]);
+    this.draw.attach(this.chart, this.candles, () => this.times, INTERVALS[this.interval], () => this.history);
     this.studies = new Studies(this.chart, this.candles, (lines) => this.onBacktest(lines));
     this.studies.setEnabled(this.menu.enabled);
     this.studies.setBars(this.history);
