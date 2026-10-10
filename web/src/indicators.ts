@@ -423,6 +423,10 @@ export interface BacktestStats {
   profitFactor: number;
   netR: number;
   rr: number;
+  /** Average result of one trade, in R: what the strategy is worth per attempt. */
+  avgR: number;
+  /** Deepest fall of the running total from its peak, in R. */
+  drawdown: number;
 }
 
 export interface StrategyResult {
@@ -439,46 +443,62 @@ export interface ExitRules {
   maxBars: number;
 }
 
+export interface Plan {
+  dir: number;
+  stop: number;
+  target: number;
+}
+
 /**
  * Walks forward one position at a time: an entry on bar i fills at its close, then each next
  * bar checks the stop before the target (the pessimistic order when one bar touches both),
  * and a trade that runs out of time closes at market. Results are in R, so a timed-out trade
- * counts for what it really made, not as a full win or loss.
+ * counts for what it really made, not as a full win or loss. `fee` is the exchange's cut per
+ * side as a fraction of the position; it is taken off every result, in R.
  */
-export function backtest(bars: Bar[], entryAt: (i: number) => number, range: Line, rules: ExitRules) {
+export function walk(bars: Bar[], planAt: (i: number) => Plan | null, maxBars: number, fee = 0) {
   const trades: Trade[] = [];
   let pos: Trade | null = null;
+  const result = (p: Trade, exit: number) => {
+    const risk = Math.abs(p.entry - p.stop);
+    return ((exit - p.entry) * p.dir) / risk - (2 * fee * p.entry) / risk;
+  };
   for (let i = 0; i < bars.length; i++) {
     if (pos && i > pos.entryIndex) {
       const b = bars[i];
-      const risk = Math.abs(pos.entry - pos.stop);
       let exit: number | null = null;
       if (pos.dir === 1 ? b.low <= pos.stop : b.high >= pos.stop) exit = pos.stop;
       else if (pos.dir === 1 ? b.high >= pos.target : b.low <= pos.target) exit = pos.target;
-      else if (i - pos.entryIndex >= rules.maxBars) exit = b.close;
+      else if (i - pos.entryIndex >= maxBars) exit = b.close;
       if (exit !== null) {
-        trades.push({ ...pos, exitIndex: i, r: ((exit - pos.entry) * pos.dir) / risk, open: false });
+        trades.push({ ...pos, exitIndex: i, r: result(pos, exit), open: false });
         pos = null;
       }
       continue;
     }
-    if (pos || range[i] === null || range[i]! <= 0) continue;
-    const dir = entryAt(i);
-    if (!dir) continue;
-    const entry = bars[i].close;
-    pos = {
-      dir,
-      entryIndex: i,
-      exitIndex: bars.length - 1,
-      entry,
-      stop: entry - dir * rules.stopAtr * range[i]!,
-      target: entry + dir * rules.targetAtr * range[i]!,
-      r: 0,
-      open: true,
-    };
+    if (pos) continue;
+    const plan = planAt(i);
+    if (!plan) continue;
+    pos = { ...plan, entryIndex: i, exitIndex: bars.length - 1, entry: bars[i].close, r: 0, open: true };
   }
-  if (pos) pos.r = ((bars[bars.length - 1].close - pos.entry) * pos.dir) / Math.abs(pos.entry - pos.stop);
-  return { trades, open: pos, stats: statsOf(trades, rules) };
+  if (pos) pos.r = result(pos, bars[bars.length - 1].close);
+  return { trades, open: pos };
+}
+
+/** The walk with stop and target set as multiples of the bar's range (ATR). */
+export function backtest(bars: Bar[], entryAt: (i: number) => number, range: Line, rules: ExitRules) {
+  const { trades, open } = walk(
+    bars,
+    (i) => {
+      if (range[i] === null || range[i]! <= 0) return null;
+      const dir = entryAt(i);
+      if (!dir) return null;
+      const entry = bars[i].close;
+      return { dir, stop: entry - dir * rules.stopAtr * range[i]!, target: entry + dir * rules.targetAtr * range[i]! };
+    },
+    rules.maxBars,
+  );
+  return { trades, open, stats: statsOf(trades, rules) };
 }
 
 export function statsOf(trades: Trade[], rules: ExitRules): BacktestStats | null {
@@ -487,6 +507,14 @@ export function statsOf(trades: Trade[], rules: ExitRules): BacktestStats | null
   const gross = won.reduce((s, t) => s + t.r, 0);
   const lost = -trades.filter((t) => t.r < 0).reduce((s, t) => s + t.r, 0);
   const rr = rules.targetAtr / rules.stopAtr;
+  let total = 0;
+  let peak = 0;
+  let drawdown = 0;
+  for (const t of trades) {
+    total += t.r;
+    peak = Math.max(peak, total);
+    drawdown = Math.max(drawdown, peak - total);
+  }
   return {
     trades: trades.length,
     winRate: (won.length / trades.length) * 100,
@@ -494,6 +522,8 @@ export function statsOf(trades: Trade[], rules: ExitRules): BacktestStats | null
     profitFactor: lost > 0 ? gross / lost : gross > 0 ? Infinity : 0,
     netR: gross - lost,
     rr,
+    avgR: (gross - lost) / trades.length,
+    drawdown,
   };
 }
 
@@ -552,4 +582,118 @@ export function squeezeStrategy(bars: Bar[]): StrategyResult {
     return 0;
   };
   return { ...backtest(bars, entryAt, range, SQUEEZE), tooFew: false };
+}
+
+// ---------- Pulse Setups ----------
+
+export const SETUP = {
+  mid: 50,
+  slow: 200,
+  /** The range price has to leave, in bars. */
+  range: 20,
+  /** How recently volatility must have been coiled, in bars. */
+  coil: 6,
+  volume: 1.5,
+  /** Bars whose extreme the stop hides behind, and the room it gets, in ATR. */
+  swing: 5,
+  minStop: 1.2,
+  maxStop: 2.5,
+  /** A stop closer than this share of price costs too much in fees to be worth trading. */
+  minRisk: 0.004,
+  rr: 3,
+  maxBars: 60,
+  /** Taker fee per side on Binance futures without discounts. */
+  fee: 0.0005,
+};
+
+/** What the setup needs, one answer per condition, for the bar asked about. */
+export interface SetupState {
+  /** 1 when the trend is up, -1 when down, 0 when there is none to trade with. */
+  trend: number;
+  /** Volatility was squeezed within the last few bars. */
+  coil: boolean;
+  /** The bar closed outside the recent range, in the direction of the trend. */
+  breakout: boolean;
+  volume: boolean;
+  /** The stop is far enough for fees not to eat the trade. */
+  room: boolean;
+}
+
+export interface SetupResult extends StrategyResult {
+  /** The conditions on the latest bar: what is in place and what the setup still waits for. */
+  state: SetupState | null;
+  /** Running total in R after each closed trade. */
+  equity: number[];
+}
+
+/**
+ * Pulse Setups: join a trend as it leaves a coil. The trend is the 50 EMA above (below) the 200
+ * with price on the same side; the coil is Bollinger bands inside the Keltner channel a few bars
+ * back; the entry is a close outside the 20-bar range on a burst of volume. The stop goes behind
+ * the last swing, the target three times as far the other way, so one win pays for three losses
+ * and the win rate needed to break even is 25%. Results are after fees.
+ */
+export function setupsStrategy(bars: Bar[]): SetupResult {
+  const { mid, slow, coil, swing, minStop, maxStop, minRisk, rr, maxBars, fee } = SETUP;
+  if (bars.length < slow + 30) return { trades: [], open: null, stats: null, tooFew: true, state: null, equity: [] };
+  const closes = bars.map((b) => b.close);
+  const e50 = ema(closes, mid);
+  const e200 = ema(closes, slow);
+  const unit = atr(bars, 14);
+  const channel = atr(bars, 20);
+  const bands = bollinger(closes, 20, 2);
+  const volumeAvg = sma(bars.map((b) => b.volume), 20);
+  const squeezed = bars.map((_, i) => {
+    const m = bands.mid[i];
+    if (m === null || channel[i] === null) return false;
+    return bands.upper[i]! < m + 1.5 * channel[i]! && bands.lower[i]! > m - 1.5 * channel[i]!;
+  });
+
+  /** The stop distance for an entry on bar i in direction dir, before the fee check. */
+  const riskAt = (i: number, dir: number) => {
+    let extreme = dir === 1 ? Infinity : -Infinity;
+    for (let k = Math.max(0, i - swing); k <= i; k++) {
+      extreme = dir === 1 ? Math.min(extreme, bars[k].low) : Math.max(extreme, bars[k].high);
+    }
+    const behind = Math.abs(closes[i] - extreme) + 0.2 * unit[i]!;
+    return Math.min(Math.max(behind, minStop * unit[i]!), maxStop * unit[i]!);
+  };
+
+  const stateAt = (i: number): SetupState | null => {
+    if (i < slow + 10 || e200[i] === null || unit[i] === null || volumeAvg[i] === null) return null;
+    const up = e50[i]! > e200[i]! && closes[i] > e200[i]!;
+    const down = e50[i]! < e200[i]! && closes[i] < e200[i]!;
+    const trend = up ? 1 : down ? -1 : 0;
+    let high = -Infinity;
+    let low = Infinity;
+    for (let k = i - SETUP.range; k < i; k++) {
+      high = Math.max(high, bars[k].high);
+      low = Math.min(low, bars[k].low);
+    }
+    return {
+      trend,
+      coil: squeezed.slice(Math.max(0, i - coil), i).some(Boolean),
+      breakout: trend === 1 ? closes[i] > high : trend === -1 ? closes[i] < low : false,
+      volume: bars[i].volume >= volumeAvg[i]! * SETUP.volume,
+      room: trend !== 0 && riskAt(i, trend) / closes[i] >= minRisk,
+    };
+  };
+
+  const planAt = (i: number): Plan | null => {
+    const s = stateAt(i);
+    if (!s || !s.trend || !s.coil || !s.breakout || !s.volume || !s.room) return null;
+    const risk = riskAt(i, s.trend);
+    return { dir: s.trend, stop: closes[i] - s.trend * risk, target: closes[i] + s.trend * risk * rr };
+  };
+
+  const { trades, open } = walk(bars, planAt, maxBars, fee);
+  let total = 0;
+  return {
+    trades,
+    open,
+    stats: statsOf(trades, { stopAtr: 1, targetAtr: rr, maxBars }),
+    tooFew: false,
+    state: stateAt(bars.length - 1),
+    equity: trades.map((t) => (total += t.r)),
+  };
 }

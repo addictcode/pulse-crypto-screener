@@ -216,3 +216,17 @@ test('a question mark lists the shortcuts', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
 });
+
+test('Pulse Setups shows its plan tools and scans the market', async ({ page }) => {
+  await openTerminal(page);
+  await page.locator('#ind-btn').click();
+  await page.locator('#ind-menu').getByText('Pulse Setups').click();
+
+  await page.keyboard.press('Escape');
+
+  await expect(page.locator('#plan-tools')).toBeVisible();
+  await expect(page.locator('#bt')).toContainText('Pulse Setups');
+  await page.locator('#plan-scan').click();
+  // the fake market is flat: nothing to trade, and the scan has to say so rather than stay silent
+  await expect(page.locator('#plan-found')).toContainText('No open setups on 5m');
+});

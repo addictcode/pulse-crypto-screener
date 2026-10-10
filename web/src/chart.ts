@@ -16,13 +16,14 @@ import {
 import type { Alerts } from './alerts';
 import { candles, positioning } from './api';
 import { DrawLayer, type ToolId } from './draw';
-import { priceDigits, px, usd } from './format';
+import { base, priceDigits, px, usd } from './format';
 import { t } from './i18n';
 import { ICONS, type IconName } from './icons';
 import { IndicatorMenu, renderBacktest } from './indicator-menu';
+import { setupsStrategy, type Trade } from './indicators';
 import type { Market } from './market';
 import { load, save } from './storage';
-import { Studies } from './studies';
+import { Studies, type BacktestLine } from './studies';
 import type { CandleDto, Liquidation, Signal } from './types';
 
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
@@ -94,6 +95,11 @@ export class PriceChart {
 
   private readonly market: Market;
   private readonly alerts: Alerts;
+  /** The trade Pulse Setups holds on this chart, if any: what the position size is worked out for. */
+  private planTrade: Trade | null = null;
+  private scanning = false;
+  /** Set by the page: a pair picked from the scan results. */
+  onPick: (symbol: string) => void = () => undefined;
 
   constructor(market: Market, alerts: Alerts) {
     this.market = market;
@@ -101,6 +107,18 @@ export class PriceChart {
     alerts.changed.on(() => this.syncAlerts());
     this.draw = new DrawLayer(this.el, () => this.renderTools());
     this.renderTools();
+    const risk = document.getElementById('plan-risk') as HTMLInputElement;
+    risk.value = String(load('planRisk', 50));
+    risk.addEventListener('input', () => {
+      const value = Number(risk.value.replace(',', '.'));
+      if (Number.isFinite(value) && value > 0) save('planRisk', value);
+      this.renderSize();
+    });
+    document.getElementById('plan-scan')!.addEventListener('click', () => void this.scan());
+    document.getElementById('plan-found')!.addEventListener('click', (e) => {
+      const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-sym]');
+      if (hit) this.onPick(hit.dataset.sym!);
+    });
     this.toolsEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
@@ -139,6 +157,73 @@ export class PriceChart {
     this.symbol = symbol;
     this.draw.setSymbol(symbol);
     void this.load();
+  }
+
+  private onBacktest(lines: BacktestLine[]) {
+    renderBacktest(this.backtestEl, lines);
+    const setups = lines.find((l) => l.id === 'setups');
+    document.getElementById('plan-tools')!.hidden = !setups;
+    this.planTrade = setups?.result.open ?? null;
+    this.renderSize();
+  }
+
+  /** How much to buy or sell so that the stop costs exactly the chosen sum. */
+  private renderSize() {
+    const out = document.getElementById('plan-size')!;
+    const risk = load('planRisk', 50);
+    const trade = this.planTrade;
+    if (!trade) {
+      out.textContent = '';
+      return;
+    }
+    const quantity = risk / Math.abs(trade.entry - trade.stop);
+    out.textContent = t('size {q} {coin}, {usd} at entry', {
+      q: quantity >= 100 ? quantity.toFixed(0) : quantity.toPrecision(3),
+      coin: base(this.symbol),
+      usd: usd(quantity * trade.entry),
+    });
+  }
+
+  /**
+   * Runs Pulse Setups over the most traded pairs on the current timeframe and lists the ones with
+   * a trade open, newest first. A few requests at a time: the candles come from the same API as
+   * the chart's own.
+   */
+  private async scan() {
+    if (this.scanning) return;
+    this.scanning = true;
+    const found = document.getElementById('plan-found')!;
+    const button = document.getElementById('plan-scan') as HTMLButtonElement;
+    button.disabled = true;
+    const symbols = [...this.market.rows.values()].sort((a, b) => b.vol24h - a.vol24h).slice(0, 30).map((r) => r.symbol);
+    const interval = this.interval;
+    const hits: Array<{ symbol: string; trade: Trade; age: number }> = [];
+    let done = 0;
+    const next = async (): Promise<void> => {
+      const symbol = symbols.shift();
+      if (!symbol) return;
+      try {
+        const bars = await candles(symbol, interval, HISTORY);
+        const open = setupsStrategy(bars).open;
+        if (open) hits.push({ symbol, trade: open, age: bars.length - 1 - open.entryIndex });
+      } catch {
+        // one pair that did not load is not worth failing the scan for
+      }
+      found.textContent = t('scanning {n} of {m}', { n: ++done, m: 30 });
+      return next();
+    };
+    await Promise.all([next(), next(), next(), next()]);
+    hits.sort((a, b) => a.age - b.age);
+    found.innerHTML = hits.length
+      ? hits
+          .map(
+            ({ symbol, trade, age }) =>
+              `<button type="button" data-sym="${symbol}"><b>${base(symbol)}</b><span class="${trade.dir === 1 ? 'up' : 'down'}">${trade.dir === 1 ? t('Long') : t('Short')}</span><span class="${trade.r >= 0 ? 'up' : 'down'}">${trade.r >= 0 ? '+' : ''}${trade.r.toFixed(1)}R</span><span class="mute">${t('{n} bars ago', { n: age })}</span></button>`,
+          )
+          .join('')
+      : `<span class="mute">${t('No open setups on {tf} among them right now', { tf: interval })}</span>`;
+    button.disabled = false;
+    this.scanning = false;
   }
 
   /**
@@ -307,7 +392,7 @@ export class PriceChart {
     this.history = data.map((c) => ({ ...c }));
     this.times = data.map((c) => c.time);
     this.draw.attach(this.chart, this.candles, () => this.times, INTERVALS[this.interval]);
-    this.studies = new Studies(this.chart, this.candles, (lines) => renderBacktest(this.backtestEl, lines));
+    this.studies = new Studies(this.chart, this.candles, (lines) => this.onBacktest(lines));
     this.studies.setEnabled(this.menu.enabled);
     this.studies.setBars(this.history);
     void this.loadPositioning();

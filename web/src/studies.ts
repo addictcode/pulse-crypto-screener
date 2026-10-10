@@ -29,6 +29,7 @@ import {
   macd,
   rsi,
   rsi2Strategy,
+  setupsStrategy,
   smartTrail,
   squeezeStrategy,
   structure,
@@ -45,7 +46,7 @@ export type StudyId =
   | 'ema' | 'bb' | 'vwap' | 'st' | 'smart'
   | 'fvg' | 'ob' | 'ms' | 'div'
   | 'rsi' | 'macd' | 'hw'
-  | 'rsi2' | 'squeeze'
+  | 'setups' | 'rsi2' | 'squeeze'
   | 'oi' | 'ls' | 'taker' | 'fund';
 
 /** Studies drawn from the exchange's statistics rather than from the candles on screen. */
@@ -71,6 +72,7 @@ export const STUDIES: StudyInfo[] = [
   { id: 'rsi', name: 'RSI 14', hint: 'own pane', group: 'Oscillators' },
   { id: 'macd', name: 'MACD 12, 26, 9', hint: 'own pane', group: 'Oscillators' },
   { id: 'hw', name: 'HyperWave + money flow', hint: 'momentum, turning points', group: 'Oscillators' },
+  { id: 'setups', name: 'Pulse Setups', hint: 'trade plan: entry, stop, 3R target, after fees', group: 'Strategies' },
   { id: 'rsi2', name: 'RSI-2 pullback', hint: 'entries, stop, target, backtest', group: 'Strategies' },
   { id: 'squeeze', name: 'Squeeze breakout', hint: 'entries, stop, target, backtest', group: 'Strategies' },
   { id: 'oi', name: 'Open interest', hint: 'in USD, over time', group: 'Positioning' },
@@ -234,6 +236,7 @@ interface Palette {
 }
 
 export interface BacktestLine {
+  id: StudyId;
   name: string;
   result: StrategyResult;
 }
@@ -531,13 +534,20 @@ export class Studies {
     }
 
     const strategies: Array<[StudyId, string, (b: Bar[]) => StrategyResult, string, string]> = [
+      ['setups', 'Pulse Setups', setupsStrategy, 'Long', 'Short'],
       ['rsi2', 'RSI-2', rsi2Strategy, 'Long', 'Short'],
       ['squeeze', 'Squeeze', squeezeStrategy, 'Break', 'Break'],
     ];
     for (const [id, name, run, longText, shortText] of strategies) {
       if (!on(id)) continue;
       const result = run(bars);
-      backtests.push({ name, result });
+      backtests.push({ id, name, result });
+      if (id === 'setups' && result.open) {
+        // the open trade as two bands: what is risked and what is aimed for
+        const o = result.open;
+        shapes.push({ kind: 'zone', from: o.entryIndex, top: Math.max(o.entry, o.target), bottom: Math.min(o.entry, o.target), color: p.up });
+        shapes.push({ kind: 'zone', from: o.entryIndex, top: Math.max(o.entry, o.stop), bottom: Math.min(o.entry, o.stop), color: p.down });
+      }
       const all = result.open ? [...result.trades, result.open] : result.trades;
       for (const t of all.slice(-30)) {
         markers.push(

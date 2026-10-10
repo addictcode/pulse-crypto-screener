@@ -8,10 +8,13 @@ import {
   fairValueGaps,
   macd,
   rsi,
+  SETUP,
+  setupsStrategy,
   sma,
   structure,
   supertrend,
   vwap,
+  walk,
   type Bar,
 } from './indicators';
 
@@ -142,5 +145,52 @@ describe('backtest', () => {
     expect(trades).toEqual([]);
     expect(open).toMatchObject({ entryIndex: 0, open: true });
     expect(open!.r).toBeCloseTo(0.4);
+  });
+});
+
+describe('fees and Pulse Setups', () => {
+  it('takes the fee off every result, in R', () => {
+    // long from 100 with the stop at 99: 1% of price is risked, so 0.05% a side costs 0.1R
+    const bars = [bar(0, 100, 100, 100, 100), bar(1, 100, 103.5, 99.5, 103)];
+    const plan = (i: number) => (i === 0 ? { dir: 1, stop: 99, target: 103 } : null);
+    expect(walk(bars, plan, 10).trades[0].r).toBeCloseTo(3, 9);
+    expect(walk(bars, plan, 10, 0.0005).trades[0].r).toBeCloseTo(2.9, 9);
+  });
+
+  it('asks for more history than a 200-bar average needs', () => {
+    expect(setupsStrategy(closes(Array.from({ length: 120 }, (_, i) => 100 + i))).tooFew).toBe(true);
+  });
+
+  /** A market that trends, rests in a narrow range and breaks out of it on volume, over and over. */
+  function coilingTrend(): Bar[] {
+    const bars: Bar[] = [];
+    let price = 100;
+    let seed = 7;
+    const noise = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5);
+    for (let i = 0; i < 900; i++) {
+      const phase = i % 60;
+      const burst = phase === 40;
+      const move = burst ? 1.6 : phase > 40 ? 0.25 + noise() * 0.5 : phase > 25 ? noise() * 0.08 : 0.12 + noise() * 0.6;
+      const open = price;
+      price += move;
+      const spread = phase > 25 && phase < 40 ? 0.06 : 0.4;
+      bars.push(bar(i, open, Math.max(open, price) + spread, Math.min(open, price) - spread, price, burst ? 5000 : 1000));
+    }
+    return bars;
+  }
+
+  it('aims three times as far as it risks, with the stop on the losing side', () => {
+    const { trades, open, stats, equity } = setupsStrategy(coilingTrend());
+    const all = open ? [...trades, open] : trades;
+    expect(all.length).toBeGreaterThan(3);
+    for (const trade of all) {
+      const risk = (trade.entry - trade.stop) * trade.dir;
+      expect(risk).toBeGreaterThan(0);
+      expect((trade.target - trade.entry) * trade.dir).toBeCloseTo(risk * SETUP.rr, 9);
+      expect(risk / trade.entry).toBeGreaterThanOrEqual(SETUP.minRisk);
+    }
+    expect(stats!.breakEven).toBeCloseTo(25, 9);
+    expect(equity).toHaveLength(trades.length);
+    expect(equity.at(-1)).toBeCloseTo(stats!.netR, 9);
   });
 });

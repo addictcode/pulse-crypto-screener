@@ -300,6 +300,25 @@ body[data-view="screener"][data-focus] .desk > .panel:not(.instrument) { display
 .bt p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; font-size: 11.5px; line-height: 1.7; color: var(--ink-2); }
 .bt b { font-weight: 600; color: var(--ink); }
 .bt .open { margin-left: auto; }
+.plan { padding: 6px 0 4px; }
+.plan p + p { margin-top: 1px; }
+.plan i { font-style: normal; }
+.plan-side { padding: 0 7px; border-radius: 4px; font-weight: 600; background: color-mix(in srgb, currentColor 14%, transparent); }
+.plan-check { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-3); }
+.plan-check::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; }
+.plan-check.met { color: var(--ink); }
+.plan-check.met::before { background: var(--up); border-color: var(--up); }
+.plan-verdict { margin-left: auto; color: var(--ink-3); }
+.plan-tools { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 0 14px 8px; font-size: 11.5px; color: var(--ink-2); }
+.plan-tools label { display: inline-flex; align-items: center; gap: 6px; }
+.plan-tools input { width: 64px; height: 24px; padding: 0 7px; background: var(--bg-1); border: 1px solid var(--rule-strong); border-radius: 5px; color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; text-align: right; }
+.plan-tools output { color: var(--ink); font-variant-numeric: tabular-nums; }
+.plan-tools .btn { height: 24px; margin-left: auto; }
+.plan-found { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.plan-found:empty { display: none; }
+.plan-found button { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 9px; border: 1px solid var(--rule); border-radius: 5px; color: var(--ink-2); font-size: 11.5px; font-variant-numeric: tabular-nums; transition: border-color .15s, background .15s; }
+.plan-found button:hover { border-color: var(--rule-strong); background: var(--bg-2); }
+.plan-found b { color: var(--ink); font-weight: 600; }
 
 .chart-area { flex: 1; min-height: 0; display: grid; grid-template-columns: 38px minmax(0, 1fr); border-top: 1px solid var(--rule-soft); }
 .tools { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; border-right: 1px solid var(--rule-soft); }
