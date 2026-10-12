@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +35,9 @@ class SetupJournalIT {
         String symbol = "STP" + timeframe.substring(0, 4).toUpperCase() + "USDT";
         market.onInstruments(List.of(new Instrument(symbol, "STP", "USDT")));
         price(symbol, 100.2);
-        Instant opened = Instant.now();
+        // whole milliseconds: the database keeps microseconds and rounds, so a time with nanoseconds
+        // can come back a hair later than it went in
+        Instant opened = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         List<Object> published = new ArrayList<>();
         SetupTracker tracker = new SetupTracker(journal, market, published::add);
 
