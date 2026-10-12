@@ -4,6 +4,8 @@
 #   deploy/home.sh url       only show the current address
 #   deploy/home.sh publish   point the permanent link (GitHub Pages) at the current address
 #   deploy/home.sh watch     keep it online: restart a dead tunnel and republish, until Ctrl+C
+#   deploy/home.sh autostart      run watch by itself whenever this user is logged in (macOS)
+#   deploy/home.sh autostart-off  undo that
 #   deploy/home.sh stop      stop everything (data stays in Docker volumes)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,6 +14,7 @@ cd "$(dirname "$0")/.."
 # GitHub Pages page (index.html in the repository root) that reads the current address from
 # url.txt on this branch and forwards the visitor there.
 LIVE_BRANCH=live
+AGENT=dev.pulse.home
 
 compose() {
   docker compose -p pulse -f compose.prod.yaml -f compose.tunnel.yaml "$@"
@@ -59,10 +62,15 @@ case "${1:-up}" in
   publish) publish "$(url)" ;;
   watch)
     current=$(url)
-    alive "$current" || { echo "$current does not answer yet, waiting"; sleep 20; }
-    publish "$current"
-    echo "watching $current (Ctrl+C to stop; run under 'caffeinate -is' so the Mac stays awake)"
     failures=0
+    if alive "$current"; then
+      publish "$current" || true
+    else
+      # after a night asleep the old tunnel is gone: do not wait three minutes to notice
+      echo "$current does not answer, the tunnel will be restarted"
+      failures=2
+    fi
+    echo "watching $current (the link opens the demo while this machine sleeps)"
     while sleep 60; do
       if alive "$current"; then
         failures=0
@@ -112,5 +120,33 @@ ENV
     echo "Pulse is at: $address"
     echo "Permanent link: deploy/home.sh publish (once), or deploy/home.sh watch to keep it current"
     ;;
-  *) echo "usage: deploy/home.sh [up|url|publish|watch|stop]" >&2; exit 2 ;;
+  autostart)
+    # A LaunchAgent of the logged-in user: it has the keychain (for the GitHub CLI) and starts
+    # again by itself if Docker was not up yet or the network was down.
+    plist="$HOME/Library/LaunchAgents/$AGENT.plist"
+    mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+    cat > "$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$AGENT</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$PWD/deploy/home.sh</string><string>watch</string></array>
+  <key>EnvironmentVariables</key><dict><key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>$HOME/Library/Logs/pulse-home.log</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/pulse-home.log</string>
+</dict></plist>
+PLIST
+    launchctl bootout "gui/$(id -u)/$AGENT" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$plist"
+    echo "watch now starts by itself; log: ~/Library/Logs/pulse-home.log; undo: deploy/home.sh autostart-off"
+    ;;
+  autostart-off)
+    launchctl bootout "gui/$(id -u)/$AGENT" 2>/dev/null || true
+    rm -f "$HOME/Library/LaunchAgents/$AGENT.plist"
+    echo "autostart removed"
+    ;;
+  *) echo "usage: deploy/home.sh [up|url|publish|watch|autostart|autostart-off|stop]" >&2; exit 2 ;;
 esac
