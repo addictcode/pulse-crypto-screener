@@ -69,8 +69,9 @@ public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Densi
     /**
      * @param timeframes candle sizes on which Pulse Setups are looked for
      * @param pairs      how many of the most traded pairs are watched
+     * @param maxOpen    how many trades may be open at once across all pairs and timeframes
      */
-    public record Setups(boolean enabled, List<String> timeframes, int pairs) {
+    public record Setups(boolean enabled, List<String> timeframes, int pairs, int maxOpen) {
     }
 
     /**

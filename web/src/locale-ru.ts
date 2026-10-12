@@ -26,7 +26,8 @@ export const RU: Record<string, string> = {
   'Got it': 'Понятно',
   'Journal of Pulse Setups': 'Журнал Pulse Setups',
   'Pulse Setups, live record': 'Pulse Setups, живой счёт',
-  'The server takes every setup it finds at the close of a 15m or 1h candle and follows it to the stop, the target or the time limit. Results are in R, the distance to the stop, after fees. Nothing here is advice, and no orders are placed.': 'Сервер берёт каждый сетап, который находит на закрытии свечи 15м или 1ч, и ведёт его до стопа, тейка или лимита времени. Результаты в R (расстояние до стопа), после комиссий. Это не совет, и ордера никуда не отправляются.',
+  'At the close of every 15m and 1h candle the server looks for setups across the most traded pairs and follows each one to the stop, the target or the time limit. It holds one trade per coin and six at most, because breakouts that come in a burst win or lose together. Results are in R, the distance to the stop, after fees. Nothing here is advice, and no orders are placed.':
+    'На закрытии каждой свечи 15м и 1ч сервер ищет сетапы по самым торгуемым парам и ведёт каждый до стопа, тейка или лимита времени. Он держит одну сделку на монету и не больше шести сразу: пробои, которые приходят пачкой, выигрывают и проигрывают вместе. Результаты в R (расстояние до стопа), после комиссий. Это не совет, и ордера никуда не отправляются.',
   'Open now': 'Открыты сейчас',
   'Opened': 'Открыт',
   'Frame': 'ТФ',

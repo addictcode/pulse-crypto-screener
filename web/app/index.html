@@ -210,7 +210,7 @@
 
   <section class="panel setupboard" id="setups" data-i18n-attrs="aria-label" aria-label="Journal of Pulse Setups">
     <div class="p-head"><h2 class="p-title" data-i18n>Pulse Setups, live record</h2><span class="p-meta" id="su-meta"></span></div>
-    <p class="su-note" data-i18n>The server takes every setup it finds at the close of a 15m or 1h candle and follows it to the stop, the target or the time limit. Results are in R, the distance to the stop, after fees. Nothing here is advice, and no orders are placed.</p>
+    <p class="su-note" data-i18n>At the close of every 15m and 1h candle the server looks for setups across the most traded pairs and follows each one to the stop, the target or the time limit. It holds one trade per coin and six at most, because breakouts that come in a burst win or lose together. Results are in R, the distance to the stop, after fees. Nothing here is advice, and no orders are placed.</p>
     <dl class="su-stats" id="su-stats"></dl>
     <div class="table-wrap">
       <table class="grid su-grid">

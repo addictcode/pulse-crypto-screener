@@ -69,7 +69,7 @@ public class SetupScanner {
             }
             int found = 0;
             for (String symbol : market.topByVolume(config.pairs())) {
-                if (!journal.holds(symbol, timeframe) && judge(symbol, timeframe, step, closed, now)) {
+                if (room(journal.open(), symbol, config.maxOpen()) && judge(symbol, timeframe, step, closed, now)) {
                     found++;
                 }
             }
@@ -98,6 +98,15 @@ public class SetupScanner {
             log.warn("Setups: {} {} could not be judged: {}", symbol, timeframe, e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Whether one more trade may be taken on this pair: one at a time per coin whatever the
+     * timeframe, and no more than {@code maxOpen} in the whole book. Pairs are judged from the most
+     * traded down, so when a burst of breakouts hits the cap it is the largest markets that get in.
+     */
+    static boolean room(List<SetupTrade> open, String symbol, int maxOpen) {
+        return open.size() < maxOpen && open.stream().noneMatch(trade -> trade.symbol().equals(symbol));
     }
 
     /** By the time the candle was judged the price had already run to the stop or the target. */

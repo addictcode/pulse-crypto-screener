@@ -81,6 +81,11 @@ pulse:
     enabled: ${PULSE_SETUPS_ENABLED:true}
     timeframes: [15m, 1h]
     pairs: 40
+    # Breakouts come in bursts when the whole market moves, and trades taken in one burst win or
+    # lose together. Over 30 days and 40 pairs a cap of 5 to 8 open trades cut the worst losing
+    # run two to four times and kept both halves of the period in profit; without it the second
+    # half made nothing.
+    max-open: 6
   signals:
     enabled: true
     scan-interval-ms: 2000
