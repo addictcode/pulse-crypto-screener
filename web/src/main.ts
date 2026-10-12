@@ -17,6 +17,7 @@ import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
 import { SetupJournal, welcomeOnce } from './setups';
+import { Settings } from './settings';
 import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
@@ -151,6 +152,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   })),
   { label: t('Save the chart as a picture'), icon: 'camera', hint: 'S', run: saveSnapshot },
   { label: t('Keyboard shortcuts'), icon: 'keyboard', hint: '?', run: showKeys },
+  { label: t('Settings'), icon: 'gear', hint: ',', run: () => settings.open() },
   {
     label: t('Copy a link to this chart'),
     icon: 'link',
@@ -160,6 +162,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
 ]);
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
 welcomeOnce();
+const settings = new Settings(welcomeOnce);
 
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -179,6 +182,10 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === '?') {
     showKeys();
+    return;
+  }
+  if (e.key === ',') {
+    settings.open();
     return;
   }
   const timeframe = Object.keys(INTERVALS)[Number(e.key) - 1];

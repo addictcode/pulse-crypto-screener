@@ -14,6 +14,7 @@ import command from '@phosphor-icons/core/assets/regular/command.svg?raw';
 import cornersIn from '@phosphor-icons/core/assets/regular/corners-in.svg?raw';
 import cornersOut from '@phosphor-icons/core/assets/regular/corners-out.svg?raw';
 import cursor from '@phosphor-icons/core/assets/regular/cursor.svg?raw';
+import gear from '@phosphor-icons/core/assets/regular/gear-six.svg?raw';
 import keyboard from '@phosphor-icons/core/assets/regular/keyboard.svg?raw';
 import lineSegment from '@phosphor-icons/core/assets/regular/line-segment.svg?raw';
 import link from '@phosphor-icons/core/assets/regular/link.svg?raw';
@@ -66,6 +67,7 @@ export const ICONS = {
   camera: icon(camera),
   check: icon(check),
   keyboard: icon(keyboard),
+  gear: icon(gear),
 };
 
 export type IconName = keyof typeof ICONS;

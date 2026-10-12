@@ -211,7 +211,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(12);
+  await expect(page.locator('#keys dt')).toHaveCount(13);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
@@ -296,4 +296,31 @@ test('a second watchlist takes its own pairs', async ({ page }) => {
   await page.locator('#presets .preset.watch').nth(1).click();
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(1);
   await expect(page.locator('#rows')).toContainText('WIF');
+});
+
+test('settings keep the risk, and a saved file brings everything back', async ({ page }) => {
+  await openTerminal(page);
+  await page.keyboard.press(',');
+  const sheet = page.locator('#settings');
+  await expect(sheet).toBeVisible();
+  await page.locator('#set-risk').fill('120');
+  await page.locator('#set-risk').blur();
+  expect(await page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBe('120');
+
+  const download = page.waitForEvent('download');
+  await page.locator('#set-export').click();
+  const file = await (await download).path();
+  expect((await download).suggestedFilename()).toMatch(/^pulse-settings-\d{4}-\d\d-\d\d\.json$/);
+
+  // erase everything (two clicks), then load the file back
+  await page.locator('#set-reset').click();
+  await expect(page.locator('#set-reset')).toHaveText('Click again to erase everything');
+  await page.locator('#set-reset').click();
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
+  expect(await page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBeNull();
+
+  await page.locator('#settings-btn').click();
+  await page.locator('#set-file').setInputFiles(file);
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBe('120');
 });
