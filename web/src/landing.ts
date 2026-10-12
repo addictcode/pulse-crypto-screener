@@ -1,6 +1,5 @@
-// the width axis is what lets the big lines run condensed
-import '@fontsource-variable/martian-mono/wdth.css';
-import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/unbounded';
+import '@fontsource-variable/onest';
 import './theme.css';
 import './landing.css';
 

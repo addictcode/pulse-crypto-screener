@@ -1,34 +1,33 @@
-/* Pulse terminal. One quiet dark surface, hairlines instead of boxes, one accent for
+/* Pulse terminal. One quiet dark surface, hairlines instead of boxes, white for
    "this is selected". The landing page keeps its own louder world in theme.css. */
 
 :root {
-  --bg-0: #0a0c11;
-  --bg-1: #0e1116;
-  --bg-2: #151a22;
-  --bg-3: #1c222d;
-  --bg-sel: rgba(255, 176, 0, .08);
-  --rule: #1a1f29;
-  --rule-soft: #141820;
-  --rule-strong: #2b3341;
+  --bg-0: #070708;
+  --bg-1: #0b0b0d;
+  --bg-2: #131316;
+  --bg-3: #1b1c20;
+  --bg-sel: rgba(255, 255, 255, .06);
+  --rule: #1a1b1f;
+  --rule-soft: #131417;
+  --rule-strong: #2c2e34;
 
-  --ink: #e7eaf0;
-  --ink-2: #a3abba;
-  --ink-3: #7c8595;
+  --ink: #d9dbe0;
+  --ink-2: #9a9da5;
+  --ink-3: #777b84;
 
   --up: #2ebd85;
   --down: #f6465d;
-  --accent: #ffb000;
-  --accent-soft: rgba(255, 176, 0, .45);
+  /* no hue of its own: "look here" is the brightest thing on a dark screen, colour is left to the market */
+  --accent: #ffffff;
+  --accent-soft: rgba(255, 255, 255, .34);
   /* indicator lines; hex, the chart code derives translucent variants from them */
   --ind-amber: #ffe066;
   --ind-violet: #a78bfa;
   --ind-orange: #ff9a3c;
-  /* the accent is amber now; lines that used to borrow it keep a colour of their own */
   --ind-blue: #4db8ff;
 
-  --f-ui: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-num: "JetBrains Mono Variable", ui-monospace, monospace;
-  --f-display: "Martian Mono Variable", var(--f-ui);
+  --f-ui: "Onest Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-display: "Unbounded Variable", var(--f-ui);
 
   --top-h: 44px;
   --status-h: 26px;
@@ -48,7 +47,7 @@ body {
   background: var(--bg-0);
   color: var(--ink);
   font: 13px/1.45 var(--f-ui);
-  font-feature-settings: "tnum", "cv11", "calt";
+  font-feature-settings: "tnum", "calt";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
@@ -154,7 +153,7 @@ kbd {
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; }
 .brand svg { width: 20px; height: 20px; display: block; color: var(--accent); }
-.brand b { font: 700 15px/1 var(--f-display); letter-spacing: .2em; text-transform: uppercase; }
+.brand b { font: 700 13px/1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; }
 .views { display: flex; align-self: stretch; gap: 2px; }
 .view {
   position: relative;
@@ -462,8 +461,8 @@ body:not([data-list="wide"]) .screener .x { display: none; }
 .flt-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .flt-actions [data-act="delete"] { margin-right: auto; }
 .flt-actions [data-act="delete"]:hover { color: var(--down); border-color: var(--down); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #06121c; font-weight: 600; }
-.btn.primary:hover { background: var(--accent); color: #06121c; filter: brightness(1.1); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #08090a; font-weight: 600; }
+.btn.primary:hover { background: var(--accent); color: #08090a; filter: brightness(1.1); }
 
 /* five cells lit by how hard volume is running */
 .meter { display: inline-flex; gap: 2px; margin-right: 7px; vertical-align: -1px; }
@@ -593,7 +592,7 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 .al-row { display: flex; gap: 8px; }
 .al-row input { flex: 1; min-width: 0; height: 28px; padding: 0 9px; background: var(--bg-0); border: 1px solid var(--rule-strong); border-radius: var(--r); font-size: 12.5px; outline: none; }
 .al-row input:focus { border-color: var(--accent); }
-.al-row button { height: 28px; padding: 0 12px; border-radius: var(--r); background: var(--accent); color: #06121c; font-size: 12px; font-weight: 600; white-space: nowrap; transition: filter .15s; }
+.al-row button { height: 28px; padding: 0 12px; border-radius: var(--r); background: var(--accent); color: #08090a; font-size: 12px; font-weight: 600; white-space: nowrap; transition: filter .15s; }
 .al-row button:hover { filter: brightness(1.1); }
 .al-note { min-height: 17px; margin-top: 6px; color: var(--ind-amber); font-size: 11.5px; }
 .al-list { list-style: none; margin: 2px -14px 0; border-top: 1px solid var(--rule-strong); padding: 6px 0; }

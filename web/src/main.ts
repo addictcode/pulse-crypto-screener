@@ -1,6 +1,5 @@
-import '@fontsource-variable/inter';
-import '@fontsource-variable/martian-mono';
-import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/onest';
+import '@fontsource-variable/unbounded';
 import './styles.css';
 
 import { Alerts } from './alerts';
