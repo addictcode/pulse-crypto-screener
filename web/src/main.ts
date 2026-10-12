@@ -17,6 +17,7 @@ import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
 import { SetupJournal, welcomeOnce } from './setups';
+import { Layout } from './layout';
 import { Settings } from './settings';
 import { SignalRecord } from './signals';
 import { save } from './storage';
@@ -93,6 +94,8 @@ initViews(
   },
 );
 
+const layout = new Layout();
+
 // chart only: the list and the dock step aside
 const focusButton = document.getElementById('focus-btn')!;
 function setFocus(on: boolean) {
@@ -143,6 +146,8 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: t('Densities'), icon: 'view', run: go('densities') },
   ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command, { label: t('Setups'), icon: 'view', run: go('setups') } satisfies Command]),
   { label: t('Chart only'), icon: 'expand', hint: 'F', run: toggleFocus },
+  { label: t('Show or hide the pair list'), icon: 'sidebar', hint: 'L', run: () => layout.toggleList() },
+  { label: t('Show or hide the feeds under the chart'), icon: 'dock', hint: 'B', run: () => layout.toggleDock() },
   { label: t('All columns in the list'), icon: 'columns', run: () => screener.setWide(!screener.wide) },
   ...Object.keys(INTERVALS).map((tf, i): Command => ({
     label: t('Timeframe {tf}', { tf }),
@@ -182,6 +187,14 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === '?') {
     showKeys();
+    return;
+  }
+  if (e.key.toLowerCase() === 'l') {
+    layout.toggleList();
+    return;
+  }
+  if (e.key.toLowerCase() === 'b') {
+    layout.toggleDock();
     return;
   }
   if (e.key === ',') {

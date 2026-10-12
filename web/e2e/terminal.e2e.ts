@@ -211,7 +211,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(13);
+  await expect(page.locator('#keys dt')).toHaveCount(15);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
@@ -378,4 +378,37 @@ test('a trend line lies exactly under the mouse and survives a change of timefra
   await expect(page.locator('#tf [data-tf="5m"]')).toHaveAttribute('aria-selected', 'true');
   await expect.poll(() => ink(203, 151)).toBeGreaterThan(0);
   expect(await ink(437, 233)).toBeGreaterThan(0);
+});
+
+test('the chart takes the room when its borders are dragged or the side panes are put away', async ({ page }) => {
+  await openTerminal(page);
+  const chart = page.locator('#chart');
+  const before = (await chart.boundingBox())!;
+
+  // drag the border between the chart and the pair list to the right: the list narrows
+  const border = (await page.locator('.sash-v').boundingBox())!;
+  await page.mouse.move(border.x + 3, border.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(border.x + 63, border.y + 220, { steps: 5 });
+  await page.mouse.up();
+  const dragged = (await chart.boundingBox())!;
+  expect(dragged.width - before.width).toBeGreaterThan(50);
+
+  // the feeds under the chart go away with a key, the list with a button
+  await page.keyboard.press('b');
+  await expect(page.locator('.panel.tape')).toBeHidden();
+  expect((await chart.boundingBox())!.height).toBeGreaterThan(before.height + 100);
+  await page.locator('#list-btn').click();
+  await expect(page.locator('.panel.screener')).toBeHidden();
+  const full = (await chart.boundingBox())!;
+  expect(full.width).toBeGreaterThan(dragged.width + 200);
+
+  // and all of it is remembered
+  await page.reload();
+  await expect(page.locator('#chart canvas').first()).toBeVisible();
+  await expect(page.locator('.panel.screener')).toBeHidden();
+  await expect(page.locator('.panel.tape')).toBeHidden();
+  await page.keyboard.press('l');
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
+  expect(Math.abs((await chart.boundingBox())!.width - dragged.width)).toBeLessThan(3);
 });

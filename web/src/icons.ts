@@ -29,7 +29,9 @@ import minus from '@phosphor-icons/core/assets/regular/minus.svg?raw';
 import rectangle from '@phosphor-icons/core/assets/regular/rectangle.svg?raw';
 import pencil from '@phosphor-icons/core/assets/regular/pencil-simple.svg?raw';
 import plus from '@phosphor-icons/core/assets/regular/plus.svg?raw';
+import rows from '@phosphor-icons/core/assets/regular/square-half-bottom.svg?raw';
 import ruler from '@phosphor-icons/core/assets/regular/ruler.svg?raw';
+import sidebar from '@phosphor-icons/core/assets/regular/sidebar-simple.svg?raw';
 import sliders from '@phosphor-icons/core/assets/regular/sliders-horizontal.svg?raw';
 import stack from '@phosphor-icons/core/assets/regular/stack.svg?raw';
 import squaresFour from '@phosphor-icons/core/assets/regular/squares-four.svg?raw';
@@ -75,6 +77,8 @@ export const ICONS = {
   keyboard: icon(keyboard),
   gear: icon(gear),
   magnet: icon(magnet),
+  sidebar: icon(sidebar),
+  dock: icon(rows),
   // one for each view, for the tab bar on a phone
   terminal: icon(chartBar),
   grid: icon(squaresFour),
