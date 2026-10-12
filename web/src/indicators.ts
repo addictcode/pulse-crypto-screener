@@ -660,10 +660,36 @@ export interface SetupResult extends StrategyResult {
  * swing, the target three times as far the other way. Results are after fees.
  */
 export function setupsStrategy(bars: Bar[], flow: Flow | null = null, scaleOut = false): SetupResult {
-  const { mid, slow, swing, minStop, maxStop, minRisk, rr, maxBars, fee, oiBars, oiRise } = SETUP;
+  const { slow, rr, maxBars, fee, oiBars } = SETUP;
   const empty = { trades: [], open: null, stats: null, state: null, equity: [], covered: 0, scaled: scaleOut };
   if (bars.length < slow + 30) return { ...empty, tooFew: true, needsFlow: false };
   if (!flow || !flow.oi.some((v) => v !== null)) return { ...empty, tooFew: false, needsFlow: true };
+  const { stateAt, planAt } = setupPlanner(bars, flow);
+
+  const { trades, open } = walk(bars, planAt, maxBars, fee, scaleOut);
+  let total = 0;
+  let covered = 0;
+  for (let i = slow + 10; i < bars.length; i++) if (flow.oi[i] !== null && flow.oi[i - oiBars] !== null && flow.oi[i - oiBars] !== undefined) covered++;
+  return {
+    trades,
+    open,
+    stats: statsOf(trades, { stopAtr: 1, targetAtr: rr, maxBars }),
+    tooFew: false,
+    needsFlow: false,
+    state: stateAt(bars.length - 1),
+    equity: trades.map((t) => (total += t.r)),
+    covered,
+    scaled: scaleOut,
+  };
+}
+
+/**
+ * The rules on their own, bar by bar: which conditions hold on bar `i` and the plan they give,
+ * whether or not a trade is already open. The strategy above walks these plans one trade at a
+ * time; anything that looks at many pairs at once asks for them directly.
+ */
+export function setupPlanner(bars: Bar[], flow: Flow) {
+  const { mid, slow, swing, minStop, maxStop, minRisk, rr, oiBars, oiRise } = SETUP;
   const closes = bars.map((b) => b.close);
   const e50 = ema(closes, mid);
   const e200 = ema(closes, slow);
@@ -714,19 +740,5 @@ export function setupsStrategy(bars: Bar[], flow: Flow | null = null, scaleOut =
     return { dir: s.trend, stop: closes[i] - s.trend * risk, target: closes[i] + s.trend * risk * rr };
   };
 
-  const { trades, open } = walk(bars, planAt, maxBars, fee, scaleOut);
-  let total = 0;
-  let covered = 0;
-  for (let i = slow + 10; i < bars.length; i++) if (flow.oi[i] !== null && flow.oi[i - oiBars] !== null && flow.oi[i - oiBars] !== undefined) covered++;
-  return {
-    trades,
-    open,
-    stats: statsOf(trades, { stopAtr: 1, targetAtr: rr, maxBars }),
-    tooFew: false,
-    needsFlow: false,
-    state: stateAt(bars.length - 1),
-    equity: trades.map((t) => (total += t.r)),
-    covered,
-    scaled: scaleOut,
-  };
+  return { stateAt, planAt };
 }
