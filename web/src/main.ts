@@ -17,6 +17,7 @@ import { Market } from './market';
 import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
+import { SetupJournal, welcomeOnce } from './setups';
 import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
@@ -45,6 +46,7 @@ new LiquidationsPanel(market);
 // the screener owns the selection; every other view selects through it so they stay in step
 let densities: Densities | null = null;
 let record: SignalRecord | null = null;
+let setups: SetupJournal | null = null;
 let heatmap: Heatmap | null = null;
 const screener = new Screener(market, (symbol) => {
   instrument.show(symbol);
@@ -62,6 +64,11 @@ densities = new Densities(market, selectSymbol);
 new Tape(market, selectSymbol);
 densities.setSelected(screener.selected);
 record = new SignalRecord(market, selectSymbol);
+// a row of the journal opens that pair on the timeframe the setup was taken on
+setups = new SetupJournal(market, (symbol, timeframe) => {
+  chart.setTimeframe(timeframe);
+  selectSymbol(symbol);
+});
 record.setSelected(screener.selected);
 heatmap = new Heatmap(market, selectSymbol);
 heatmap.setSelected(screener.selected);
@@ -78,6 +85,7 @@ initViews(
     densities?.setActive(view === 'densities');
     grid.setActive(view === 'grid');
     record?.setActive(view === 'signals');
+    setups?.setActive(view === 'setups');
     heatmap?.setActive(view === 'heatmap');
   },
   (symbol) => {
@@ -133,7 +141,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: t('Grid'), icon: 'view', run: go('grid') },
   { label: t('Heatmap'), icon: 'view', run: go('heatmap') },
   { label: t('Densities'), icon: 'view', run: go('densities') },
-  ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command]),
+  ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command, { label: t('Setups'), icon: 'view', run: go('setups') } satisfies Command]),
   { label: t('Chart only'), icon: 'expand', hint: 'F', run: toggleFocus },
   { label: t('All columns in the list'), icon: 'columns', run: () => screener.setWide(!screener.wide) },
   ...Object.keys(INTERVALS).map((tf, i): Command => ({
@@ -152,6 +160,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: lang === 'ru' ? 'Switch to English' : 'Переключить на русский', icon: 'translate', run: () => setLang(lang === 'ru' ? 'en' : 'ru') },
 ]);
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
+welcomeOnce();
 
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

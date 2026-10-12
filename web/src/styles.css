@@ -169,6 +169,8 @@ kbd {
 }
 .view:hover { color: var(--ink); }
 .view[aria-current="page"] { color: var(--ink); }
+.view .count { margin-left: 6px; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.view .count:empty { display: none; }
 .view[aria-current="page"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
 .market { display: flex; align-items: center; gap: 22px; margin-left: auto; min-width: 0; }
 .mk { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
@@ -217,6 +219,7 @@ kbd {
 .charts { grid-area: charts; display: none; }
 .outcomes { grid-area: outcomes; display: none; }
 .sighist { grid-area: sighist; display: none; }
+.setupboard { grid-area: setups; display: none; }
 
 .p-head { flex: none; display: flex; align-items: center; gap: 12px; height: 36px; padding: 0 12px 0 14px; }
 .p-title { font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
@@ -469,7 +472,8 @@ body:not([data-list="wide"]) .screener .x { display: none; }
 .meter.hot i.on { background: var(--accent); }
 
 /* ---------- views ---------- */
-body[data-view="densities"] .desk, body[data-view="signals"] .desk, body[data-view="heatmap"] .desk { grid-template-columns: minmax(0, 1fr) var(--side-w); }
+body[data-view="densities"] .desk, body[data-view="signals"] .desk, body[data-view="setups"] .desk, body[data-view="heatmap"] .desk { grid-template-columns: minmax(0, 1fr) var(--side-w); }
+body[data-view="setups"] .desk { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "setups ins" "setups book"; }
 body[data-view="densities"] .desk { grid-template-rows: minmax(0, 1.15fr) minmax(0, 1fr) auto; grid-template-areas: "map ins" "wl ins" "wl book"; }
 body[data-view="signals"] .desk { grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "outcomes ins" "sighist ins" "sighist book"; }
 body[data-view="heatmap"] .desk { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "heat ins" "heat book"; }
@@ -479,7 +483,7 @@ body:not([data-view="screener"]) .tape,
 body:not([data-view="screener"]) .liqs { display: none; }
 body[data-view="grid"] .desk > .panel:not(.charts) { display: none; }
 body[data-view="densities"] .densmap, body[data-view="densities"] .walllist,
-body[data-view="signals"] .outcomes, body[data-view="signals"] .sighist,
+body[data-view="signals"] .outcomes, body[data-view="signals"] .sighist, body[data-view="setups"] .setupboard,
 body[data-view="heatmap"] .heat, body[data-view="grid"] .charts { display: flex; }
 body:not([data-view="screener"]) .book { max-height: 200px; }
 body:not([data-view="screener"]) .book .ladder { flex: none; }
@@ -552,7 +556,20 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 
 /* ---------- signal record ---------- */
 .outcomes { max-height: 52dvh; }
-.oc-grid th, .sh-grid th, .walls-grid th { cursor: default; }
+.oc-grid th, .sh-grid th, .walls-grid th, .su-grid th { cursor: default; }
+.su-note { flex: none; padding: 0 14px 10px; max-width: 86ch; color: var(--ink-3); font-size: 12px; line-height: 1.55; }
+.su-stats { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); border-block: 1px solid var(--rule); }
+.su-stats > div { padding: 10px 14px 12px; border-right: 1px solid var(--rule-soft); }
+.su-stats > div.thin dd { opacity: .62; }
+.su-stats dt { color: var(--ink-3); font-size: 11.5px; }
+.su-stats dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-top: 4px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.su-stats dd b { font-size: 19px; font-weight: 600; flex-basis: 100%; }
+.su-grid thead:not(:first-child) th { border-top: 1px solid var(--rule); }
+.su-grid thead tr:first-child th { position: static; height: 34px; color: var(--ink); font-size: 12.5px; font-weight: 600; border-bottom: 0; }
+.su-grid .su-sub th { position: static; height: 24px; }
+.su-grid tbody tr[data-sym] { cursor: pointer; }
+.su-grid tbody tr[data-sym]:hover { background: var(--bg-2); }
+.su-grid td.empty { height: auto; padding: 14px; text-align: left; white-space: normal; color: var(--ink-3); line-height: 1.55; }
 .oc-grid th.oc-h { height: 26px; text-align: center; color: var(--ink-2); border-bottom: 0; }
 .oc-grid .oc-sub th { top: 26px; height: 24px; }
 .oc-grid th.oc-h, .oc-grid .oc-sub th:nth-child(odd), .oc-grid td:nth-child(2n+3) { border-left: 1px solid var(--rule-soft); }
@@ -625,6 +642,12 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 .clock { color: var(--ink-2); }
 .clock span { color: var(--ink-3); margin-left: 5px; }
 .statusbar a { text-decoration: none; }
+.welcome { position: fixed; z-index: 60; left: 14px; bottom: calc(var(--status-h) + 12px); width: min(340px, calc(100vw - 28px)); padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--rule-strong); border-radius: 10px; box-shadow: 0 14px 40px rgba(0, 0, 0, .5); }
+.welcome h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.welcome ul { list-style: none; display: grid; gap: 7px; margin-bottom: 12px; color: var(--ink-2); font-size: 12.5px; line-height: 1.5; }
+.welcome li { display: flex; align-items: baseline; gap: 8px; }
+.welcome kbd { flex: none; }
+.welcome .btn { height: 28px; }
 .keys-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 11.5px; transition: color .15s; }
 .keys-btn:hover { color: var(--ink); }
 .keys { width: min(440px, calc(100vw - 24px)); margin: 12dvh auto 0; padding: 18px 20px 12px; background: var(--bg-2); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 12px; box-shadow: 0 24px 70px rgba(0, 0, 0, .6); }
@@ -726,4 +749,4 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 }
 
 /* ---------- standalone demo: no server, so no stored signals ---------- */
-body[data-mode="lite"] .view[data-view="signals"] { display: none; }
+body[data-mode="lite"] .view[data-view="signals"], body[data-mode="lite"] .view[data-view="setups"] { display: none; }

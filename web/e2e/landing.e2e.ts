@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 
 import { fakeBackend, ROWS } from './backend';
 
+// the page keeps a full-screen WebGL scene, which a headless browser renders in software
+test.describe.configure({ timeout: 90_000 });
+
 test('the landing page shows live numbers and leads to the terminal', async ({ page }) => {
   await fakeBackend(page);
   await page.goto('/');

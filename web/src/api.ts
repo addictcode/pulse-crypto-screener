@@ -1,5 +1,5 @@
 import { connect, type Market } from './market';
-import type { CandleDto, OutcomeStats, Positioning, Signal, VenueGap } from './types';
+import type { CandleDto, OutcomeStats, Positioning, SetupBoard, Signal, VenueGap } from './types';
 
 /**
  * Built as the standalone demo: no Pulse server, the page talks to the exchanges itself. Set at
@@ -45,6 +45,10 @@ export async function compare(market: Market): Promise<VenueGap[]> {
 /** Stored signals, newest first. The demo has no server to store them. */
 export async function signalHistory(limit: number): Promise<Signal[]> {
   return STANDALONE ? [] : getJson(`/api/signals?limit=${limit}`);
+}
+
+export async function setupBoard(): Promise<SetupBoard> {
+  return STANDALONE ? { open: [], closed: [], stats: [], since: null } : getJson('/api/setups');
 }
 
 export async function signalStats(days: number): Promise<OutcomeStats[]> {

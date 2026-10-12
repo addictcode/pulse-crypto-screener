@@ -255,3 +255,16 @@ test('a line can be drawn in one drag, undone and removed with a right click', a
   await page.mouse.click(...at(0.6, 0.4), { button: 'right' });
   await expect.poll(stored).toBe(0);
 });
+
+test('the setups journal lists trades and opens one on its timeframe', async ({ page }) => {
+  await openTerminal(page, '#setups');
+  await expect(page.locator('#su-stats')).toContainText('+4.7R');
+  await expect(page.locator('#su-closed tr')).toHaveCount(1);
+  // SOL trades at 115 in the fake market: one R above a long from 114 with the stop at 113, less fees
+  await expect(page.locator('#su-open tr')).toContainText('+0.89R');
+
+  await page.locator('#su-open tr[data-sym="SOLUSDT"]').click();
+
+  await expect(selected(page)).toHaveText('SOL');
+  await expect(page.locator('#tf [aria-selected="true"]')).toHaveText('15m');
+});

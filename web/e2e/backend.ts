@@ -40,6 +40,10 @@ export interface FakeBackend {
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
 export async function fakeBackend(page: Page): Promise<FakeBackend> {
+  // tests start as a returning visitor: the first-visit card would sit on top of what they click
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('pulse.welcomed')) localStorage.setItem('pulse.welcomed', 'true');
+  });
   const sockets: WebSocketRoute[] = [];
   await page.routeWebSocket(/\/ws\/market$/, (ws) => {
     sockets.push(ws);
@@ -58,6 +62,16 @@ export async function fakeBackend(page: Page): Promise<FakeBackend> {
   });
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/signals**', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/setups**', (route) =>
+    route.fulfill({
+      json: {
+        since: '2026-10-11T10:00:00Z',
+        stats: [{ timeframe: '1h', trades: 3, wins: 2, netR: 4.7 }],
+        open: [{ id: 5, symbol: 'SOLUSDT', timeframe: '15m', direction: 1, entry: 114, stop: 113, target: 117, openedAt: '2026-10-11T12:15:25Z', expiresAt: '2026-10-12T03:15:00Z', status: 'OPEN', closedAt: null, exitPrice: null, resultR: null }],
+        closed: [{ id: 4, symbol: 'WIFUSDT', timeframe: '1h', direction: -1, entry: 0.9, stop: 0.92, target: 0.84, openedAt: '2026-10-11T10:00:25Z', expiresAt: '2026-10-13T22:00:00Z', status: 'WON', closedAt: '2026-10-11T11:40:00Z', exitPrice: 0.84, resultR: 2.96 }],
+      },
+    }),
+  );
   await page.route('**/api/positioning**', (route) =>
     route.fulfill({ json: { openInterest: [], longShortAccounts: [], longShortTop: [], takerBuySell: [], funding: [] } }),
   );

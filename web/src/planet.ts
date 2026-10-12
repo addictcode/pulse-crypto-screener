@@ -241,6 +241,7 @@ export class VoxelPlanet {
   private visible = true;
   private frame = 0;
   private last = performance.now();
+  private last0 = performance.now();
   private clock = 0;
   private spin = this.reducedMotion ? 0 : 1.4;
   private intro = this.reducedMotion ? 1 : 0;
@@ -251,6 +252,8 @@ export class VoxelPlanet {
   /** Where the page wants it; the planet glides there instead of jumping with every scroll event. */
   private readonly goal = { x: 0, y: 0, r: 1 };
   private placed = false;
+  /** Frames timed since the last change of resolution, and how long they took together. */
+  private timed = { frames: 0, seconds: 0 };
 
   constructor(canvas: HTMLCanvasElement, options: Options) {
     this.canvas = canvas;
@@ -681,15 +684,35 @@ export class VoxelPlanet {
   private loop = () => {
     this.frame = requestAnimationFrame(this.loop);
     const now = performance.now();
+    this.last0 = this.last;
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     if (!this.visible || document.hidden) return;
+    this.pace(now - this.last0);
     this.clock += dt;
     this.frameCamera(dt);
     this.animate(dt);
     this.renderer.render(this.scene, this.camera);
     if (this.labels.length) this.placeLabels();
   };
+
+  /**
+   * The scene fills the screen, which a weak or software GPU cannot keep up with at full
+   * resolution. When frames take too long the canvas is drawn with fewer pixels: a softer
+   * planet that moves is better than a sharp one that stutters.
+   */
+  private pace(frameMs: number) {
+    this.timed.frames++;
+    this.timed.seconds += Math.min(frameMs, 500) / 1000;
+    if (this.timed.frames < 40) return;
+    const average = this.timed.seconds / this.timed.frames;
+    this.timed = { frames: 0, seconds: 0 };
+    const ratio = this.renderer.getPixelRatio();
+    if (average > 0.034 && ratio > 0.6) {
+      this.renderer.setPixelRatio(Math.max(0.6, ratio * 0.72));
+      this.resize();
+    }
+  }
 
   dispose() {
     cancelAnimationFrame(this.frame);

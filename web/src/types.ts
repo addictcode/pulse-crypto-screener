@@ -62,6 +62,39 @@ export interface Signal {
   ret1h: number | null;
 }
 
+/** Mirror of dev.pulse.setup.SetupTrade: one setup from the server's journal. */
+export interface SetupTrade {
+  id: number;
+  symbol: string;
+  timeframe: string;
+  direction: number;
+  entry: number;
+  stop: number;
+  target: number;
+  openedAt: string;
+  expiresAt: string;
+  status: 'OPEN' | 'WON' | 'LOST' | 'TIMEOUT';
+  closedAt: string | null;
+  exitPrice: number | null;
+  /** In R, the distance to the stop, after fees; null while the trade is open. */
+  resultR: number | null;
+}
+
+export interface SetupStats {
+  timeframe: string;
+  trades: number;
+  wins: number;
+  netR: number;
+}
+
+/** Mirror of dev.pulse.api.SetupController.Board. */
+export interface SetupBoard {
+  open: SetupTrade[];
+  closed: SetupTrade[];
+  stats: SetupStats[];
+  since: string | null;
+}
+
 /** Mirror of dev.pulse.signal.OutcomeStats: how one kind of signal played out. */
 export interface OutcomeStats {
   type: SignalType;

@@ -18,6 +18,7 @@
     <a class="view" href="#heatmap" data-view="heatmap" data-i18n>Heatmap</a>
     <a class="view" href="#densities" data-view="densities" data-i18n>Densities</a>
     <a class="view" href="#signals" data-view="signals" data-i18n>Signals</a>
+    <a class="view" href="#setups" data-view="setups"><span data-i18n>Setups</span><span class="count"></span></a>
   </nav>
   <div class="market">
     <div class="mk"><span class="mk-label">BTC</span><span class="mk-val" id="m-btc">&nbsp;</span><span class="mk-chg" id="m-btc-c"></span></div>
@@ -200,6 +201,22 @@
           <th data-i18n>Avg move</th><th data-i18n>Price up</th><th data-i18n>Avg move</th><th data-i18n>Price up</th><th data-i18n>Avg move</th><th data-i18n>Price up</th>
         </tr></thead>
         <tbody id="oc-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel setupboard" id="setups" data-i18n-attrs="aria-label" aria-label="Journal of Pulse Setups">
+    <div class="p-head"><h2 class="p-title" data-i18n>Pulse Setups, live record</h2><span class="p-meta" id="su-meta"></span></div>
+    <p class="su-note" data-i18n>The server takes every setup it finds at the close of a 15m or 1h candle and follows it to the stop, the target or the time limit. Results are in R, the distance to the stop, after fees. Nothing here is advice, and no orders are placed.</p>
+    <dl class="su-stats" id="su-stats"></dl>
+    <div class="table-wrap">
+      <table class="grid su-grid">
+        <thead><tr><th class="sym" colspan="8"><span data-i18n>Open now</span> <span class="count" id="su-open-n"></span></th></tr>
+        <tr class="su-sub"><th class="sym" data-i18n>Opened</th><th class="sym" data-i18n>Symbol</th><th class="sym" data-i18n>Frame</th><th class="sym" data-i18n>Side</th><th data-i18n>Entry</th><th data-i18n>Stop</th><th data-i18n>Target</th><th data-i18n>Now</th></tr></thead>
+        <tbody id="su-open"></tbody>
+        <thead><tr><th class="sym" colspan="8" data-i18n>Finished</th></tr>
+        <tr class="su-sub"><th class="sym" data-i18n>Closed</th><th class="sym" data-i18n>Symbol</th><th class="sym" data-i18n>Frame</th><th class="sym" data-i18n>Side</th><th data-i18n>Entry</th><th data-i18n>Exit</th><th class="sym" data-i18n>Ended at</th><th data-i18n>Result</th></tr></thead>
+        <tbody id="su-closed"></tbody>
       </table>
     </div>
   </section>

@@ -1,6 +1,6 @@
-export type View = 'screener' | 'grid' | 'heatmap' | 'densities' | 'signals';
+export type View = 'screener' | 'grid' | 'heatmap' | 'densities' | 'signals' | 'setups';
 
-const VIEWS: View[] = ['screener', 'grid', 'heatmap', 'densities', 'signals'];
+const VIEWS: View[] = ['screener', 'grid', 'heatmap', 'densities', 'signals', 'setups'];
 
 /**
  * What the address bar says: `#heatmap`, `#screener:SOLUSDT`. The pair is optional and rides
