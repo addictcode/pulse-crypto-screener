@@ -26,8 +26,8 @@ interface Px {
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
 const HIT = 6;
 const HANDLE = 9;
-/** How close to a candle's open, high, low or close a point has to be to stick to it. */
-const MAGNET = 8;
+/** With the magnet on: how close to a candle's open, high, low or close a point has to be to stick to it. */
+const MAGNET = 10;
 /** A press that travels this far before release is a drag, and the drawing ends where it ends. */
 const DRAG = 8;
 const UNDO_DEPTH = 40;
@@ -122,6 +122,8 @@ export class DrawLayer {
   private pressed: Px | null = null;
   /** Earlier states of this pair's drawings, newest last, for Ctrl+Z. */
   private undoStack: string[] = [];
+  /** Points stick to the candle under them. Off by default: a line goes exactly where the cursor is. */
+  private magnet = load('drawMagnet', false);
   private saved = '[]';
   private width = 0;
   private height = 0;
@@ -207,6 +209,21 @@ export class DrawLayer {
     return this.selectedId !== null;
   }
 
+  get magnetOn() {
+    return this.magnet;
+  }
+
+  toggleMagnet() {
+    this.magnet = !this.magnet;
+    save('drawMagnet', this.magnet);
+    this.onChange();
+  }
+
+  /** Holding Ctrl or Cmd does the opposite of the magnet button for one point. */
+  private snaps(e: PointerEvent): boolean {
+    return this.magnet !== (e.ctrlKey || e.metaKey);
+  }
+
   setTool(tool: ToolId | null) {
     this.activeTool = tool;
     this.draft = null;
@@ -255,23 +272,43 @@ export class DrawLayer {
 
   // ---------- coordinates ----------
 
+  /**
+   * The bar axis as a straight line: where bar 0 is and how wide a bar is, in pixels. The chart
+   * only answers for whole bars (a fractional index comes back as 0, the left edge), and a point
+   * rarely sits on a whole bar: it is placed between candles, or was drawn on another timeframe.
+   */
+  private axis(): { origin: number; spacing: number } | null {
+    const scale = this.chart?.timeScale();
+    const first = scale?.logicalToCoordinate(0 as Logical) ?? null;
+    const second = scale?.logicalToCoordinate(1 as Logical) ?? null;
+    if (first === null || second === null || second === first) return null;
+    return { origin: first, spacing: second - first };
+  }
+
   private x(time: number): number | null {
     const logical = logicalAt(this.times(), this.step, time);
-    return logical === null || !this.chart ? null : this.chart.timeScale().logicalToCoordinate(logical as Logical);
+    const axis = this.axis();
+    return logical === null || !axis ? null : axis.origin + logical * axis.spacing;
   }
 
   private y(price: number): number | null {
     return this.series?.priceToCoordinate(price) ?? null;
   }
 
+  /** The bar index under a pixel, with its fraction; the chart's own answer is rounded up to a whole bar. */
+  private logical(x: number): number | null {
+    const axis = this.axis();
+    return axis ? (x - axis.origin) / axis.spacing : null;
+  }
+
   /**
-   * The time and price under a pixel. With `magnet` the point sticks to the nearest open, high,
-   * low or close of the candle it is over when that is a few pixels away, so a line can start
-   * exactly on a wick instead of roughly near it.
+   * The time and price under a pixel, exactly. With `magnet` the point sticks to the nearest
+   * open, high, low or close of the candle it is over when that is a few pixels away, so a line
+   * can start on a wick instead of roughly near it.
    */
   private pointAt(at: Px, magnet = false): Point | null {
     if (!this.chart || !this.series) return null;
-    const logical = this.chart.timeScale().coordinateToLogical(at.x);
+    const logical = this.logical(at.x);
     const price = this.series.coordinateToPrice(at.y);
     if (logical === null || price === null) return null;
     const time = timeAt(this.times(), this.step, logical);
@@ -335,7 +372,7 @@ export class DrawLayer {
       e.stopPropagation();
       this.pressed = at;
       this.wrap.setPointerCapture(e.pointerId);
-      this.place(at, !(e.ctrlKey || e.metaKey));
+      this.place(at, this.snaps(e));
       return;
     }
     const handle = this.hitHandle(at);
@@ -385,7 +422,7 @@ export class DrawLayer {
       }
       return;
     }
-    const point = this.pointAt(at, Boolean(this.draft || this.drag?.handle !== 'body') && !(e.ctrlKey || e.metaKey));
+    const point = this.pointAt(at, Boolean(this.draft || this.drag?.handle !== 'body') && this.snaps(e));
     if (!point) return;
     if (this.draft) {
       this.draft.points[1] = point;
@@ -413,7 +450,7 @@ export class DrawLayer {
       // pressed, pulled and let go: the drawing ends here; a plain click waits for the second one
       const at = this.local(e);
       if (Math.hypot(at.x - pressed.x, at.y - pressed.y) >= DRAG) {
-        this.place(at, !(e.ctrlKey || e.metaKey));
+        this.place(at, this.snaps(e));
         return;
       }
     }
@@ -516,7 +553,7 @@ export class DrawLayer {
 
   private chip(x: number, y: number, text: string, color: string) {
     const ctx = this.ctx;
-    ctx.font = '500 11px "Inter Variable", sans-serif';
+    ctx.font = '500 11px "Onest Variable", sans-serif';
     const w = ctx.measureText(text).width + 10;
     ctx.fillStyle = alpha(this.colors.bg, 0.92);
     ctx.beginPath();
@@ -581,7 +618,7 @@ export class DrawLayer {
       const change = ((to.p - from.p) / from.p) * 100;
       const bars = Math.round(Math.abs(to.t - from.t) / this.step);
       const text = `${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(2)}%   ${px(Math.abs(to.p - from.p))}   ${t('{n} bars', { n: bars })}, ${spanText(to.t - from.t)}`;
-      ctx.font = '500 11px "Inter Variable", sans-serif';
+      ctx.font = '500 11px "Onest Variable", sans-serif';
       const w = ctx.measureText(text).width + 10;
       const lx = Math.max(4, Math.min(width - w - 4, (a.x + b.x) / 2 - w / 2));
       const ly = rising ? y - 14 : Math.max(a.y, b.y) + 14;
@@ -589,7 +626,7 @@ export class DrawLayer {
     } else if (d.type === 'fib') {
       const left = Math.min(a.x, b.x);
       const [from, to] = d.points;
-      ctx.font = '11px "Inter Variable", sans-serif';
+      ctx.font = '11px "Onest Variable", sans-serif';
       FIB_LEVELS.forEach((level, i) => {
         const price = from.p + (to.p - from.p) * level;
         const y = this.y(price);

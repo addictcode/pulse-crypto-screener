@@ -29,7 +29,7 @@ import type { CandleDto, Liquidation, Signal } from './types';
 export const INTERVALS: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14_400, '1d': 86_400 };
 /** Enough for a 200-bar average to settle and still leave strategies hundreds of bars to trade. */
 const HISTORY = 1000;
-export const CHART_FONT = '"Inter Variable", system-ui, sans-serif';
+export const CHART_FONT = '"Onest Variable", system-ui, sans-serif';
 
 /** The drawing toolbar, top to bottom. */
 const TOOLS: Array<[ToolId, IconName, string]> = [
@@ -129,7 +129,8 @@ export class PriceChart {
     this.toolsEl.addEventListener('click', (e) => {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
-      if (button.dataset.act === 'delete') this.draw.deleteSelected();
+      if (button.dataset.act === 'magnet') this.draw.toggleMagnet();
+      else if (button.dataset.act === 'delete') this.draw.deleteSelected();
       else if (button.dataset.act === 'clear') this.draw.clear();
       else this.draw.setTool((button.dataset.tool as ToolId) || null);
     });
@@ -254,7 +255,7 @@ export class PriceChart {
 
     const now = new Date();
     const stamp = now.toISOString().slice(0, 16).replace('T', ' ');
-    const family = '"Inter Variable", system-ui, sans-serif';
+    const family = '"Onest Variable", system-ui, sans-serif';
     const pad = 12 * scale;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = token('--ink') || '#e6e9ef';
@@ -290,6 +291,7 @@ export class PriceChart {
       button('data-tool=""', 'cursor', t('Cursor: select and move drawings'), tool === null) +
       TOOLS.map(([id, icon, label]) => button(`data-tool="${id}"`, icon, label, tool === id)).join('') +
       '<hr>' +
+      button('data-act="magnet"', 'magnet', t('Magnet: points stick to the open, high, low and close of candles'), this.draw.magnetOn) +
       button(`data-act="delete"${this.draw.hasSelection ? '' : ' disabled'}`, 'close', t('Delete the selected drawing (Del)')) +
       button(`data-act="clear"${this.draw.count ? '' : ' disabled'}`, 'trash', t('Remove all drawings on this pair'));
   }

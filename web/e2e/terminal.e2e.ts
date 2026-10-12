@@ -342,3 +342,40 @@ test.describe('the tab bar on a phone', () => {
     await expect(page.locator('body')).toHaveAttribute('data-view', 'heatmap');
   });
 });
+
+test('a trend line lies exactly under the mouse and survives a change of timeframe', async ({ page }) => {
+  await openTerminal(page);
+  const chart = (await page.locator('#chart').boundingBox())!;
+  // how much of a small square around a point of the chart is covered by a drawing
+  const ink = (x: number, y: number) =>
+    page.evaluate(
+      ([x, y]) => {
+        const layer = document.querySelector<HTMLCanvasElement>('.drawlayer')!;
+        const scale = window.devicePixelRatio;
+        const pixels = layer.getContext('2d')!.getImageData(Math.round(x * scale) - 3, Math.round(y * scale) - 3, 7, 7).data;
+        let covered = 0;
+        for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 40) covered++;
+        return covered;
+      },
+      [x, y],
+    );
+
+  // two clicks between candles, not on them: the points must stay where they were put
+  await page.locator('#tools [data-tool="trend"]').click();
+  await page.mouse.click(chart.x + 203, chart.y + 151);
+  await page.mouse.move(chart.x + 300, chart.y + 190, { steps: 4 });
+  await page.mouse.click(chart.x + 437, chart.y + 233);
+  await expect.poll(() => ink(203, 151)).toBeGreaterThan(0);
+  expect(await ink(437, 233)).toBeGreaterThan(0);
+  expect(await ink(320, 192)).toBeGreaterThan(0); // the middle of the line
+  expect(await ink(320, 120)).toBe(0); // and nothing where no line goes
+
+  // on another timeframe the same two moments are elsewhere on the screen, but not at its edge
+  await page.locator('#tf [data-tf="15m"]').click();
+  await expect(page.locator('#tf [data-tf="15m"]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#chart canvas').first()).toBeVisible();
+  await page.locator('#tf [data-tf="5m"]').click();
+  await expect(page.locator('#tf [data-tf="5m"]')).toHaveAttribute('aria-selected', 'true');
+  await expect.poll(() => ink(203, 151)).toBeGreaterThan(0);
+  expect(await ink(437, 233)).toBeGreaterThan(0);
+});

@@ -24,6 +24,7 @@ import link from '@phosphor-icons/core/assets/regular/link.svg?raw';
 import list from '@phosphor-icons/core/assets/regular/list.svg?raw';
 import magnifyingGlass from '@phosphor-icons/core/assets/regular/magnifying-glass.svg?raw';
 import lightning from '@phosphor-icons/core/assets/regular/lightning.svg?raw';
+import magnet from '@phosphor-icons/core/assets/regular/magnet-straight.svg?raw';
 import minus from '@phosphor-icons/core/assets/regular/minus.svg?raw';
 import rectangle from '@phosphor-icons/core/assets/regular/rectangle.svg?raw';
 import pencil from '@phosphor-icons/core/assets/regular/pencil-simple.svg?raw';
@@ -73,6 +74,7 @@ export const ICONS = {
   check: icon(check),
   keyboard: icon(keyboard),
   gear: icon(gear),
+  magnet: icon(magnet),
   // one for each view, for the tab bar on a phone
   terminal: icon(chartBar),
   grid: icon(squaresFour),
