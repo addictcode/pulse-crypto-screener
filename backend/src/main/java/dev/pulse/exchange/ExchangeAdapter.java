@@ -31,6 +31,11 @@ public interface ExchangeAdapter {
         return Positioning.EMPTY;
     }
 
+    /** Open interest in USD over time, on its own: one request where {@link #positioning} makes five. */
+    default List<Positioning.Point> openInterest(String symbol, String period, int limit) {
+        return positioning(symbol, period, limit).openInterest();
+    }
+
     /**
      * How often the symbol pays funding. Rates are quoted per interval, so two rates only
      * compare once both are brought to the same number of hours.

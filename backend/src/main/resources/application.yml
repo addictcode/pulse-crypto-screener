@@ -76,6 +76,11 @@ pulse:
     min-notional: 25000
     volume-share: 0.0003
     max-per-side: 3
+  # Pulse Setups across the market: found once per closed candle, journalled, followed to the end
+  setups:
+    enabled: ${PULSE_SETUPS_ENABLED:true}
+    timeframes: [15m, 1h]
+    pairs: 40
   signals:
     enabled: true
     scan-interval-ms: 2000

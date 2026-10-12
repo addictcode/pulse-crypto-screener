@@ -217,6 +217,11 @@ public class BinanceAdapter implements ExchangeAdapter {
         return new Positioning(join(openInterest), join(accounts), join(top), join(taker), join(funding));
     }
 
+    @Override
+    public List<Positioning.Point> openInterest(String symbol, String period, int limit) {
+        return rest.statistic("openInterestHist", symbol, period, limit, "sumOpenInterestValue");
+    }
+
     private static List<Positioning.Point> join(Future<List<Positioning.Point>> future) {
         try {
             return future.get();

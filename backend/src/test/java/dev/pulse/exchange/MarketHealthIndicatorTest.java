@@ -15,7 +15,7 @@ class MarketHealthIndicatorTest {
 
     private static final PulseProperties PROPERTIES = new PulseProperties(
             new PulseProperties.Binance(true, "", "", "", 1, 2000, 120, 800, 15, Duration.ofSeconds(60), Duration.ofSeconds(30)),
-            null, null, null, null, null);
+            null, null, null, null, null, null);
 
     @Test
     void aFeedThatTalksIsUp() {

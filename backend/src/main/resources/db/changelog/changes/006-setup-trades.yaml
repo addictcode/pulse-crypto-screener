@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-setup-trades
+      author: pulse
+      comment: >
+        The journal of Pulse Setups: every trade the scanner took, with its plan, and how it
+        ended. result_r is in units of the stop distance, after fees; it stays empty while the
+        trade is open.
+      changes:
+        - createTable:
+            tableName: setup_trade
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: symbol, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: timeframe, type: varchar(8), constraints: { nullable: false } }
+              - column: { name: direction, type: integer, constraints: { nullable: false } }
+              - column: { name: entry_price, type: double precision, constraints: { nullable: false } }
+              - column: { name: stop_price, type: double precision, constraints: { nullable: false } }
+              - column: { name: target_price, type: double precision, constraints: { nullable: false } }
+              - column: { name: opened_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: expires_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: status, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: closed_at, type: timestamp with time zone }
+              - column: { name: exit_price, type: double precision }
+              - column: { name: result_r, type: double precision }
+        - createIndex:
+            tableName: setup_trade
+            indexName: ix_setup_trade_status_closed
+            columns:
+              - column: { name: status }
+              - column: { name: closed_at }

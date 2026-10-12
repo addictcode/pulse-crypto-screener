@@ -6,7 +6,8 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("pulse")
-public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Density density, Signals signals, Telegram telegram) {
+public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Density density, Signals signals, Setups setups,
+                              Telegram telegram) {
 
     /**
      * @param streamUrl       combined-stream endpoint. Binance moved market data to {@code /market/stream};
@@ -63,6 +64,13 @@ public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Densi
      * @param escalation    inside the cooldown a repeat fires only if this many times stronger
      */
     public record Signals(boolean enabled, long scanIntervalMs, Duration warmup, double minVolume24h, double escalation) {
+    }
+
+    /**
+     * @param timeframes candle sizes on which Pulse Setups are looked for
+     * @param pairs      how many of the most traded pairs are watched
+     */
+    public record Setups(boolean enabled, List<String> timeframes, int pairs) {
     }
 
     /**

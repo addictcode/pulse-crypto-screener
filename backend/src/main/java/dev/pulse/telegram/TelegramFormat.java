@@ -7,6 +7,7 @@ import java.util.List;
 
 import dev.pulse.alert.AlertFired;
 import dev.pulse.alert.PriceAlert;
+import dev.pulse.setup.SetupTrade;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.Text;
 
@@ -41,6 +42,23 @@ final class TelegramFormat {
         return "<b>" + Text.base(a.symbol()) + (a.above() ? " rose to " : " fell to ") + Text.price(a.level()) + "</b>\n"
                 + "Now " + Text.price(fired.price()) + ".\n"
                 + "<i>Price alert, " + CLOCK.format(Instant.now()) + " UTC</i>";
+    }
+
+    static String setupOpened(SetupTrade t) {
+        return "<b>" + Text.base(t.symbol()) + " " + t.timeframe() + ": " + (t.direction() == 1 ? "long" : "short") + " setup</b>\n"
+                + "Entry " + Text.price(t.entry()) + ", stop " + Text.price(t.stop()) + ", target " + Text.price(t.target()) + " (3R).\n"
+                + "<i>Pulse Setups, " + CLOCK.format(t.openedAt()) + " UTC. Not advice.</i>";
+    }
+
+    static String setupClosed(SetupTrade t) {
+        String how = switch (t.status()) {
+            case WON -> "reached its target";
+            case LOST -> "was stopped out";
+            default -> "ran out of time";
+        };
+        return "<b>" + Text.base(t.symbol()) + " " + t.timeframe() + " " + (t.direction() == 1 ? "long" : "short") + " " + how + "</b>\n"
+                + String.format(java.util.Locale.ROOT, "%+.2fR after fees.", t.resultR()) + "\n"
+                + "<i>Pulse Setups, " + CLOCK.format(t.closedAt()) + " UTC</i>";
     }
 
     static String escape(String text) {

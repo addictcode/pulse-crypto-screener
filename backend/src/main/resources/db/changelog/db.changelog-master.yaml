@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/changes/004-price-alerts.yaml
   - include:
       file: db/changelog/changes/005-backfill-signal-direction.yaml
+  - include:
+      file: db/changelog/changes/006-setup-trades.yaml

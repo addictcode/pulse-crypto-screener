@@ -2,3 +2,5 @@
 pulse:
   bybit:
     enabled: false
+  setups:
+    enabled: false

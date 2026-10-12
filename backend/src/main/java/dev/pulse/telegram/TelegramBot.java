@@ -18,6 +18,8 @@ import dev.pulse.config.PulseProperties;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.MarketStore;
+import dev.pulse.setup.SetupClosed;
+import dev.pulse.setup.SetupOpened;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalHistory;
 import jakarta.annotation.PreDestroy;
@@ -99,6 +101,23 @@ class TelegramBot {
         }
         if (owner.equals(accounts.settings(event.alert().userId()).telegramChatId())) {
             Thread.ofVirtual().name("telegram-alert").start(() -> reply(owner, TelegramFormat.alert(event)));
+        }
+    }
+
+    @EventListener
+    void onSetupOpened(SetupOpened event) {
+        tellOwner("telegram-setup", TelegramFormat.setupOpened(event.trade()));
+    }
+
+    @EventListener
+    void onSetupClosed(SetupClosed event) {
+        tellOwner("telegram-setup", TelegramFormat.setupClosed(event.trade()));
+    }
+
+    private void tellOwner(String thread, String text) {
+        Long owner = config.ownerChatId();
+        if (running && owner != null) {
+            Thread.ofVirtual().name(thread).start(() -> reply(owner, text));
         }
     }
 
