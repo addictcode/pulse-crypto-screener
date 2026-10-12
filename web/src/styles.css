@@ -168,6 +168,8 @@ kbd {
 }
 .view:hover { color: var(--ink); }
 .view[aria-current="page"] { color: var(--ink); }
+/* the icons belong to the tab bar a phone gets instead of this strip */
+.view .i { display: none; }
 .view .count { margin-left: 6px; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
 .view .count:empty { display: none; }
 .view[aria-current="page"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
@@ -761,6 +763,23 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
   .status-right { margin-left: 0; flex-wrap: wrap; gap: 4px 14px; }
   .toasts { right: 8px; bottom: 12px; }
   .palette { margin-top: 8dvh; }
+}
+
+/* a phone gets its views as a tab bar under the thumb instead of a strip that scrolls sideways */
+@media (max-width: 900px) {
+  :root { --tabs-h: calc(56px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: var(--tabs-h); }
+  .views { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; order: 0; height: var(--tabs-h); margin: 0; padding: 0 2px env(safe-area-inset-bottom, 0px); gap: 0; overflow: visible; background: var(--bg-1); border-top: 1px solid var(--rule-strong); }
+  .view { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 0; font-size: 10px; letter-spacing: -.01em; }
+  .view > span:not(.i):not(.count) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .view .i { display: inline-flex; font-size: 20px; }
+  .view .count { position: absolute; top: 6px; left: calc(50% + 8px); margin: 0; min-width: 15px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--bg-0); font-size: 10px; line-height: 15px; text-align: center; }
+  .view[aria-current="page"]::after { left: 22%; right: 22%; top: -1px; bottom: auto; border-radius: 0 0 2px 2px; }
+  .top .lang { display: none; }
+  .toasts { bottom: calc(var(--tabs-h) + 12px); }
+  .welcome { bottom: calc(var(--tabs-h) + 12px); }
+  .set-row { gap: 12px; }
+  .set-actions #set-reset { margin-left: 0; }
 }
 
 /* on a phone the pair list follows the chart; the feeds come after */

@@ -10,22 +10,27 @@ import caretUpFill from '@phosphor-icons/core/assets/fill/caret-up-fill.svg?raw'
 import check from '@phosphor-icons/core/assets/regular/check.svg?raw';
 import chartLineUp from '@phosphor-icons/core/assets/regular/chart-line-up.svg?raw';
 import columns from '@phosphor-icons/core/assets/regular/columns.svg?raw';
+import chartBar from '@phosphor-icons/core/assets/regular/chart-bar.svg?raw';
 import command from '@phosphor-icons/core/assets/regular/command.svg?raw';
 import cornersIn from '@phosphor-icons/core/assets/regular/corners-in.svg?raw';
 import cornersOut from '@phosphor-icons/core/assets/regular/corners-out.svg?raw';
+import crosshair from '@phosphor-icons/core/assets/regular/crosshair.svg?raw';
 import cursor from '@phosphor-icons/core/assets/regular/cursor.svg?raw';
 import gear from '@phosphor-icons/core/assets/regular/gear-six.svg?raw';
+import gridNine from '@phosphor-icons/core/assets/regular/grid-nine.svg?raw';
 import keyboard from '@phosphor-icons/core/assets/regular/keyboard.svg?raw';
 import lineSegment from '@phosphor-icons/core/assets/regular/line-segment.svg?raw';
 import link from '@phosphor-icons/core/assets/regular/link.svg?raw';
 import list from '@phosphor-icons/core/assets/regular/list.svg?raw';
 import magnifyingGlass from '@phosphor-icons/core/assets/regular/magnifying-glass.svg?raw';
+import lightning from '@phosphor-icons/core/assets/regular/lightning.svg?raw';
 import minus from '@phosphor-icons/core/assets/regular/minus.svg?raw';
 import rectangle from '@phosphor-icons/core/assets/regular/rectangle.svg?raw';
 import pencil from '@phosphor-icons/core/assets/regular/pencil-simple.svg?raw';
 import plus from '@phosphor-icons/core/assets/regular/plus.svg?raw';
 import ruler from '@phosphor-icons/core/assets/regular/ruler.svg?raw';
 import sliders from '@phosphor-icons/core/assets/regular/sliders-horizontal.svg?raw';
+import stack from '@phosphor-icons/core/assets/regular/stack.svg?raw';
 import squaresFour from '@phosphor-icons/core/assets/regular/squares-four.svg?raw';
 import starFill from '@phosphor-icons/core/assets/fill/star-fill.svg?raw';
 import star from '@phosphor-icons/core/assets/regular/star.svg?raw';
@@ -68,6 +73,13 @@ export const ICONS = {
   check: icon(check),
   keyboard: icon(keyboard),
   gear: icon(gear),
+  // one for each view, for the tab bar on a phone
+  terminal: icon(chartBar),
+  grid: icon(squaresFour),
+  heatmap: icon(gridNine),
+  densities: icon(stack),
+  signals: icon(lightning),
+  setups: icon(crosshair),
 };
 
 export type IconName = keyof typeof ICONS;

@@ -324,3 +324,21 @@ test('settings keep the risk, and a saved file brings everything back', async ({
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
   await expect.poll(() => page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBe('120');
 });
+
+test.describe('the tab bar on a phone', () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test('keeps every view one tap away at the bottom of the screen', async ({ page }) => {
+    await openTerminal(page);
+    const bar = (await page.locator('.views').boundingBox())!;
+    expect(bar.y + bar.height).toBeCloseTo(812, 0);
+    const tabs = page.locator('.views .view');
+    for (const tab of await tabs.all()) {
+      const box = (await tab.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(375.5);
+    }
+    await page.locator('.view[data-view="heatmap"]').click();
+    await expect(page.locator('body')).toHaveAttribute('data-view', 'heatmap');
+  });
+});
