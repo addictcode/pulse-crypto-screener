@@ -427,17 +427,12 @@ export const RU: Record<string, string> = {
   'Largest walls near price': 'Крупнейшие стены у цены',
   'within 1%': 'в пределах 1%',
   'Order books are syncing.': 'Стаканы синхронизируются.',
-  'One terminal, ten instruments.': 'Один терминал, десять инструментов.',
   'Screener': 'Скринер',
-  'Every perpetual with 5 minute to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.':
-    'Каждый контракт с движением от 5 минут до 24 часов, всплеском объёма, NATR, фандингом, открытым интересом и ликвидациями. Список пересортировывается вживую, но не под курсором.',
   'Walls plotted by distance and size. Fresh ones are dashed, old ones solid: the ones that hold are easy to tell apart.':
     'Стены на карте по расстоянию и размеру. Свежие нарисованы пунктиром, старые сплошной линией: те, что держатся, видно сразу.',
   'Walls within 2% of price, bids left, asks right': 'Стены в пределах 2% от цены: покупка слева, продажа справа',
   'Seven detectors with cooldowns and a per-coin budget, so one wild small cap cannot flood your screen.':
     'Семь детекторов с паузами и лимитом на монету, чтобы одна бешеная мелочь не забила весь экран.',
-  'Alerts reach your phone with context in one message. Bursts arrive as a digest. Thresholds, mute and watchlist are set by chatting to the bot.':
-    'Алерт приходит на телефон одним сообщением вместе с контекстом. Пачка сигналов приходит дайджестом. Пороги, паузу и избранное задаёшь командами боту.',
   'WIF jumps 2.8% in five minutes': 'WIF растёт на 2,8% за 5 минут',
   'Price 0.8421, +9.6% on the day. Volume 4.1× the hourly pace, open interest +3.2% over 15 minutes.':
     'Цена 0.8421, +9,6% за день. Объём в 4,1× выше часового темпа, открытый интерес +3,2% за 15 минут.',
@@ -466,6 +461,32 @@ export const RU: Record<string, string> = {
   'Your screen': 'Твой экран',
   'Only changed numbers travel to the browser, twice a second, compressed to a few kilobytes.':
     'В браузер уходят только изменившиеся числа, дважды в секунду, в сжатом виде это несколько килобайт.',
+  'See it live': 'Смотреть вживую',
+  'Unroll the planet and you have the screener.': 'Разверни планету — получится скринер.',
+  'Every column is a pair: height for volume, colour for the day. Laid flat, that is the Pulse screener, with 5 minute to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.':
+    'Каждый столбик — пара: высота по объёму, цвет по движению за день. В развёрнутом виде это и есть скринер Pulse: движение от 5 минут до 24 часов, всплеск объёма, NATR, фандинг, открытый интерес и ликвидации. Список пересортировывается вживую, но не под курсором.',
+  'Fastest right now': 'Самые быстрые сейчас',
+  '5 minutes': '5 минут',
+  'A setup with a stop, a target and a record.': 'Сетап со стопом, тейком и историей.',
+  'Pulse Setups waits for a breakout that new money walks into: a trend, a 20 candle high on heavy volume, open interest rising. It names the entry, the stop and a target three risks away, and the server keeps score of every one, losers included.':
+    'Pulse Setups ждёт пробоя, в который заходят новые деньги: тренд, максимум 20 свечей на большом объёме, растущий открытый интерес. Он называет вход, стоп и тейк на расстоянии трёх рисков, а сервер ведёт счёт каждой сделке, включая убыточные.',
+  'Setup journal': 'Журнал сетапов',
+  'A breakout candle, the entry at its close, the stop under the last swing and the target three times as far':
+    'Свеча пробоя, вход по её закрытию, стоп под последним минимумом и тейк втрое дальше',
+  'Target, 3 risks': 'Тейк, 3 риска',
+  'Stop, 1 risk': 'Стоп, 1 риск',
+  '20 candle high': 'Максимум 20 свечей',
+  'Closed trades': 'Закрытых сделок',
+  'Reached target': 'Дошли до тейка',
+  'Net result': 'Итог',
+  'The journal is kept by the Pulse server and fills as setups close.': 'Журнал ведёт сервер Pulse, он наполняется по мере закрытия сетапов.',
+  'The journal is kept by the Pulse server; this demo runs without one.': 'Журнал ведёт сервер Pulse, в демо его нет.',
+  'Open now: {n}': 'Открыто сейчас: {n}',
+  'A forward test on candles nobody had seen. It is a record, not a promise, and not investment advice.':
+    'Форвард-тест на свечах, которых ещё никто не видел. Это история сделок, а не обещание и не инвестиционная рекомендация.',
+  'The rest of the desk.': 'Остальные инструменты.',
+  'Alerts reach your phone with context in one message. Thresholds, mute and watchlist are set by chatting to the bot.':
+    'Алерт приходит на телефон одним сообщением вместе с контекстом. Пороги, паузу и избранное задаёшь командами боту.',
   'Watch the market, not tabs.': 'Смотри на рынок, а не на вкладки.',
   'Pulse is a personal research tool. Nothing here is investment advice.': 'Pulse — личный исследовательский инструмент. Ничто здесь не является инвестиционной рекомендацией.',
 

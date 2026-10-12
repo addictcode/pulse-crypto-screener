@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="description" data-i18n-attrs="content" content="Pulse scans every Binance USDT perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%230a0c11' stroke='%23ffb000' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%23ffb000' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%23070708' stroke='%23e9eaec' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%23e9eaec' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
 <title>Pulse, a radar for crypto futures</title>
 </head>
 <body class="landing">
@@ -16,11 +16,12 @@
 </div>
 
 <header class="nav">
-  <a class="brand" href="./" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="#ffb000" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="#ffb000" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="#ffb000" fill-opacity=".14"/></svg><b>Pulse</b></a>
+  <a class="brand" href="./" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="currentColor" fill-opacity=".14"/></svg><b>Pulse</b></a>
   <nav data-i18n-attrs="aria-label" aria-label="Sections">
     <a href="#live" data-i18n>Live</a>
+    <a href="#screener" data-i18n>Screener</a>
+    <a href="#setups" data-i18n>Setups</a>
     <a href="#features" data-i18n>Features</a>
-    <a href="#how" data-i18n>How it works</a>
   </nav>
   <div class="lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button></div>
   <a class="cta small" href="app/" data-i18n>Open terminal</a>
@@ -38,7 +39,7 @@
         <p class="lede" data-i18n>Pulse scans every Binance perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.</p>
         <div class="actions">
           <a class="cta" href="app/" data-i18n>Open terminal</a>
-          <a class="ghost" href="#how" data-i18n>How it works</a>
+          <a class="ghost" href="#live" data-i18n>See it live</a>
         </div>
       </div>
       <div class="hero-data">
@@ -56,35 +57,77 @@
   <div class="ticker" id="ticker" data-i18n-attrs="aria-label" aria-label="The most traded pairs right now"><div class="ticker-track" id="ticker-track"></div></div>
 
   <section class="band" id="live" data-planet="right">
-    <div class="band-body">
+    <div class="band-body reveal">
       <h2 data-i18n>Everything that moves, as it moves.</h2>
       <p data-i18n>The tape lists every pump, dump, volume burst and liquidation wave the moment it happens. Stronger events are promoted to alerts, which also go to Telegram.</p>
       <div class="hud live-tape">
-        <div class="hud-head"><span class="p-title" data-i18n>Signal tape</span><span class="mono mute" id="tape-rate"></span></div>
+        <div class="hud-head"><span class="p-title" data-i18n>Signal tape</span><span class="mute" id="tape-rate"></span></div>
         <ol class="tape-list" id="tape-preview"><li class="empty-note" data-i18n>Connecting to the market.</li></ol>
       </div>
     </div>
   </section>
 
   <section class="band flip" data-planet="left">
-    <div class="band-body">
+    <div class="band-body reveal">
       <h2 data-i18n>See where the size is waiting.</h2>
       <p data-i18n>Live order books for the 60 most traded pairs. Pulse finds resting orders many times larger than the book around them, tracks how long they stand and how fast the market would eat through them.</p>
       <div class="hud">
-        <div class="hud-head"><span class="p-title" data-i18n>Largest walls near price</span><span class="mono mute" data-i18n>within 1%</span></div>
+        <div class="hud-head"><span class="p-title" data-i18n>Largest walls near price</span><span class="mute" data-i18n>within 1%</span></div>
         <table class="mini walls" id="walls-preview"><tbody><tr><td class="empty-note" data-i18n>Order books are syncing.</td></tr></tbody></table>
       </div>
     </div>
   </section>
 
+  <!-- twice the height of the screen: the words stay put while the planet comes apart behind them -->
+  <section class="unroll" id="screener" data-planet="field">
+    <div class="unroll-pin">
+      <div class="unroll-words reveal">
+        <h2 data-i18n>Unroll the planet and you have the screener.</h2>
+        <p data-i18n>Every column is a pair: height for volume, colour for the day. Laid flat, that is the Pulse screener, with 5 minute to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.</p>
+      </div>
+      <div class="hud movers reveal">
+        <div class="hud-head"><span class="p-title" data-i18n>Fastest right now</span><span class="mute" data-i18n>5 minutes</span></div>
+        <table class="mini" id="movers-preview"><tbody><tr><td class="empty-note" data-i18n>Connecting to the market.</td></tr></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="setups" data-planet="right">
+    <div class="band-body reveal">
+      <h2 data-i18n>A setup with a stop, a target and a record.</h2>
+      <p data-i18n>Pulse Setups waits for a breakout that new money walks into: a trend, a 20 candle high on heavy volume, open interest rising. It names the entry, the stop and a target three risks away, and the server keeps score of every one, losers included.</p>
+      <div class="hud setup">
+        <div class="hud-head"><span class="p-title" data-i18n>Setup journal</span><span class="mute" id="su-since"></span></div>
+        <svg class="plan-sketch" viewBox="0 0 520 164" role="img" data-i18n-attrs="aria-label" aria-label="A breakout candle, the entry at its close, the stop under the last swing and the target three times as far">
+          <g class="sk-candles">
+            <path d="M24 126v24M58 124v22M92 128v22M126 123v21M160 127v22M194 124v21M228 126v22M262 123v20"/>
+            <path class="body" d="M16 130h16v14H16zM50 128h16v13H50zM84 133h16v12H84zM118 127h16v12h-16zM152 131h16v13h-16zM186 128h16v12h-16zM220 131h16v12h-16zM254 127h16v12h-16z"/>
+          </g>
+          <path class="sk-range" d="M10 122h274"/>
+          <path class="sk-break" d="M296 114v22"/><rect class="sk-break" x="288" y="118" width="16" height="16"/>
+          <rect class="sk-reward" x="312" y="10" width="198" height="108"/>
+          <rect class="sk-risk" x="312" y="118" width="198" height="36"/>
+          <path class="sk-target" d="M312 10h198"/><path class="sk-entry" d="M304 118h206"/><path class="sk-stop" d="M312 154h198"/>
+          <text x="322" y="31" class="sk-up" data-i18n>Target, 3 risks</text>
+          <text x="322" y="110" data-i18n>Entry</text>
+          <text x="322" y="142" class="sk-down" data-i18n>Stop, 1 risk</text>
+          <text x="10" y="113" class="sk-mute" data-i18n>20 candle high</text>
+        </svg>
+        <dl class="su-stats" id="su-stats" hidden>
+          <div><dt data-i18n>Closed trades</dt><dd id="su-n">0</dd></div>
+          <div><dt data-i18n>Reached target</dt><dd id="su-win">0%</dd></div>
+          <div><dt data-i18n>Net result</dt><dd id="su-net">0R</dd></div>
+        </dl>
+        <table class="mini su-open" id="su-open"><tbody></tbody></table>
+        <p class="su-note" id="su-note" data-i18n>The journal is kept by the Pulse server and fills as setups close.</p>
+      </div>
+      <p class="fine" data-i18n>A forward test on candles nobody had seen. It is a record, not a promise, and not investment advice.</p>
+    </div>
+  </section>
+
   <section class="features" id="features" data-planet="back">
-    <h2 data-i18n>One terminal, ten instruments.</h2>
-    <div class="bento">
-      <article class="cell wide">
-        <h3 data-i18n>Screener</h3>
-        <p data-i18n>Every perpetual with 5 minute to 24 hour moves, volume surge, NATR, funding, open interest and liquidations, re-sorted live but never under your cursor.</p>
-        <table class="mini" id="movers-preview"><tbody></tbody></table>
-      </article>
+    <h2 class="reveal" data-i18n>The rest of the desk.</h2>
+    <div class="bento reveal">
       <article class="cell">
         <h3 data-i18n>Density map</h3>
         <p data-i18n>Walls plotted by distance and size. Fresh ones are dashed, old ones solid: the ones that hold are easy to tell apart.</p>
@@ -95,11 +138,9 @@
         <p data-i18n>Seven detectors with cooldowns and a per-coin budget, so one wild small cap cannot flood your screen.</p>
         <div class="chips" id="signal-chips"></div>
       </article>
-      <article class="cell wide accent tg">
-        <div>
-          <h3>Telegram</h3>
-          <p data-i18n>Alerts reach your phone with context in one message. Bursts arrive as a digest. Thresholds, mute and watchlist are set by chatting to the bot.</p>
-        </div>
+      <article class="cell tg">
+        <h3>Telegram</h3>
+        <p data-i18n>Alerts reach your phone with context in one message. Thresholds, mute and watchlist are set by chatting to the bot.</p>
         <div class="msg" aria-hidden="true">
           <b data-i18n>WIF jumps 2.8% in five minutes</b>
           <span data-i18n>Price 0.8421, +9.6% on the day. Volume 4.1× the hourly pace, open interest +3.2% over 15 minutes.</span>
@@ -107,7 +148,7 @@
         </div>
       </article>
     </div>
-    <dl class="spec">
+    <dl class="spec reveal">
       <div><dt data-i18n>Signal record</dt><dd data-i18n>Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what usually follows each kind, so you learn which ones deserve a reaction.</dd></div>
       <div><dt data-i18n>Price alerts</dt><dd data-i18n>Set a level from the chart with Alt and a click, or from the bot. It fires once: a sound and a note on screen, a message on your phone.</dd></div>
       <div><dt data-i18n>Binance vs Bybit</dt><dd data-i18n>Funding on both venues brought to the same 8 hours, the price gap between them and where the open interest sits. The Arb preset lists the widest funding gaps.</dd></div>
@@ -118,8 +159,8 @@
   </section>
 
   <section class="how" id="how" data-planet="back">
-    <h2 data-i18n>How it works</h2>
-    <ol class="pipeline">
+    <h2 class="reveal" data-i18n>How it works</h2>
+    <ol class="pipeline reveal">
       <li><b data-i18n>Binance streams</b><span data-i18n>Tickers, candles, mark prices, liquidations and order books over WebSockets.</span></li>
       <li><b data-i18n>Pulse engine</b><span data-i18n>Java backend keeps the market in memory, rebuilds books, scores walls and runs the detectors every 2 seconds.</span></li>
       <li><b data-i18n>Your screen</b><span data-i18n>Only changed numbers travel to the browser, twice a second, compressed to a few kilobytes.</span></li>

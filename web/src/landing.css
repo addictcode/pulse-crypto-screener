@@ -1,16 +1,31 @@
 /* Landing page. One long shot of the planet: it stays on screen for the whole page and the
-   scroll moves the camera (see stage() in landing.ts). Colours come from theme.css. */
+   scroll moves the camera, turns the sun and, once, unrolls the planet into a field (see stage()
+   in landing.ts). Colours come from theme.css. */
 
 .landing {
-  /* a terminal's voice: one monospace for the big lines, another for everything read or
-     measured; both have Cyrillic, so both languages look the same */
   --gutter: clamp(16px, 4vw, 64px);
+  --ease: cubic-bezier(.16, 1, .3, 1);
   /* 0 at the top of the page, 1 once the first screen has been scrolled away */
   --away: 0;
-  overflow-x: hidden;
-  font-family: var(--f-ui);
+  /* how much of the page has been read, 0 to 1 */
+  --page: 0;
+  overflow-x: clip;
 }
-.landing ::selection { background: var(--accent); color: #140d00; }
+.landing ::selection { background: var(--ink); color: var(--bg-0); }
+
+/* how far down the page you are: a hairline along the top edge */
+.landing::before {
+  content: "";
+  position: fixed;
+  z-index: 70;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(var(--page));
+  transform-origin: 0 50%;
+}
 
 /* Stacking, bottom to top: the headline, the planet in front of it, then everything to read or
    press. main gets no stacking context of its own, or the three could not interleave. */
@@ -20,75 +35,66 @@
 .nav, .foot { position: relative; z-index: 3; }
 .landing main { position: static; }
 .mega { position: relative; z-index: 0; }
-.hero-foot, .ticker, .band-body, .features, .how, .final .cta { position: relative; z-index: 2; }
+.hero-foot, .ticker, .band-body, .unroll-pin, .features, .how, .final .cta { position: relative; z-index: 2; }
 .static .scene { display: none; }
 
-.mono { font: 11.5px var(--f-num); }
-
-.nav { height: 72px; padding: 0 var(--gutter); display: flex; align-items: center; gap: 20px; }
-.nav nav { display: flex; gap: 26px; margin-left: auto; margin-right: 12px; }
-.nav nav a { color: var(--ink-2); text-decoration: none; font: 600 12px var(--f-ui); letter-spacing: .12em; text-transform: uppercase; transition: color .15s; }
+.nav { height: 76px; padding: 0 var(--gutter); display: flex; align-items: center; gap: 20px; }
+.nav nav { display: flex; gap: 30px; margin-left: auto; margin-right: 14px; }
+.nav nav a { color: var(--ink-2); text-decoration: none; font-size: 14.5px; font-weight: 500; transition: color .2s; }
 .nav nav a:hover { color: var(--ink); }
 .lang { display: inline-flex; border: 1px solid var(--rule-strong); }
-.lang button { height: 34px; padding: 0 10px; color: var(--ink-3); font: 600 11.5px var(--f-ui); letter-spacing: .1em; transition: color .15s, background .15s; }
+.lang button { height: 34px; padding: 0 11px; color: var(--ink-2); font-size: 12.5px; font-weight: 600; transition: color .2s, background .2s; }
 .lang button:hover { color: var(--ink); }
 .lang button[aria-pressed="true"] { color: var(--bg-0); background: var(--ink); }
 
-/* one call to action everywhere, with chamfered corners like the HUD */
+/* one call to action everywhere: the only solid white shape on the page */
 .cta {
   display: inline-flex;
   align-items: center;
-  height: 48px;
-  padding: 0 26px;
-  background: var(--accent);
-  color: #140d00;
-  font: 700 13px var(--f-ui);
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  height: 52px;
+  padding: 0 28px;
+  background: var(--ink);
+  color: var(--bg-0);
+  font-size: 15px;
+  font-weight: 650;
   text-decoration: none;
   white-space: nowrap;
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-  transition: transform .15s, background .15s;
+  transition: background .2s, transform .2s var(--ease), box-shadow .3s var(--ease);
 }
-.cta:hover { background: #ffc94d; }
+.cta:hover { background: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, .1); }
 .cta:active { transform: translateY(1px); }
-.cta.small { height: 36px; padding: 0 16px; font-size: 11.5px; }
+.cta.small { height: 36px; padding: 0 16px; font-size: 13.5px; }
 .ghost {
   display: inline-flex;
   align-items: center;
-  height: 48px;
-  padding: 0 20px;
+  height: 52px;
+  padding: 0 22px;
   color: var(--ink);
-  background: rgba(5, 6, 7, .5);
+  background: rgba(4, 4, 5, .55);
   border: 1px solid var(--rule-strong);
-  font: 600 13px var(--f-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 500;
   text-decoration: none;
-  transition: border-color .15s;
+  white-space: nowrap;
+  transition: border-color .2s;
 }
-.ghost:hover { border-color: var(--accent-soft); }
+.ghost:hover { border-color: var(--ink); }
 
-/* ---------- first screen: three lines of poster type with the planet rising in front ---------- */
-.hero { position: relative; height: calc(100svh - 72px); min-height: 560px; padding: 0 var(--gutter); display: flex; flex-direction: column; }
-.mega { font: 800 var(--mega) / .96 var(--f-display); font-stretch: 75%; text-transform: uppercase; letter-spacing: 0; color: var(--ink); pointer-events: none; }
-/* as tall as the screen allows: the lines must clear the navigation and still leave the lower
-   third to the planet */
-.hero .mega { --mega: min(9.2vw, 19svh); margin-top: clamp(8px, 3svh, 36px); opacity: calc(1 - var(--away) * 1.5); }
-html[lang="ru"] .hero .mega { --mega: min(8.6vw, 19svh); }
+/* ---------- first screen: three lines of poster type, the planet rising in front of them ---------- */
+.hero { position: relative; height: calc(100svh - 76px); min-height: 580px; padding: 0 var(--gutter); display: flex; flex-direction: column; }
+.mega { font: 800 var(--mega) / 1 var(--f-display); text-transform: uppercase; letter-spacing: -.025em; color: var(--ink); pointer-events: none; }
+/* as large as the widest line allows; the lower third of the screen belongs to the planet */
+.hero .mega { --mega: min(8.05vw, 16.5svh); margin-top: clamp(4px, 2.4svh, 30px); opacity: calc(1 - var(--away) * 1.5); }
+html[lang="ru"] .hero .mega { --mega: min(7vw, 16.5svh); }
 .mega span { display: block; white-space: nowrap; will-change: transform; }
 /* the lines part as the page scrolls away: outer ones left, the hollow one right */
 .hero .mega span:nth-child(1) { transform: translate3d(calc(var(--away) * -9vw), 0, 0); }
 .hero .mega span:nth-child(2) { transform: translate3d(calc(var(--away) * 14vw), 0, 0); }
 .hero .mega span:nth-child(3) { transform: translate3d(calc(var(--away) * -5vw), 0, 0); }
-.mega .hollow { color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--ink) 62%, transparent); }
-.mega em { font-style: normal; color: var(--accent); }
-/* the block cursor of a terminal, waiting after the last word */
-.hero .mega span:last-child::after { content: ""; display: inline-block; width: .5em; height: .74em; margin-left: .12em; background: var(--accent); }
-@media (prefers-reduced-motion: no-preference) {
-  .hero .mega span:last-child::after { animation: caret 1.1s steps(1) infinite; }
-  @keyframes caret { 50% { opacity: 0; } }
-}
+/* outlined, not filled. The fill is the page's own black painted over the stroke, which hides
+   the seams where the strokes of a variable font overlap inside a letter */
+.mega .hollow { color: var(--bg-0); -webkit-text-stroke: 3px color-mix(in srgb, var(--ink) 72%, var(--bg-0)); paint-order: stroke fill; }
+.mega em { font-style: normal; }
 
 /* the planet sinks into darkness along the bottom edge, which is where the words sit */
 .hero::after {
@@ -98,8 +104,8 @@ html[lang="ru"] .hero .mega { --mega: min(8.6vw, 19svh); }
   left: 0;
   right: 0;
   bottom: 0;
-  height: 46%;
-  background: linear-gradient(to top, var(--bg-0) 4%, rgba(5, 6, 7, .78) 42%, transparent);
+  height: 44%;
+  background: linear-gradient(to top, var(--bg-0) 6%, rgba(4, 4, 5, .8) 44%, transparent);
   pointer-events: none;
 }
 .hero-foot {
@@ -107,20 +113,20 @@ html[lang="ru"] .hero .mega { --mega: min(8.6vw, 19svh); }
   margin-top: auto;
   padding-bottom: clamp(20px, 4svh, 44px);
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 540px) minmax(0, 1fr);
   align-items: end;
   gap: 32px;
   pointer-events: none;
 }
 .hero-foot a, .hero-foot .stats { pointer-events: auto; }
-.lede { max-width: 54ch; color: var(--ink); font-size: clamp(13.5px, 1.05vw, 15.5px); line-height: 1.65; text-wrap: pretty; }
-.actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
-.hero-data { justify-self: end; display: grid; gap: 12px; justify-items: end; }
-.stats { display: grid; grid-template-columns: repeat(4, auto); gap: 0 clamp(18px, 2.6vw, 44px); }
+.lede { max-width: 50ch; color: var(--ink); font-size: clamp(15.5px, 1.2vw, 18px); line-height: 1.55; text-wrap: pretty; }
+.actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.hero-data { justify-self: end; display: grid; gap: 14px; justify-items: end; }
+.stats { display: grid; grid-template-columns: repeat(4, auto); gap: 0 clamp(20px, 2.8vw, 48px); }
 .stats > div { display: flex; flex-direction: column; justify-content: flex-end; }
-.stats dt { color: var(--ink-2); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-.stats dd { font: 600 clamp(18px, 1.7vw, 24px) var(--f-num); margin-top: 4px; font-variant-numeric: tabular-nums; }
-.planet-note { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 14px; font: 11px var(--f-num); color: var(--ink-2); }
+.stats dt { color: var(--ink-2); font-size: 13px; white-space: nowrap; }
+.stats dd { font: 600 clamp(20px, 1.9vw, 28px) / 1.15 var(--f-ui); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.planet-note { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
 .planet-note > span { display: inline-flex; align-items: center; gap: 6px; }
 .planet-note .hint { color: var(--ink-3); }
 .static .hint { display: none; }
@@ -128,11 +134,11 @@ html[lang="ru"] .hero .mega { --mega: min(8.6vw, 19svh); }
 .sw.up { color: var(--up); }
 .sw.down { color: var(--down); }
 
-.planet-tip { position: absolute; left: 0; top: 0; z-index: 2; padding: 8px 11px; background: rgba(10, 11, 13, .92); border: 1px solid var(--rule-strong); font: 11.5px/1.5 var(--f-num); white-space: nowrap; }
-.planet-tip b { font: 700 13px var(--f-ui); margin-right: 8px; }
+.planet-tip { position: absolute; left: 0; top: 0; z-index: 2; padding: 8px 12px; background: rgba(10, 10, 12, .94); border: 1px solid var(--rule-strong); font-size: 13px; line-height: 1.5; white-space: nowrap; }
+.planet-tip b { font-weight: 700; margin-right: 8px; }
 
 /* an event on the planet: a pin on the column, a short lead and a note beside it */
-.planet-label { --tone: var(--accent); position: absolute; left: 0; top: 0; opacity: 0; transition: opacity .4s; will-change: transform; }
+.planet-label { --tone: var(--ink); position: absolute; left: 0; top: 0; opacity: 0; transition: opacity .4s; will-change: transform; }
 .planet-label.up { --tone: var(--up); }
 .planet-label.down { --tone: var(--down); }
 .planet-label.on { opacity: 1; }
@@ -142,137 +148,180 @@ html[lang="ru"] .hero .mega { --mega: min(8.6vw, 19svh); }
   position: absolute;
   bottom: 25px;
   right: -1px;
-  padding: 5px 9px 4px;
-  background: rgba(8, 9, 10, .88);
+  padding: 5px 10px;
+  background: rgba(8, 8, 10, .9);
   border: 1px solid color-mix(in srgb, var(--tone) 50%, transparent);
-  font: 11px/1.4 var(--f-num);
+  font-size: 12.5px;
+  line-height: 1.4;
   color: var(--ink-2);
   white-space: nowrap;
   transform: translateY(6px);
-  transition: transform .5s cubic-bezier(.16, 1, .3, 1);
+  transition: transform .5s var(--ease);
 }
 .planet-label.on .card { transform: none; }
 .planet-label.flip .card { right: auto; left: -1px; }
-.planet-label .card b { font: 700 12.5px var(--f-ui); color: var(--ink); margin-right: 7px; }
+.planet-label .card b { font-weight: 700; color: var(--ink); margin-right: 7px; }
 
 /* the running strip of the most traded pairs */
-.ticker { overflow: hidden; height: 44px; border-block: 1px solid var(--rule-soft); background: rgba(5, 6, 7, .82); opacity: 0; transition: opacity .6s; }
+.ticker { overflow: hidden; height: 46px; border-block: 1px solid var(--rule-soft); background: rgba(4, 4, 5, .86); opacity: 0; transition: opacity .6s; }
 .ticker.on { opacity: 1; }
 .ticker-track { display: flex; width: max-content; height: 100%; }
 .ticker-track > div { display: flex; }
-.ticker a { display: inline-flex; align-items: center; gap: 9px; height: 100%; padding: 0 22px; color: var(--ink-2); text-decoration: none; font: 12px var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ticker a b { font: 600 13px var(--f-ui); color: var(--ink); letter-spacing: .04em; }
+.ticker a { display: inline-flex; align-items: center; gap: 9px; height: 100%; padding: 0 22px; color: var(--ink-2); text-decoration: none; font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; transition: background .2s; }
+.ticker a b { font-weight: 600; color: var(--ink); }
 .ticker a:hover { background: var(--bg-sel); }
-.ticker a:hover b { color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) {
   .ticker-track { animation: ticker 90s linear infinite; }
   .ticker:hover .ticker-track, .ticker:focus-within .ticker-track { animation-play-state: paused; }
   @keyframes ticker { to { transform: translateX(-50%); } }
 }
 
-/* ---------- the two demos: words and a live panel on one side, the planet on the other ---------- */
-.band { min-height: 100svh; padding: 96px var(--gutter); display: flex; align-items: center; pointer-events: none; }
-.band-body { width: min(600px, 47%); pointer-events: auto; }
+/* ---------- the demos: words and a live panel on one side, the planet on the other ---------- */
+.band { min-height: 100svh; padding: 110px var(--gutter); display: flex; align-items: center; pointer-events: none; }
+.band-body { width: min(580px, 45%); pointer-events: auto; }
 .band.flip { justify-content: flex-end; }
-.band h2, .features h2, .how h2 { font: 800 clamp(30px, 4.1vw, 64px) / 1 var(--f-display); font-stretch: 75%; text-transform: uppercase; letter-spacing: 0; text-wrap: balance; }
-.band-body > p { margin: 20px 0 28px; color: var(--ink-2); font-size: 14.5px; line-height: 1.7; max-width: 58ch; text-wrap: pretty; }
+.band h2, .unroll h2, .features h2, .how h2 { font: 700 clamp(26px, 2.75vw, 44px) / 1.1 var(--f-display); letter-spacing: -.03em; text-wrap: balance; }
+.band-body > p, .unroll-words > p { margin: 22px 0 30px; color: var(--ink-2); font-size: 16.5px; line-height: 1.6; max-width: 56ch; text-wrap: pretty; }
+.band-body > .fine { margin: 16px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-3); max-width: 60ch; }
 
-.hud { position: relative; background: rgba(10, 11, 13, .92); border: 1px solid var(--rule); box-shadow: inset 0 1px 0 rgba(255, 176, 0, .07), 0 30px 80px rgba(0, 0, 0, .45); }
-.hud::before, .hud::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; }
-.hud::before { top: -1px; left: -1px; border-top: 1px solid var(--accent); border-left: 1px solid var(--accent); }
-.hud::after { bottom: -1px; right: -1px; border-bottom: 1px solid var(--accent); border-right: 1px solid var(--accent); }
-.hud-head { display: flex; justify-content: space-between; align-items: center; height: 42px; padding: 0 16px; border-bottom: 1px solid var(--rule-soft); }
-.p-title { font: 600 11.5px/1 var(--f-ui); letter-spacing: .14em; text-transform: uppercase; }
-.live-tape .tape-list { list-style: none; padding: 8px 16px 12px; height: calc(26px * 11 + 20px); overflow: hidden; }
+.hud { position: relative; background: rgba(9, 9, 11, .93); border: 1px solid var(--rule); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 40px 90px -20px rgba(0, 0, 0, .7); }
+.hud-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; height: 46px; padding: 0 18px; border-bottom: 1px solid var(--rule-soft); font-size: 13px; }
+.p-title { font-weight: 600; font-size: 14px; }
+.live-tape .tape-list { list-style: none; padding: 8px 18px 12px; height: calc(28px * 11 + 20px); overflow: hidden; }
 
 /* tape rows and badges, same as in the terminal */
-.tape-row { display: grid; grid-template-columns: 70px 76px 112px minmax(0, 1fr); align-items: center; height: 26px; font: 11.5px var(--f-num); }
+.tape-row { display: grid; grid-template-columns: 74px 78px 124px minmax(0, 1fr); align-items: center; height: 28px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .tape-row time { color: var(--ink-3); }
-.tape-row .s { font: 600 12.5px var(--f-ui); }
+.tape-row .s { font-weight: 600; }
 .tape-row .v { text-align: right; }
-.tape-row.alert { background: linear-gradient(90deg, rgba(255, 176, 0, .09), transparent 70%); box-shadow: inset 2px 0 0 var(--accent); }
-.tape-row.alert .v { text-align: left; color: var(--ink); font-family: var(--f-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tape-row.alert { background: linear-gradient(90deg, rgba(255, 255, 255, .07), transparent 70%); box-shadow: inset 2px 0 0 var(--ink); }
+.tape-row.alert .v { text-align: left; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .badge {
   justify-self: start;
-  font: 600 10.5px/1 var(--f-ui);
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
   padding: 4px 7px;
   color: var(--tone);
-  background: color-mix(in srgb, var(--tone) 12%, transparent);
-  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: color-mix(in srgb, var(--tone) 13%, transparent);
+  white-space: nowrap;
 }
 .badge.up { --tone: var(--up); }
 .badge.down { --tone: var(--down); }
-.badge.hot { --tone: var(--accent); }
+.badge.hot { --tone: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  .tape-row.enter { animation: tapeIn .6s ease-out; }
-  @keyframes tapeIn { from { background: rgba(255, 176, 0, .16); } }
+  .tape-row.enter { animation: tapeIn .7s ease-out; }
+  @keyframes tapeIn { from { background: rgba(255, 255, 255, .14); } }
 }
-.empty-note { color: var(--ink-3); font-size: 12.5px; padding: 12px 0; list-style: none; }
+.empty-note { color: var(--ink-3); font-size: 13.5px; padding: 12px 0; list-style: none; }
 
-.mini { width: 100%; border-collapse: collapse; font: 12px var(--f-num); font-variant-numeric: tabular-nums; }
+.mini { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
 .hud .mini { margin: 6px 0 10px; }
 /* the bar column takes whatever is left, so the table can never be wider than its frame */
 .mini.walls { table-layout: auto; }
 .mini.walls td { padding: 0 8px; }
-.mini.walls td:first-child { padding-left: 16px; }
-.mini.walls td:last-child { padding-right: 16px; }
+.mini.walls td:first-child { padding-left: 18px; }
+.mini.walls td:last-child { padding-right: 18px; }
 .mini.walls .barcell { width: 100%; }
 .mini.walls .bar { display: block; }
-.mini td { height: 32px; padding: 0 16px; white-space: nowrap; }
-.mini td:first-child { font: 600 13px var(--f-ui); }
+.mini td { height: 34px; padding: 0 18px; white-space: nowrap; }
+.mini td:first-child { font-weight: 600; }
 .mini td.r { text-align: right; }
 .mini .bar { display: inline-block; height: 6px; vertical-align: middle; }
 
-/* ---------- what is inside: the planet steps back and dims behind these ---------- */
-.features, .how { max-width: 1320px; margin: 0 auto; padding: 96px var(--gutter); }
-.bento { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.cell { position: relative; padding: 26px; background: rgba(10, 11, 13, .92); border: 1px solid var(--rule); min-height: 200px; }
-.cell.wide { grid-column: span 2; }
-.cell.accent { background: linear-gradient(135deg, rgba(38, 28, 6, .95), rgba(20, 17, 10, .95) 60%, rgba(10, 11, 13, .95)); }
-.cell.tg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
-.msg { display: grid; gap: 6px; padding: 14px 16px; background: rgba(5, 6, 7, .55); border: 1px solid var(--rule-strong); border-radius: 14px 14px 14px 4px; font-size: 13.5px; line-height: 1.5; }
-.msg b { font-weight: 700; color: var(--ink); }
+/* ---------- the planet comes apart: a tall section whose words stay pinned while it happens ---------- */
+.unroll { height: 230svh; pointer-events: none; }
+.unroll-pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  padding: clamp(84px, 13svh, 130px) var(--gutter) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  align-items: start;
+  gap: 48px;
+}
+.unroll-words { max-width: 640px; pointer-events: auto; }
+.unroll-words > p { margin-bottom: 0; }
+.hud.movers { pointer-events: auto; }
+.hud.movers .mini td { padding: 0 10px; }
+.hud.movers .mini td:first-child { padding-left: 18px; }
+.hud.movers .mini td:last-child { padding-right: 18px; }
+
+/* ---------- a setup, drawn: where it enters, where it gives up, where it takes profit ---------- */
+.plan-sketch { display: block; width: 100%; height: auto; padding: 16px 18px 6px; }
+.plan-sketch path { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.sk-candles path { stroke: var(--ink-3); }
+.sk-candles .body { fill: #24262b; }
+.sk-range { stroke: var(--ink-3); stroke-dasharray: 3 4; }
+path.sk-break { stroke: var(--up); }
+rect.sk-break { fill: var(--up); }
+.sk-reward { fill: color-mix(in srgb, var(--up) 13%, transparent); }
+.sk-risk { fill: color-mix(in srgb, var(--down) 15%, transparent); }
+.sk-target { stroke: var(--up); }
+.sk-entry { stroke: var(--ink); }
+.sk-stop { stroke: var(--down); }
+.plan-sketch text { font: 500 13px var(--f-ui); fill: var(--ink); }
+.plan-sketch .sk-up { fill: var(--up); }
+.plan-sketch .sk-down { fill: var(--down); }
+.plan-sketch .sk-mute { fill: var(--ink-2); }
+.su-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule-soft); }
+.su-stats > div { padding: 14px 18px; }
+.su-stats > div + div { border-left: 1px solid var(--rule-soft); }
+.su-stats dt { color: var(--ink-2); font-size: 13px; }
+.su-stats dd { margin-top: 2px; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mini.su-open { margin: 0; border-top: 1px solid var(--rule-soft); }
+.mini.su-open:empty, .mini.su-open tbody:empty { display: none; }
+.mini.su-open td { padding: 0 8px; }
+.mini.su-open td:first-child { padding-left: 18px; }
+.mini.su-open td:last-child { padding-right: 18px; }
+.su-note { padding: 12px 18px 14px; border-top: 1px solid var(--rule-soft); color: var(--ink-2); font-size: 13.5px; }
+
+/* ---------- what else is inside: the planet steps back and dims behind these ---------- */
+.features, .how { max-width: 1320px; margin: 0 auto; padding: 110px var(--gutter); }
+.bento { margin-top: 44px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); background: rgba(9, 9, 11, .93); }
+.cell { position: relative; padding: 28px; min-height: 260px; display: flex; flex-direction: column; }
+.cell + .cell { border-left: 1px solid var(--rule); }
+.cell h3 { font: 600 16px/1.2 var(--f-display); letter-spacing: -.02em; }
+.cell p { margin: 12px 0 20px; color: var(--ink-2); font-size: 15px; line-height: 1.55; max-width: 44ch; }
+.cell > :last-child { margin-top: auto; }
+.msg { display: grid; gap: 5px; padding: 13px 15px; background: var(--bg-2); border-radius: 14px 14px 14px 3px; font-size: 14px; line-height: 1.45; }
+.msg b { font-weight: 650; color: var(--ink); }
 .msg span { color: var(--ink-2); }
-.msg i { color: var(--ink-3); font-size: 12.5px; }
-.cell h3 { font: 700 15px var(--f-ui); letter-spacing: .02em; text-transform: uppercase; }
-.cell p { margin-top: 10px; color: var(--ink-2); font-size: 13.5px; line-height: 1.65; max-width: 60ch; }
-.cell .mini { margin-top: 16px; }
-.strip { display: block; width: 100%; height: 64px; margin-top: 18px; }
+.msg i { color: var(--ink-3); font-size: 12.5px; font-style: normal; }
+.strip { display: block; width: 100%; height: 64px; }
 .strip .axis { stroke: var(--rule-strong); }
-.strip .price { stroke: var(--accent); stroke-dasharray: 2 3; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
-.chips .badge { font-size: 10px; }
-.cell .mini td { padding: 0 12px 0 0; height: 28px; }
+.strip .price { stroke: var(--ink); stroke-dasharray: 2 3; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* the rest of the instruments as a spec sheet: name on the left, what it does beside it */
-.spec { margin-top: 44px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 56px; border-top: 1px solid var(--rule); background: rgba(5, 6, 7, .72); }
-.spec > div { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--rule); }
-.spec dt { font: 700 13px/1.5 var(--f-ui); text-transform: uppercase; letter-spacing: .02em; }
-.spec dd { color: var(--ink-2); font-size: 13.5px; line-height: 1.65; }
+.spec { margin-top: 28px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; background: rgba(4, 4, 5, .78); }
+.spec > div { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--rule); }
+.spec dt { font-size: 15px; font-weight: 600; line-height: 1.5; }
+.spec dd { color: var(--ink-2); font-size: 15px; line-height: 1.55; }
 
-.pipeline { list-style: none; margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; counter-reset: step; }
-.pipeline li { position: relative; padding: 24px 28px 0 0; border-top: 1px solid var(--rule-strong); }
+.pipeline { list-style: none; margin-top: 44px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; counter-reset: step; }
+.pipeline li { position: relative; padding: 26px 32px 0 0; border-top: 1px solid var(--rule-strong); }
+/* numbered because the order is the point: the data really does pass through in this sequence */
 .pipeline li::before {
   counter-increment: step;
-  content: "0" counter(step);
+  content: counter(step);
   position: absolute;
-  top: -11px;
+  top: -12px;
   left: 0;
-  padding-right: 10px;
+  padding-right: 12px;
   background: var(--bg-0);
-  font: 600 13px var(--f-num);
-  color: var(--accent);
+  font: 600 14px/24px var(--f-display);
+  color: var(--ink);
 }
-.pipeline b { display: block; font: 700 15px var(--f-ui); text-transform: uppercase; letter-spacing: .02em; }
-.pipeline span { display: block; margin-top: 10px; color: var(--ink-2); font-size: 13.5px; line-height: 1.65; max-width: 40ch; }
+.pipeline b { display: block; font: 600 16px/1.2 var(--f-display); letter-spacing: -.02em; }
+.pipeline span { display: block; margin-top: 12px; color: var(--ink-2); font-size: 15px; line-height: 1.55; max-width: 38ch; }
 
 /* ---------- the ending mirrors the opening: big words, the horizon again ---------- */
 .final { position: relative; min-height: 100svh; padding: 12svh var(--gutter) 0; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
-.final .mega { --mega: min(8.4vw, 17svh); text-wrap: balance; }
-html[lang="ru"] .final .mega { --mega: min(7vw, 16svh); }
-.final .cta { margin-top: 36px; pointer-events: auto; }
+.final .mega { --mega: min(6.6vw, 15svh); max-width: 16ch; text-wrap: balance; }
+html[lang="ru"] .final .mega { --mega: min(5.6vw, 14svh); max-width: 18ch; }
+.final .cta { margin-top: 40px; pointer-events: auto; }
 
 .foot {
   /* laid over the bottom of the ending; a fixed height keeps the page from ending below it */
@@ -284,11 +333,39 @@ html[lang="ru"] .final .mega { --mega: min(7vw, 16svh); }
   justify-content: space-between;
   gap: 16px;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 13.5px;
   background: linear-gradient(to top, var(--bg-0) 30%, transparent);
 }
-.foot a { text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
+.foot a { text-decoration: none; border-bottom: 1px solid var(--rule-strong); transition: border-color .2s; }
+.foot a:hover { border-color: var(--ink); }
 
+/* ---------- motion: the page is readable without any of it ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* the headline is set line by line, each rising out of its own baseline */
+  .hero .mega span { animation: line 1.2s var(--ease) both; }
+  .hero .mega span:nth-child(2) { animation-delay: .09s; }
+  .hero .mega span:nth-child(3) { animation-delay: .18s; }
+  @keyframes line {
+    from { clip-path: inset(0 0 100% 0); translate: 0 60%; }
+    to { clip-path: inset(-20% -5% -20% -5%); translate: 0 0; }
+  }
+  .hero-foot, .nav { animation: arrive 1.1s .45s var(--ease) both; }
+  .nav { animation-delay: .1s; }
+  @keyframes arrive { from { opacity: 0; translate: 0 14px; } }
+
+  /* sections arrive piece by piece the first time they are scrolled to; only when a script is
+     there to bring them in */
+  .js .reveal > *, .js .reveal:is(h2) {
+    opacity: 0;
+    translate: 0 26px;
+    filter: blur(8px);
+    transition: opacity .9s var(--ease), translate .9s var(--ease), filter .9s var(--ease);
+  }
+  .js .reveal > :nth-child(2) { transition-delay: .08s; }
+  .js .reveal > :nth-child(3) { transition-delay: .16s; }
+  .js .reveal > :nth-child(4) { transition-delay: .24s; }
+  .js .reveal.in > *, .js .reveal.in:is(h2) { opacity: 1; translate: 0 0; filter: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .hero .mega { opacity: 1; }
   .hero .mega span { transform: none !important; }
@@ -298,34 +375,44 @@ html[lang="ru"] .final .mega { --mega: min(7vw, 16svh); }
   .nav { height: 64px; gap: 12px; }
   .nav nav { display: none; }
   .nav .lang { margin-left: auto; }
-  .nav .lang button { height: 32px; padding: 0 8px; }
-  .cta.small { padding: 0 12px; font-size: 10.5px; letter-spacing: .08em; }
+  .nav .lang button { height: 32px; padding: 0 9px; }
+  .cta.small { padding: 0 13px; font-size: 13px; }
   .hero { height: calc(100svh - 64px); }
-  .hero .mega { --mega: min(10.2vw, 14svh); margin-top: 3svh; }
-  html[lang="ru"] .hero .mega { --mega: min(8.3vw, 14svh); }
-  .hero::after { height: 58%; }
-  .hero-foot { grid-template-columns: 1fr; gap: 18px; padding-bottom: 46px; }
+  /* on a phone the lines may break, so the type can stay large */
+  .hero .mega { --mega: min(11.4vw, 9.4svh); margin-top: 2svh; }
+  html[lang="ru"] .hero .mega { --mega: min(10.2vw, 9.4svh); }
+  .mega span { white-space: normal; }
+  .hero::after { height: 56%; }
+  .hero-foot { grid-template-columns: 1fr; gap: 18px; padding-bottom: 40px; }
   .hero-data { justify-self: stretch; justify-items: start; }
   .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 12px; width: 100%; }
-  .stats dt { font-size: 9.5px; white-space: normal; }
-  .stats dd { font-size: 15px; }
+  .stats dt { font-size: 11.5px; white-space: normal; line-height: 1.25; }
+  .stats dd { font-size: 17px; }
   .planet-note { display: none; }
+  .lede { font-size: 15px; }
   .actions { margin-top: 16px; }
-  .cta, .ghost { height: 44px; padding: 0 18px; font-size: 12px; }
-  .band { min-height: 0; padding: 64px var(--gutter); }
+  .cta, .ghost { height: 46px; padding: 0 18px; font-size: 14.5px; }
+  .band { min-height: 0; padding: 72px var(--gutter); }
   .band-body { width: 100%; }
-  .band h2, .features h2, .how h2 { font-size: clamp(28px, 8.6vw, 44px); }
-  .cell.tg { grid-template-columns: 1fr; gap: 18px; }
+  .band h2, .unroll h2, .features h2, .how h2 { font-size: clamp(22px, 6.4vw, 34px); }
+  .band-body > p, .unroll-words > p { font-size: 15.5px; margin: 16px 0 24px; }
+  .unroll { height: 200svh; }
+  .unroll-pin { grid-template-columns: 1fr; padding-top: 76px; gap: 0; }
+  .hud.movers { display: none; }
   .bento { grid-template-columns: 1fr; }
-  .cell.wide { grid-column: auto; }
-  .spec { grid-template-columns: 1fr; margin-top: 28px; }
-  .spec > div { grid-template-columns: 1fr; gap: 6px; padding: 16px 0; }
+  .cell { min-height: 0; padding: 22px; }
+  .cell + .cell { border-left: 0; border-top: 1px solid var(--rule); }
+  .spec { grid-template-columns: 1fr; }
+  .spec > div { grid-template-columns: 1fr; gap: 4px; padding: 16px 0; }
   .ticker a { padding: 0 16px; }
-  .pipeline { grid-template-columns: 1fr; gap: 28px; }
-  .features, .how { padding: 64px var(--gutter); }
-  .tape-row { grid-template-columns: 62px 62px 104px minmax(0, 1fr); }
+  .pipeline { grid-template-columns: 1fr; gap: 30px; }
+  .features, .how { padding: 72px var(--gutter); }
+  .tape-row { grid-template-columns: 64px 60px 112px minmax(0, 1fr); font-size: 12.5px; }
+  .live-tape .tape-list { padding-inline: 12px; }
+  .plan-sketch text { font-size: 17px; }
+  .su-stats dd { font-size: 20px; }
+  .su-stats > div { padding: 12px; }
   .final { padding-top: 8svh; }
-  .final .mega { --mega: min(12vw, 12svh); }
-  html[lang="ru"] .final .mega { --mega: min(10vw, 11svh); }
+  .final .mega, html[lang="ru"] .final .mega { --mega: min(10.4vw, 9svh); }
   .foot { flex-direction: column; align-items: flex-start; justify-content: flex-end; height: 120px; margin-top: -120px; gap: 8px; }
 }

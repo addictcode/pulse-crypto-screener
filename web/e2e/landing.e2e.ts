@@ -25,6 +25,31 @@ test('the landing page speaks Russian', async ({ page }) => {
   await expect(page.locator('.hero .cta')).toHaveText('Открыть терминал');
 });
 
+test('the setups panel shows the journal the server keeps', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/');
+  // three closed trades, two of them winners, and one still open
+  await expect(page.locator('#su-n')).toHaveText('3', { timeout: 20_000 });
+  await expect(page.locator('#su-win')).toHaveText('67%');
+  await expect(page.locator('#su-net')).toHaveText('+4.7R');
+  await expect(page.locator('#su-open tr')).toHaveCount(1);
+  await expect(page.locator('#su-open tr')).toContainText('SOL');
+  await expect(page.locator('#su-note')).toBeHidden();
+});
+
+test('scrolling to the screener keeps its words on screen while the planet unrolls', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/');
+  // the frame the words sit in; the words themselves are still arriving when it is measured
+  const words = page.locator('#screener .unroll-pin');
+  await page.locator('#screener').evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + 40));
+  const before = (await words.boundingBox())!.y;
+  await page.evaluate(() => window.scrollBy(0, window.innerHeight * 0.6));
+  // the section is pinned: more than half a screen further on, the frame has not moved
+  expect(Math.abs((await words.boundingBox())!.y - before)).toBeLessThan(2);
+  await expect(page.locator('#screener .reveal').first()).toHaveClass(/\bin\b/);
+});
+
 test('a tape event is called out on the planet', async ({ page }) => {
   // WebGL in a headless browser is software rendering: give it room on a busy CI machine
   test.slow();

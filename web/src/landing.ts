@@ -5,13 +5,16 @@ import './landing.css';
 
 import { age, base, pct, px, tone, usd } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
-import { startFeed } from './api';
+import { STANDALONE, setupBoard, startFeed } from './api';
 import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
+import type { SetupBoard } from './types';
 
 localize();
 mountLangSwitch(document.getElementById('lang')!);
+// sections wait out of sight only when there is a script to bring them in (see .reveal)
+document.documentElement.classList.add('js');
 
 const $ = (id: string) => document.getElementById(id)!;
 const market = new Market();
@@ -58,44 +61,68 @@ if (hasWebgl) {
 }
 
 /**
- * The page is one shot of the planet, and scrolling moves the camera. Each section names where
- * the planet should be when that section is in the middle of the screen: the hero and the ending
- * see only its top, as a horizon; the two demos have it beside them; behind the feature list it
- * steps back and dims. Between sections the view is blended, so the planet travels with the scroll.
+ * The page is one shot of the planet, and scrolling directs it. Each section names what the
+ * planet does while that section is on screen: the hero and the ending see only its top, lit from
+ * behind like an eclipse; the demos have it beside them in daylight; for the screener it unrolls
+ * into a flat field; behind the feature list it steps back and dims. A section taller than the
+ * screen holds its view for as long as it fills the screen, and between sections the views are
+ * blended, so the planet travels with the scroll.
  */
-type View = { x: number; y: number; r: number; glow: number };
+type View = { x: number; y: number; r: number; glow: number; flat: number; dawn: number };
 const stops = [...document.querySelectorAll<HTMLElement>('[data-planet]')];
 const scene = $('scene');
 
-function viewOf(kind: string, w: number, h: number): View {
+/** `held` runs from 0 to 1 while a tall section stays on screen. */
+function viewOf(kind: string, w: number, h: number, held: number): View {
   const wide = w >= 900;
   if (kind === 'horizon' || kind === 'ending') {
     // only the top of the planet is on screen; the ending shows less of it, to leave the words alone
     const r = Math.max(0.62 * w, 0.7 * h);
-    const sunk = kind === 'ending' ? 0.74 : wide ? 0.65 : 0.3;
-    return { x: w / 2, y: h + r * sunk, r, glow: 1 };
+    const sunk = kind === 'ending' ? 0.74 : wide ? 0.66 : 0.36;
+    return { x: w / 2, y: h + r * sunk, r, glow: 1, flat: 0, dawn: 1 };
   }
-  if (kind === 'back' || !wide) return { x: w / 2, y: h / 2, r: wide ? h * 0.4 : w * 0.46, glow: wide ? 0.16 : 0.2 };
-  return { x: w * (kind === 'right' ? 0.74 : 0.26), y: h * 0.52, r: Math.min(h * 0.3, w * 0.2), glow: 1 };
+  if (kind === 'field') {
+    // the camera keeps closing in while the field is on screen, so the scene never stands still
+    const r = (wide ? Math.min(w * 0.17, h * 0.26) : w * 0.27) * (1 + held * 0.16);
+    return { x: w / 2, y: h * (wide ? 0.68 : 0.7), r, glow: 1, flat: 1, dawn: 0 };
+  }
+  if (kind === 'back' || !wide) return { x: w / 2, y: h / 2, r: wide ? h * 0.4 : w * 0.46, glow: wide ? 0.16 : 0.2, flat: 0, dawn: 0.5 };
+  return { x: w * (kind === 'right' ? 0.74 : 0.26), y: h * 0.52, r: Math.min(h * 0.3, w * 0.2), glow: 1, flat: 0, dawn: 0 };
 }
 
 function stage() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const middle = window.scrollY + h / 2;
-  // the hero's mark is the middle of the first screen, so the page opens exactly on its view
-  const marks = stops.map((el, i) => (i === 0 ? h / 2 : el.getBoundingClientRect().top + window.scrollY + el.offsetHeight / 2));
+  // where the middle of the screen is while a section holds the view: one point for a section
+  // no taller than the screen, a stretch for a taller one
+  const marks = stops.map((el, i) => {
+    // the hero's mark is the middle of the first screen, so the page opens exactly on its view
+    if (i === 0) return { from: h / 2, to: h / 2 };
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const half = Math.min(h, el.offsetHeight) / 2;
+    return { from: top + half, to: top + el.offsetHeight - half };
+  });
   let i = 0;
-  while (i < stops.length - 2 && middle > marks[i + 1]) i++;
-  const from = viewOf(stops[i].dataset.planet!, w, h);
-  const to = viewOf(stops[i + 1].dataset.planet!, w, h);
-  const raw = Math.min(1, Math.max(0, (middle - marks[i]) / (marks[i + 1] - marks[i])));
-  const k = raw * raw * (3 - 2 * raw);
-  const mix = (a: number, b: number) => a + (b - a) * k;
-  planet?.setView(mix(from.x, to.x), mix(from.y, to.y), mix(from.r, to.r));
-  scene.style.opacity = mix(from.glow, to.glow).toFixed(3);
+  while (i < stops.length - 1 && middle >= marks[i + 1].from) i++;
+  const span = marks[i].to - marks[i].from;
+  const held = span > 0 ? Math.min(1, (middle - marks[i].from) / span) : 1;
+  let view = viewOf(stops[i].dataset.planet!, w, h, Math.max(0, held));
+  if (middle > marks[i].to && i < stops.length - 1) {
+    const to = viewOf(stops[i + 1].dataset.planet!, w, h, 0);
+    const raw = Math.min(1, (middle - marks[i].to) / (marks[i + 1].from - marks[i].to));
+    const k = raw * raw * (3 - 2 * raw);
+    const from = view;
+    const mix = (key: keyof View) => from[key] + (to[key] - from[key]) * k;
+    view = { x: mix('x'), y: mix('y'), r: mix('r'), glow: mix('glow'), flat: mix('flat'), dawn: mix('dawn') };
+  }
+  planet?.setView(view.x, view.y, view.r);
+  planet?.setMood(view.flat, view.dawn);
+  scene.style.opacity = view.glow.toFixed(3);
+  const root = document.documentElement.style;
   // how far the first screen has been scrolled away, for the headline that parts as it leaves
-  document.documentElement.style.setProperty('--away', Math.min(1, window.scrollY / h).toFixed(4));
+  root.setProperty('--away', Math.min(1, window.scrollY / h).toFixed(4));
+  root.setProperty('--page', Math.min(1, window.scrollY / Math.max(1, document.documentElement.scrollHeight - h)).toFixed(4));
 }
 let staged = 0;
 const restage = () => {
@@ -105,6 +132,19 @@ const restage = () => {
 window.addEventListener('scroll', restage, { passive: true });
 window.addEventListener('resize', restage);
 stage();
+
+// each block is brought in once, the first time a fifth of it is on screen
+const arrivals = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add('in');
+      arrivals.unobserve(entry.target);
+    }
+  },
+  { threshold: 0.2 },
+);
+document.querySelectorAll('.reveal').forEach((el) => arrivals.observe(el));
 
 // what the tape reports also happens on the planet, a few events at a time so it stays readable
 market.newTape.on((items) => {
@@ -246,6 +286,7 @@ function renderMovers() {
     .filter((r) => r.ch5m !== null && r.vol24h > 20_000_000)
     .sort((a, b) => Math.abs(b.ch5m!) - Math.abs(a.ch5m!))
     .slice(0, 5);
+  if (!movers.length) return;
   ($('movers-preview') as HTMLTableElement).tBodies[0].innerHTML = movers
     .map(
       (r) => `<tr><td>${base(r.symbol)}</td><td class="r">${px(r.price)}</td><td class="r ${tone(r.ch5m)}">${pct(r.ch5m)} ${t('5m')}</td><td class="r mute">${usd(r.vol24h)}</td></tr>`,
@@ -254,5 +295,47 @@ function renderMovers() {
 }
 market.snapshot.on(renderMovers);
 setInterval(renderMovers, 3_000);
+
+/**
+ * The setups the server is following right now and how the finished ones ended. Open trades are
+ * priced from the live market, in R: 1R is the distance from the entry to the stop.
+ */
+let board: SetupBoard | null = null;
+function renderSetups() {
+  if (!board) return;
+  const closed = board.stats.reduce((sum, s) => sum + s.trades, 0);
+  const wins = board.stats.reduce((sum, s) => sum + s.wins, 0);
+  const net = board.stats.reduce((sum, s) => sum + s.netR, 0);
+  $('su-stats').hidden = closed === 0;
+  $('su-n').textContent = String(closed);
+  $('su-win').textContent = closed ? `${Math.round((wins / closed) * 100)}%` : '';
+  $('su-net').textContent = inR(net, 1);
+  $('su-net').className = tone(net);
+  $('su-since').textContent = board.open.length ? t('Open now: {n}', { n: board.open.length }) : '';
+  $('su-note').hidden = closed > 0 || board.open.length > 0;
+  ($('su-open') as HTMLTableElement).tBodies[0].innerHTML = board.open
+    .slice(0, 4)
+    .map((s) => {
+      const price = market.rows.get(s.symbol)?.price;
+      const live = price === undefined ? null : (s.direction * (price - s.entry)) / Math.abs(s.entry - s.stop);
+      return `<tr><td>${base(s.symbol)}</td><td class="${s.direction > 0 ? 'up' : 'down'}">${s.direction > 0 ? t('long') : t('short')}</td><td class="mute">${s.timeframe}</td><td class="r">${px(s.entry)}</td><td class="r ${tone(live)}">${live === null ? '' : inR(live, 2)}</td></tr>`;
+    })
+    .join('');
+}
+const inR = (value: number, digits: number) => `${value < 0 ? '−' : '+'}${Math.abs(value).toFixed(digits)}R`;
+if (STANDALONE) {
+  $('su-note').textContent = t('The journal is kept by the Pulse server; this demo runs without one.');
+} else {
+  const loadSetups = () =>
+    setupBoard()
+      .then((next) => {
+        board = next;
+        renderSetups();
+      })
+      .catch(() => undefined);
+  void loadSetups();
+  setInterval(loadSetups, 30_000);
+  setInterval(renderSetups, 3_000);
+}
 
 void startFeed(market).catch(() => undefined);
