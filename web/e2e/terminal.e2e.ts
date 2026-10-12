@@ -268,3 +268,32 @@ test('the setups journal lists trades and opens one on its timeframe', async ({ 
   await expect(selected(page)).toHaveText('SOL');
   await expect(page.locator('#tf [aria-selected="true"]')).toHaveText('15m');
 });
+
+test('a second watchlist takes its own pairs', async ({ page }) => {
+  await openTerminal(page);
+  const lists = page.locator('#presets .preset.watch');
+  await expect(lists).toHaveCount(1);
+  // the first list starts with the two majors
+  await expect(lists.first().locator('.count')).toHaveText('2');
+
+  await lists.first().click();
+  await page.locator('#presets [data-act="edit-list"]').click();
+  await page.locator('#flt-menu [data-act="new-list"]').click();
+  await page.locator('#flt-menu input[name="name"]').fill('Memes');
+  await page.locator('#flt-menu button[type="submit"]').click();
+
+  // the new list is open and empty; the star now adds to it
+  await expect(lists).toHaveCount(2);
+  await expect(lists.nth(1)).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(0);
+  await page.locator('#presets [data-preset="all"]').click();
+  await page.locator('#rows [data-star="WIFUSDT"]').click();
+  await expect(lists.nth(1).locator('.count')).toHaveText('1');
+  await expect(lists.first().locator('.count')).toHaveText('2');
+
+  await page.reload();
+  await expect(page.locator('#presets .preset.watch').nth(1)).toContainText('Memes');
+  await page.locator('#presets .preset.watch').nth(1).click();
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(1);
+  await expect(page.locator('#rows')).toContainText('WIF');
+});

@@ -1,3 +1,4 @@
+import { MAX_LISTS, MAX_NAME, sanitizeLists, toggled, type Watchlist } from './watchlists';
 import { MAX_PRESETS, MAX_RULES, METRICS, OPS, matches, parseNumber, sanitize, type CustomPreset, type Rule } from './filters';
 import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
@@ -13,6 +14,8 @@ type Key = keyof SymbolMetrics | 'star' | 'spark' | 'wall' | 'fgap';
 /** Per-row data that does not live in SymbolMetrics. */
 interface RowContext {
   starred: boolean;
+  /** Name of the watchlist the star adds to. */
+  list: string;
   spark: number[] | undefined;
   wall: Wall | null;
   gap: VenueGap | undefined;
@@ -62,7 +65,6 @@ const PRESETS: Preset[] = [
   { id: 'fgap', label: t('Arb'), test: (_r, ctx) => abs(ctx.gap?.spread8h ?? null) >= RULES.fundingGap },
   { id: 'oi', label: t('OI rising'), test: (r) => (r.oiCh15m ?? 0) >= RULES.oiRise },
   { id: 'walls', label: t('Near walls'), test: (_r, ctx) => ctx.wall !== null && Math.abs(ctx.wall.distance) <= RULES.nearWall },
-  { id: 'watch', label: t('Watchlist'), test: (_r, ctx) => ctx.starred },
 ];
 
 const meter = (v: number | null) => {
@@ -78,8 +80,10 @@ const pctCell = (v: number | null, extra = '') =>
 const COLUMNS: Column[] = [
   {
     key: 'star', label: '', cls: 'c-star', core: true, sortable: false,
-    cell: (r, { starred }) =>
-      `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${starred ? t('Remove from watchlist') : t('Add to watchlist')}">${starred ? ICONS.starFill : ICONS.star}</button></td>`,
+    cell: (r, { starred, list }) => {
+      const hint = escapeHtml(starred ? t('Remove from {list}', { list }) : t('Add to {list}', { list }));
+      return `<td class="c-star"><button class="star${starred ? ' on' : ''}" data-star="${r.symbol}" aria-label="${hint}" title="${hint}">${starred ? ICONS.starFill : ICONS.star}</button></td>`;
+    },
   },
   { key: 'symbol', label: t('Symbol'), cls: 'sym', core: true, cell: (r) => `<td class="sym">${base(r.symbol)}</td>` },
   {
@@ -166,7 +170,11 @@ export class Screener {
   private readonly volumeSelect = document.getElementById('minvol') as HTMLSelectElement;
 
   private readonly state: ScreenerState;
-  private readonly starred = new Set<string>(load<string[]>('watchlist', ['BTCUSDT', 'ETHUSDT']));
+  private lists: Watchlist[] = sanitizeLists(load<unknown>('watchlists', null), load<unknown>('watchlist', null), t('Watchlist'));
+  /** The list the star adds to: the one looked at last. */
+  private activeList = load('watchActive', '');
+  /** The watchlist open in the editor; null while a filter is being edited instead. */
+  private editingList: Watchlist | null = null;
   private custom: CustomPreset[] = sanitize(load<unknown>('customPresets', []));
   private readonly filterMenu = document.getElementById('flt-menu')!;
   private readonly columnsMenu = document.getElementById('cols-menu')!;
@@ -221,10 +229,15 @@ export class Screener {
     return this.preset().label;
   }
 
-  /** Built-in presets, then the ones the user built. */
+  private active(): Watchlist {
+    return this.lists.find((l) => l.id === this.activeList) ?? this.lists[0];
+  }
+
+  /** Built-in presets, the watchlists, then the filters the user built. */
   private presets(): Preset[] {
     return [
       ...PRESETS,
+      ...this.lists.map((l) => ({ id: `watch:${l.id}`, label: l.name, test: (r: SymbolMetrics) => l.symbols.includes(r.symbol) })),
       ...this.custom.map((c) => ({ id: `custom:${c.id}`, label: c.name, test: (r: SymbolMetrics, ctx: RowContext) => matches(c.rules, r, ctx.wall, ctx.gap) })),
     ];
   }
@@ -275,7 +288,7 @@ export class Screener {
     const rows = [...this.market.rows.values()].filter(
       (r) =>
         preset.test(r, this.context(r)) &&
-        (this.state.preset === 'watch' || r.vol24h >= this.state.minVolume) &&
+        (this.state.preset.startsWith('watch:') || r.vol24h >= this.state.minVolume) &&
         (!q || base(r.symbol).includes(q)),
     );
     const column = COLUMNS.find((c) => c.key === this.state.sortKey);
@@ -293,8 +306,10 @@ export class Screener {
   }
 
   private context(r: SymbolMetrics): RowContext {
+    const list = this.active();
     return {
-      starred: this.starred.has(r.symbol),
+      starred: list.symbols.includes(r.symbol),
+      list: list.name,
       spark: this.market.sparklines.get(r.symbol),
       wall: this.market.nearestWall(r.symbol),
       gap: this.market.gaps.get(r.symbol),
@@ -374,13 +389,18 @@ export class Screener {
     const rows = [...this.market.rows.values()];
     const selected = this.preset().id;
     const chips = this.presets().map((p) => {
-      const n = rows.filter((r) => p.test(r, this.context(r)) && (p.id === 'watch' || r.vol24h >= this.state.minVolume)).length;
-      return `<button class="preset" role="tab" data-preset="${p.id}" aria-selected="${p.id === selected}">${escapeHtml(p.label)}<span class="count">${n}</span></button>`;
+      const watch = p.id.startsWith('watch:');
+      const n = rows.filter((r) => p.test(r, this.context(r)) && (watch || r.vol24h >= this.state.minVolume)).length;
+      // the star marks the list that the stars in the table add to
+      const mark = watch ? `<span class="i mark">${p.id === `watch:${this.active().id}` ? ICONS.starFill : ICONS.star}</span>` : '';
+      return `<button class="preset${watch ? ' watch' : ''}" role="tab" data-preset="${p.id}" aria-selected="${p.id === selected}">${mark}${escapeHtml(p.label)}<span class="count">${n}</span></button>`;
     });
     // a custom preset can be edited while it is selected; a new one can always be added
     const edit = selected.startsWith('custom:')
       ? `<button type="button" class="preset tool" data-act="edit" title="${t('Edit this filter')}" aria-label="${t('Edit this filter')}">${ICONS.edit}</button>`
-      : '';
+      : selected.startsWith('watch:')
+        ? `<button type="button" class="preset tool" data-act="edit-list" title="${t('Rename, delete or add a watchlist')}" aria-label="${t('Rename, delete or add a watchlist')}">${ICONS.edit}</button>`
+        : '';
     const add = this.custom.length < MAX_PRESETS
       ? `<button type="button" class="preset tool" data-act="new" title="${t('New filter')}" aria-label="${t('New filter')}">${ICONS.plus}</button>`
       : '';
@@ -397,10 +417,63 @@ export class Screener {
   }
 
   private toggleStar(symbol: string) {
-    if (this.starred.has(symbol)) this.starred.delete(symbol);
-    else this.starred.add(symbol);
-    save('watchlist', [...this.starred]);
+    this.lists = toggled(this.lists, this.active().id, symbol);
+    save('watchlists', this.lists);
     this.render();
+  }
+
+  // ---------- watchlists ----------
+
+  private openList(list: Watchlist | null) {
+    this.editingList = list ?? { id: '', name: '', symbols: [] };
+    this.editing = null;
+    const fresh = list === null;
+    this.filterMenu.innerHTML = `
+      <form class="flt-form" data-form="list" novalidate>
+        <label class="flt-name"><span>${fresh ? t('Name of the new watchlist') : t('Watchlist name')}</span><input name="name" maxlength="${MAX_NAME}" autocomplete="off" spellcheck="false" value="${escapeHtml(list?.name ?? '')}" placeholder="${t('For example: Majors')}"></label>
+        <p class="flt-hint">${t('The star in the list adds a pair to the watchlist you opened last.')}</p>
+        <p class="al-note" role="status"></p>
+        <div class="flt-actions">
+          ${!fresh && this.lists.length > 1 ? `<button type="button" class="btn" data-act="delete-list">${t('Delete')}</button>` : ''}
+          ${!fresh && this.lists.length < MAX_LISTS ? `<button type="button" class="btn" data-act="new-list">${ICONS.plus}<span>${t('New watchlist')}</span></button>` : ''}
+          <button type="button" class="btn" data-act="cancel">${t('Cancel')}</button>
+          <button type="submit" class="btn primary">${t('Save')}</button>
+        </div>
+      </form>`;
+    this.toggleMenu(this.filterMenu, null, true);
+    this.filterMenu.querySelector<HTMLInputElement>('input[name="name"]')!.focus();
+  }
+
+  private saveList() {
+    const form = this.filterMenu.querySelector('form')!;
+    const name = form.querySelector<HTMLInputElement>('input[name="name"]')!.value.trim();
+    if (!name) {
+      form.querySelector<HTMLElement>('.al-note')!.textContent = t('Give the watchlist a name.');
+      return;
+    }
+    const editing = this.editingList!;
+    const id = editing.id || String(Date.now());
+    this.lists = editing.id ? this.lists.map((l) => (l.id === id ? { ...l, name } : l)) : [...this.lists, { id, name, symbols: [] }];
+    save('watchlists', this.lists);
+    this.openWatch(id);
+    this.toggleMenu(this.filterMenu, null, false);
+    this.render();
+  }
+
+  private deleteList() {
+    const id = this.editingList!.id;
+    this.lists = this.lists.filter((l) => l.id !== id);
+    save('watchlists', this.lists);
+    this.openWatch(this.lists[0].id);
+    this.toggleMenu(this.filterMenu, null, false);
+    this.render();
+  }
+
+  /** Shows a watchlist and makes it the one the stars add to. */
+  private openWatch(id: string) {
+    this.state.preset = `watch:${id}`;
+    this.activeList = id;
+    save('watchActive', id);
   }
 
   /** "All columns": the list takes most of the width and shows every column. */
@@ -439,6 +512,7 @@ export class Screener {
 
   private openFilter(preset: CustomPreset | null) {
     this.editing = preset;
+    this.editingList = null;
     const rules: Rule[] = preset ? preset.rules : [{ metric: 'ch5m', op: 'abs', value: 2 }];
     this.filterMenu.innerHTML = `
       <form class="flt-form" novalidate>
@@ -519,7 +593,8 @@ export class Screener {
     });
     this.filterMenu.addEventListener('submit', (e) => {
       e.preventDefault();
-      this.saveFilter();
+      if ((e.target as HTMLElement).dataset.form === 'list') this.saveList();
+      else this.saveFilter();
     });
     this.filterMenu.addEventListener('change', (e) => {
       // the unit follows the metric: volume is typed in millions, liquidations in thousands
@@ -536,6 +611,10 @@ export class Screener {
         (e.target as HTMLElement).closest('.flt-rule')!.remove();
       } else if (act === 'cancel') {
         this.toggleMenu(this.filterMenu, null, false);
+      } else if (act === 'new-list') {
+        this.openList(null);
+      } else if (act === 'delete-list') {
+        this.deleteList();
       } else if (act === 'delete' && this.editing) {
         this.custom = this.custom.filter((c) => c.id !== this.editing!.id);
         save('customPresets', this.custom);
@@ -562,13 +641,19 @@ export class Screener {
     this.setWide(load('listWide', false));
     this.presetsEl.addEventListener('click', (e) => {
       const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+      if (act?.dataset.act === 'edit-list') {
+        this.openList(this.active());
+        return;
+      }
       if (act) {
         this.openFilter(act.dataset.act === 'edit' ? (this.custom.find((c) => `custom:${c.id}` === this.state.preset) ?? null) : null);
         return;
       }
       const button = (e.target as HTMLElement).closest<HTMLElement>('[data-preset]');
       if (!button) return;
-      this.state.preset = button.dataset.preset!;
+      const id = button.dataset.preset!;
+      if (id.startsWith('watch:')) this.openWatch(id.slice('watch:'.length));
+      else this.state.preset = id;
       this.render();
     });
     this.head.addEventListener('click', (e) => {
