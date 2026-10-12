@@ -1,1 +1,1 @@
-https://beta-extraction-features-seven.trycloudflare.com
+https://api.trycloudflare.com
