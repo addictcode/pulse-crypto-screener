@@ -164,11 +164,12 @@ const RIM_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
   uniform vec3 uSun;
   uniform float uGain;
+  uniform float uPower;
   varying vec3 vNormal;
   varying vec3 vView;
   varying vec3 vWorldNormal;
   void main() {
-    float edge = pow(1.0 - clamp(dot(vNormal, vView), 0.0, 1.0), 3.2);
+    float edge = pow(1.0 - clamp(dot(vNormal, vView), 0.0, 1.0), uPower);
     float lit = 0.25 + 0.75 * smoothstep(-0.35, 0.8, dot(vWorldNormal, uSun));
     gl_FragColor = vec4(uColor * edge * lit * 0.6 * uGain, 0.0);
     #include <colorspace_fragment>
@@ -252,6 +253,9 @@ export class VoxelPlanet {
   private readonly columnColor = new InstancedBufferAttribute(new Float32Array(MAX_COINS * 3), 3);
   private readonly columnFlash = new InstancedBufferAttribute(new Float32Array(MAX_COINS), 1);
   private readonly tips: Points;
+  /** Small lights scattered over the dark surface, so it reads as terrain and not as a grey ball. */
+  private lights!: Points;
+  private lightTiles: number[] = [];
   private halo!: ShaderMaterial;
   private rim!: ShaderMaterial;
   private readonly satellite = new Group();
@@ -265,6 +269,8 @@ export class VoxelPlanet {
   private readonly delay = new Float32Array(TILES);
   private readonly sun = SUN_DAY.clone();
   private readonly sunLight = new DirectionalLight('#f4f6fa', 3.1);
+  /** A weak light from the viewer's side: without it the night side is a flat black and its relief is lost. */
+  private readonly fillLight = new DirectionalLight('#aab4c8', 0.3);
   private tiles!: InstancedMesh;
   private core!: Mesh;
   private readonly orbitLines: { material: LineBasicMaterial; opacity: number }[] = [];
@@ -314,6 +320,8 @@ export class VoxelPlanet {
     this.scene.add(new AmbientLight('#9aa0aa', 0.22));
     this.sunLight.position.copy(this.sun).multiplyScalar(6);
     this.scene.add(this.sunLight);
+    this.fillLight.position.set(0.9, 2.2, 6);
+    this.scene.add(this.fillLight);
 
     this.stars = this.buildStars();
     this.scene.add(this.stars);
@@ -376,19 +384,40 @@ export class VoxelPlanet {
     this.points.forEach((p, i) => {
       // slow noise for continents, fast noise for single blocks
       const land = 0.5 + 0.5 * Math.sin(p.x * 3.1 + 1.7) * Math.cos(p.y * 2.7 - 0.4) * Math.sin(p.z * 3.6 + 0.9);
-      this.depth[i] = 0.016 + land * 0.034 + hash(i) * 0.02;
+      // most of the ground is low; one tile in eight stands up from it as a ridge
+      const ridge = hash(i + 0.77) > 0.875 ? 0.018 + hash(i + 0.21) * 0.04 : 0;
+      this.depth[i] = 0.014 + land * 0.034 + hash(i) * 0.02 + ridge;
       this.dummy.position.copy(p);
       this.dummy.lookAt(0, 0, 0);
       this.facing.push(this.dummy.quaternion.clone());
       const fromMiddle = Math.hypot(this.field[i].x, this.field[i].z) / reach;
       this.delay[i] = Math.min(1, fromMiddle * 0.86 + hash(i + 0.6) * 0.14);
-      tiles.setColorAt(i, tint.setHSL(0.62, 0.035, 0.05 + land * 0.07 + hash(i + 0.3) * 0.035));
+      // nearly black, with the odd pale tile: a uniform grey would read as a smooth ball
+      const pale = hash(i + 0.43) > 0.94 ? 0.07 : 0;
+      tiles.setColorAt(i, tint.setHSL(0.62, 0.04, 0.03 + land * 0.06 + hash(i + 0.3) * 0.04 + pale));
+      if (hash(i + 0.91) > 0.72) this.lightTiles.push(i);
     });
     this.tiles = tiles;
     this.world.add(tiles);
 
+    const count = this.lightTiles.length;
+    const color = new Float32Array(count * 3);
+    const size = new Float32Array(count);
+    this.lightTiles.forEach((tile, k) => {
+      const bright = 0.35 + hash(tile + 0.12) * 0.65;
+      color.set([bright * 0.8, bright * 0.88, bright], k * 3);
+      size[k] = 0.035 + Math.pow(hash(tile + 0.57), 4) * 0.09;
+    });
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new BufferAttribute(new Float32Array(count * 3), 3));
+    geometry.setAttribute('aColor', new BufferAttribute(color, 3));
+    geometry.setAttribute('aSize', new BufferAttribute(size, 1));
+    this.lights = new Points(geometry, this.spriteMaterial(this.reducedMotion ? 0 : 0.5));
+    this.lights.frustumCulled = false;
+    this.world.add(this.lights);
+
     // one vector for the light and both shells, so turning the sun moves all three
-    const uniforms = () => ({ uColor: { value: new Color(GLOW) }, uSun: { value: this.sun }, uLimb: { value: 1 }, uGain: { value: 1 } });
+    const uniforms = () => ({ uColor: { value: new Color(GLOW) }, uSun: { value: this.sun }, uLimb: { value: 1 }, uGain: { value: 1 }, uPower: { value: 3.2 } });
     const halo = new Mesh(
       new SphereGeometry(1.3, 64, 48),
       new ShaderMaterial({
@@ -643,6 +672,17 @@ export class VoxelPlanet {
       this.tiles.setMatrixAt(i, this.dummy.matrix);
     }
     this.tiles.instanceMatrix.needsUpdate = true;
+    const lit = this.lights.geometry.getAttribute('position') as BufferAttribute;
+    this.lightTiles.forEach((tile, k) => {
+      const at = this.spot(tile, this.ground(tile) + 0.004, this.scratch);
+      lit.setXYZ(k, at.x, at.y, at.z);
+    });
+    lit.needsUpdate = true;
+  }
+
+  /** How high the top of tile `i` is: what stands on the tile starts from here. */
+  private ground(i: number): number {
+    return this.depth[i] - 0.012;
   }
 
   /** How far from the middle the pointer still takes hold: the field is wider than the planet. */
@@ -686,6 +726,7 @@ export class VoxelPlanet {
     // stars keep their pixel size whatever the distance, column lights shrink with the planet
     (this.stars.material as ShaderMaterial).uniforms.uScale.value = this.renderer.getPixelRatio() * 52;
     (this.tips.material as ShaderMaterial).uniforms.uScale.value = scale * 0.1;
+    (this.lights.material as ShaderMaterial).uniforms.uScale.value = scale * 0.1;
   }
 
   /** The camera backs away until the planet is the asked size, then the view is shifted to its centre. */
@@ -709,7 +750,13 @@ export class VoxelPlanet {
     // a field has no atmosphere at all
     const gain = Math.min(1, 200 / this.disc.r);
     const round = (1 - flat) * (1 - flat);
-    this.halo.uniforms.uGain.value = gain * (1 + dawn * 0.3) * round;
+    // lit from behind, the planet is a black disc with a burning edge: less haze, less light on the ground
+    this.halo.uniforms.uGain.value = gain * (1 - dawn * 0.5) * round;
+    // seen from close by, the edge light would lie over the whole visible cap as a grey veil and
+    // hide the ground; it narrows to a line along the horizon as the planet grows
+    this.rim.uniforms.uPower.value = 3.2 + (1 - gain) * 9;
+    this.sunLight.intensity = 3.1 + dawn * 1.4;
+    this.fillLight.intensity = 0.3 + dawn * 1.5;
     this.rim.uniforms.uGain.value = Math.max(0.35, gain) * (1 + dawn * 2.2) * round;
     this.core.scale.setScalar(Math.max(0.001, 1 - smooth(Math.min(1, flat * 1.6))));
     for (const line of this.orbitLines) line.material.opacity = line.opacity * round;
@@ -735,6 +782,7 @@ export class VoxelPlanet {
       this.stars.rotation.y += dt * 0.004;
     }
     (this.stars.material as ShaderMaterial).uniforms.uTime.value = this.clock;
+    (this.lights.material as ShaderMaterial).uniforms.uTime.value = this.clock * 2.4;
 
     const tipPosition = this.tips.geometry.getAttribute('position') as BufferAttribute;
     const tipSize = this.tips.geometry.getAttribute('aSize') as BufferAttribute;
@@ -747,10 +795,11 @@ export class VoxelPlanet {
       coin.kick = Math.max(0, coin.kick - dt * 0.75);
       const punch = coin.kick * coin.kick;
       const height = Math.max(0.0001, coin.height * eased * (1 + punch * 0.55) + punch * 0.05);
-      this.place(coin.tile, 0.02 + height / 2, TILE_SIZE * 0.6, height);
+      const ground = this.ground(coin.tile);
+      this.place(coin.tile, ground + height / 2, TILE_SIZE * 0.6, height);
       this.columns.setMatrixAt(i, this.dummy.matrix);
       this.columnFlash.setX(i, punch + (coin === this.hovered ? 0.5 : 0));
-      const tip = this.spot(coin.tile, 0.02 + height, this.scratch);
+      const tip = this.spot(coin.tile, ground + height, this.scratch);
       tipPosition.setXYZ(i, tip.x, tip.y, tip.z);
       tipSize.setX(i, eased * (0.2 + Math.min(1, coin.height / 0.3) * 0.75 + punch * 2));
     });
@@ -766,7 +815,7 @@ export class VoxelPlanet {
         pulse.mesh.visible = false;
         continue;
       }
-      this.spot(pulse.tile, 0.07, pulse.mesh.position);
+      this.spot(pulse.tile, this.ground(pulse.tile) + 0.03, pulse.mesh.position);
       pulse.mesh.quaternion.slerpQuaternions(this.facing[pulse.tile], DOWNWARD, this.unrolled(pulse.tile));
       const spread = 1 - Math.pow(1 - age, 3);
       pulse.mesh.scale.setScalar(0.03 + spread * 0.36);
@@ -787,7 +836,7 @@ export class VoxelPlanet {
         this.labels.splice(i, 1);
         continue;
       }
-      const tip = this.spot(coin.tile, 0.04 + coin.height, this.scratch).applyMatrix4(this.world.matrixWorld);
+      const tip = this.spot(coin.tile, this.ground(coin.tile) + 0.02 + coin.height, this.scratch).applyMatrix4(this.world.matrixWorld);
       // on the field nothing is ever behind the horizon
       const facing = Math.max(this.mood.flat, tip.clone().normalize().dot(this.camera.position.clone().sub(tip).normalize()));
       tip.project(this.camera);
