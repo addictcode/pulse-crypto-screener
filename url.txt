@@ -1,1 +1,1 @@
-https://myth-immediate-cookbook-basically.trycloudflare.com
+https://api.trycloudflare.com
