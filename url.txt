@@ -1,1 +1,1 @@
-https://brooklyn-examines-ser-tel.trycloudflare.com
+https://api.trycloudflare.com
