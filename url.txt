@@ -1,1 +1,1 @@
-https://api.trycloudflare.com
+https://aware-suits-edt-enhancement.trycloudflare.com
