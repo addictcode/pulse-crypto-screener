@@ -34,7 +34,7 @@
   /* the narrow list is as wide as the columns the user chose for it */
   --list-cols: 4;
   --list-w: clamp(340px, calc(152px + var(--list-cols) * 68px), 46vw);
-  --dock-h: 190px;
+  --dock-h: 152px;
   --side-w: 480px;
   --r: 6px;
 
@@ -289,11 +289,20 @@ body[data-view="screener"][data-focus] .desk > .panel:not(.instrument) { display
   .ins-stats > div { padding: 5px 6px; }
   .ins-strip { padding-left: 10px; padding-right: 10px; }
 }
-@container ins (min-width: 1180px) {
+/* from a middling width on, the name, the price and the figures share one row: every row saved
+   here is a row of candles */
+@container ins (min-width: 760px) {
   .ins-top { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
-  .ins-head { padding: 10px 8px 10px 16px; }
+  .ins-head { padding: 8px 8px 8px 16px; }
   .ins-name { display: none; }
-  .ins-strip { padding: 6px 4px; }
+  .ins-strip { padding: 4px; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); }
+  .ins-stats > div { padding: 3px 8px; }
+  /* the other venue's figures join the row only where all eight fit */
+  .ins-stats.venue { display: none; }
+}
+@container ins (min-width: 1160px) {
+  .ins-strip { grid-template-columns: minmax(0, 1.4fr) repeat(7, minmax(0, 1fr)); }
+  .ins-stats.venue:not([hidden]) { display: contents; }
 }
 
 .chart-bar { flex: none; display: flex; align-items: center; gap: 14px; height: 40px; padding: 0 10px 0 12px; min-width: 0; }
@@ -731,7 +740,7 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 
 /* ---------- short screens: the chart needs the height more than the dock does ---------- */
 @media (max-height: 800px) and (min-width: 901px) {
-  :root { --dock-h: 172px; }
+  :root { --dock-h: 132px; }
 }
 
 /* ---------- narrower desktops ---------- */
