@@ -40,6 +40,8 @@ const TOOLS: Array<[ToolId, IconName, string]> = [
   ['fib', 'fib', t('Fibonacci retracement')],
   ['measure', 'measure', t('Ruler: change, bars and time between two points')],
 ];
+/** The key that takes each tool, shown in its hint (see TOOL_KEYS in draw.ts). */
+const TOOL_KEY: Record<ToolId, string> = { trend: 'T', ray: 'R', hline: 'H', rect: 'Z', fib: 'X', measure: 'M' };
 const MIN_MARKER_USD = 5_000;
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -130,6 +132,7 @@ export class PriceChart {
       const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button || button.disabled) return;
       if (button.dataset.act === 'magnet') this.draw.toggleMagnet();
+      else if (button.dataset.act === 'keep') this.draw.toggleKeep();
       else if (button.dataset.act === 'delete') this.draw.deleteSelected();
       else if (button.dataset.act === 'clear') this.draw.clear();
       else this.draw.setTool((button.dataset.tool as ToolId) || null);
@@ -289,9 +292,10 @@ export class PriceChart {
       `<button type="button" ${attrs} title="${label}" aria-label="${label}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}>${ICONS[icon]}</button>`;
     this.toolsEl.innerHTML =
       button('data-tool=""', 'cursor', t('Cursor: select and move drawings'), tool === null) +
-      TOOLS.map(([id, icon, label]) => button(`data-tool="${id}"`, icon, label, tool === id)).join('') +
+      TOOLS.map(([id, icon, label]) => button(`data-tool="${id}"`, icon, `${label} (${TOOL_KEY[id]})`, tool === id)).join('') +
       '<hr>' +
       button('data-act="magnet"', 'magnet', t('Magnet: points stick to the open, high, low and close of candles'), this.draw.magnetOn) +
+      button('data-act="keep"', 'pin', t('Keep the tool in hand to draw several in a row'), this.draw.keepOn) +
       button(`data-act="delete"${this.draw.hasSelection ? '' : ' disabled'}`, 'close', t('Delete the selected drawing (Del)')) +
       button(`data-act="clear"${this.draw.count ? '' : ' disabled'}`, 'trash', t('Remove all drawings on this pair'));
   }

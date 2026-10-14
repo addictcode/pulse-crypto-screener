@@ -211,7 +211,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(15);
+  await expect(page.locator('#keys dt')).toHaveCount(17);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
@@ -411,4 +411,33 @@ test('the chart takes the room when its borders are dragged or the side panes ar
   await page.keyboard.press('l');
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
   expect(Math.abs((await chart.boundingBox())!.width - dragged.width)).toBeLessThan(3);
+});
+
+test('a key takes a drawing tool, and with the pin on it stays for the next figure', async ({ page }) => {
+  await openTerminal(page);
+  const chart = (await page.locator('#chart').boundingBox())!;
+  const stored = () => page.evaluate(() => (JSON.parse(localStorage.getItem('pulse.draw.BTCUSDT') ?? '[]') as Array<{ type: string; points: Array<{ p: number }> }>));
+
+  await page.keyboard.press('t');
+  await expect(page.locator('#tools [data-tool="trend"]')).toHaveAttribute('aria-pressed', 'true');
+  // Shift keeps the second point at the price of the first
+  await page.mouse.click(chart.x + 150, chart.y + 140);
+  await page.keyboard.down('Shift');
+  await page.mouse.move(chart.x + 260, chart.y + 200, { steps: 3 });
+  await page.mouse.click(chart.x + 320, chart.y + 220);
+  await page.keyboard.up('Shift');
+  await expect.poll(async () => (await stored()).length).toBe(1);
+  const [line] = await stored();
+  expect(line.points[1].p).toBe(line.points[0].p);
+  // one figure, and the tool is put down
+  await expect(page.locator('#tools [data-tool="trend"]')).toHaveAttribute('aria-pressed', 'false');
+
+  await page.locator('#tools [data-act="keep"]').click();
+  await page.keyboard.press('h');
+  await page.mouse.click(chart.x + 200, chart.y + 100);
+  await page.mouse.click(chart.x + 200, chart.y + 180);
+  await expect.poll(async () => (await stored()).filter((d) => d.type === 'hline').length).toBe(2);
+  await expect(page.locator('#tools [data-tool="hline"]')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#tools [data-tool="hline"]')).toHaveAttribute('aria-pressed', 'false');
 });

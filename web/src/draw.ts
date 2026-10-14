@@ -31,6 +31,8 @@ const MAGNET = 10;
 /** A press that travels this far before release is a drag, and the drawing ends where it ends. */
 const DRAG = 8;
 const UNDO_DEPTH = 40;
+/** Line, Ray, Horizontal level, Zone, fibonacci (X marks the levels), Measure. */
+const TOOL_KEYS: Record<string, ToolId> = { t: 'trend', r: 'ray', h: 'hline', z: 'rect', x: 'fib', m: 'measure' };
 
 interface Candle {
   time: number;
@@ -124,6 +126,10 @@ export class DrawLayer {
   private undoStack: string[] = [];
   /** Points stick to the candle under them. Off by default: a line goes exactly where the cursor is. */
   private magnet = load('drawMagnet', false);
+  /** The tool stays in hand after a figure is finished, for drawing several in a row. */
+  private keep = load('drawKeep', false);
+  /** The drawing under the pointer, shown a little heavier so it is clear what a press would take. */
+  private hoverId: number | null = null;
   private saved = '[]';
   private width = 0;
   private height = 0;
@@ -211,6 +217,16 @@ export class DrawLayer {
 
   get magnetOn() {
     return this.magnet;
+  }
+
+  get keepOn() {
+    return this.keep;
+  }
+
+  toggleKeep() {
+    this.keep = !this.keep;
+    save('drawKeep', this.keep);
+    this.onChange();
   }
 
   toggleMagnet() {
@@ -372,7 +388,7 @@ export class DrawLayer {
       e.stopPropagation();
       this.pressed = at;
       this.wrap.setPointerCapture(e.pointerId);
-      this.place(at, this.snaps(e));
+      this.place(at, this.snaps(e), e);
       return;
     }
     const handle = this.hitHandle(at);
@@ -390,9 +406,15 @@ export class DrawLayer {
     }
   }
 
-  private place(at: Px, magnet: boolean) {
-    const point = this.pointAt(at, magnet);
+  /** With Shift held the second point keeps the price of the first: a line that is exactly level. */
+  private levelled(point: Point, anchor: Point, e: PointerEvent): Point {
+    return e.shiftKey ? { t: point.t, p: anchor.p } : point;
+  }
+
+  private place(at: Px, magnet: boolean, e: PointerEvent) {
+    let point = this.pointAt(at, magnet);
     if (!point || !this.activeTool) return;
+    if (this.draft) point = this.levelled(point, this.draft.points[0], e);
     if (this.activeTool === 'hline') {
       this.finish({ id: 0, type: 'hline', points: [point] });
     } else if (!this.draft) {
@@ -406,10 +428,12 @@ export class DrawLayer {
   private finish(drawing: Drawing) {
     drawing.id = Date.now() + Math.floor(Math.random() * 1000);
     this.drawings.push(drawing);
-    this.selectedId = drawing.id;
+    this.selectedId = this.keep ? null : drawing.id;
     this.draft = null;
-    this.activeTool = null;
-    this.wrap.classList.remove('drawing');
+    if (!this.keep) {
+      this.activeTool = null;
+      this.wrap.classList.remove('drawing');
+    }
     this.commit();
   }
 
@@ -418,14 +442,17 @@ export class DrawLayer {
     if (!this.draft && !this.drag) {
       // nothing in hand: the cursor says what a press here would do
       if (!this.activeTool && this.drawings.length) {
-        this.wrap.style.cursor = this.hitHandle(at) ? 'grab' : this.hitDrawing(at) ? 'pointer' : '';
+        const handle = this.hitHandle(at);
+        const over = handle?.drawing ?? this.hitDrawing(at);
+        this.wrap.style.cursor = handle ? 'grab' : over ? 'pointer' : '';
+        this.hoverId = over?.id ?? null;
       }
       return;
     }
     const point = this.pointAt(at, Boolean(this.draft || this.drag?.handle !== 'body') && this.snaps(e));
     if (!point) return;
     if (this.draft) {
-      this.draft.points[1] = point;
+      this.draft.points[1] = this.levelled(point, this.draft.points[0], e);
       this.render();
       return;
     }
@@ -438,7 +465,7 @@ export class DrawLayer {
       const dp = point.p - start.p;
       drag.drawing.points = drag.original.map((p) => ({ t: p.t + dt, p: p.p + dp }));
     } else {
-      drag.drawing.points[drag.handle] = point;
+      drag.drawing.points[drag.handle] = this.levelled(point, drag.drawing.points[drag.handle === 0 ? 1 : 0] ?? point, e);
     }
     this.render();
   }
@@ -450,7 +477,7 @@ export class DrawLayer {
       // pressed, pulled and let go: the drawing ends here; a plain click waits for the second one
       const at = this.local(e);
       if (Math.hypot(at.x - pressed.x, at.y - pressed.y) >= DRAG) {
-        this.place(at, this.snaps(e));
+        this.place(at, this.snaps(e), e);
         return;
       }
     }
@@ -464,6 +491,11 @@ export class DrawLayer {
     if (target?.matches('input, select, textarea')) return;
     if (e.key === 'Escape' && (this.activeTool || this.draft)) {
       this.setTool(null);
+    }
+    // one key per tool, while the chart is on screen; the same key again puts the tool down
+    const tool = e.ctrlKey || e.metaKey || e.altKey ? undefined : TOOL_KEYS[e.key.toLowerCase()];
+    if (tool && this.chart && this.wrap.offsetParent) {
+      this.setTool(this.activeTool === tool ? null : tool);
     }
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && this.undoStack.length) {
       e.preventDefault();
@@ -546,7 +578,7 @@ export class DrawLayer {
     ctx.beginPath();
     ctx.rect(0, 0, pane.w, pane.h);
     ctx.clip();
-    for (const d of this.drawings) this.paint(d, d.id === this.selectedId, false, pane.w);
+    for (const d of this.drawings) this.paint(d, d.id === this.selectedId, false, pane.w, d.id === this.hoverId);
     if (this.draft) this.paint(this.draft, false, true, pane.w);
     ctx.restore();
   }
@@ -563,11 +595,11 @@ export class DrawLayer {
     ctx.fillText(text, x + 5, y + 4);
   }
 
-  private paint(d: Drawing, selected: boolean, draft: boolean, width: number) {
+  private paint(d: Drawing, selected: boolean, draft: boolean, width: number, hovered = false) {
     const ctx = this.ctx;
     const c = this.colors;
     const color = { trend: c.accent, ray: c.accent, hline: c.amber, rect: c.violet, fib: c.ink, measure: c.accent }[d.type];
-    ctx.lineWidth = selected ? 2 : 1.25;
+    ctx.lineWidth = selected ? 2 : hovered ? 1.75 : 1.25;
     ctx.strokeStyle = color;
     ctx.setLineDash(draft ? [4, 4] : []);
 
@@ -593,6 +625,14 @@ export class DrawLayer {
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
+      if (selected || draft) {
+        // what the line says: how far price went along it, and over how many candles
+        const [from, to] = d.points;
+        const change = ((to.p - from.p) / from.p) * 100;
+        const bars = Math.round(Math.abs(to.t - from.t) / this.step);
+        ctx.setLineDash([]);
+        this.chip(Math.min(b.x + 10, width - 150), b.y + (b.y > a.y ? 16 : -16), `${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(2)}%   ${t('{n} bars', { n: bars })}`, color);
+      }
     } else if (d.type === 'rect') {
       const x = Math.min(a.x, b.x);
       const y = Math.min(a.y, b.y);

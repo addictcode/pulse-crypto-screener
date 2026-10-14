@@ -28,6 +28,7 @@ import magnet from '@phosphor-icons/core/assets/regular/magnet-straight.svg?raw'
 import minus from '@phosphor-icons/core/assets/regular/minus.svg?raw';
 import rectangle from '@phosphor-icons/core/assets/regular/rectangle.svg?raw';
 import pencil from '@phosphor-icons/core/assets/regular/pencil-simple.svg?raw';
+import pin from '@phosphor-icons/core/assets/regular/push-pin.svg?raw';
 import plus from '@phosphor-icons/core/assets/regular/plus.svg?raw';
 import rows from '@phosphor-icons/core/assets/regular/square-half-bottom.svg?raw';
 import ruler from '@phosphor-icons/core/assets/regular/ruler.svg?raw';
@@ -77,6 +78,7 @@ export const ICONS = {
   keyboard: icon(keyboard),
   gear: icon(gear),
   magnet: icon(magnet),
+  pin: icon(pin),
   sidebar: icon(sidebar),
   dock: icon(rows),
   // one for each view, for the tab bar on a phone
