@@ -1,1 +1,1 @@
-https://recommendations-bunch-enable-matched.trycloudflare.com
+https://api.trycloudflare.com
