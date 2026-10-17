@@ -1,1 +1,1 @@
-https://lets-metric-again-roster.trycloudflare.com
+https://api.trycloudflare.com
