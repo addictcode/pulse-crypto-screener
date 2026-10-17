@@ -1,1 +1,1 @@
-https://refresh-fate-coal-anniversary.trycloudflare.com
+https://api.trycloudflare.com
