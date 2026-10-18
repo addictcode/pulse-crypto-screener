@@ -1,1 +1,1 @@
-https://api.trycloudflare.com
+https://told-dos-bid-deutsche.trycloudflare.com
