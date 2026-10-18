@@ -1,1 +1,1 @@
-https://astrology-excerpt-believed-stored.trycloudflare.com
+https://api.trycloudflare.com
