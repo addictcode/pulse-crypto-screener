@@ -1,1 +1,1 @@
-https://cookbook-battle-survive-hepatitis.trycloudflare.com
+https://api.trycloudflare.com
