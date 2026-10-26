@@ -1,1 +1,1 @@
-https://absolutely-logan-slides-grade.trycloudflare.com
+https://api.trycloudflare.com
