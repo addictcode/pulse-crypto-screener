@@ -1,1 +1,1 @@
-https://sox-sophisticated-prisoner-slim.trycloudflare.com
+https://api.trycloudflare.com
