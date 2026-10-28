@@ -1,1 +1,1 @@
-https://participation-connect-got-promotes.trycloudflare.com
+https://api.trycloudflare.com
