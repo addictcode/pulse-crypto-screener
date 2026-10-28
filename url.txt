@@ -1,1 +1,1 @@
-https://jokes-cards-damages-pens.trycloudflare.com
+https://api.trycloudflare.com
