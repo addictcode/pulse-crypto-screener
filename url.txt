@@ -1,1 +1,1 @@
-https://your-oval-favourite-pioneer.trycloudflare.com
+https://api.trycloudflare.com
