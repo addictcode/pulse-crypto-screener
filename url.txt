@@ -1,1 +1,1 @@
-https://archived-ranking-hiring-progress.trycloudflare.com
+https://api.trycloudflare.com
