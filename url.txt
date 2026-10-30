@@ -1,1 +1,1 @@
-https://obligations-director-represented-atlanta.trycloudflare.com
+https://api.trycloudflare.com
