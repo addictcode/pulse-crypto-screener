@@ -1,12 +1,26 @@
 # One origin for everything: the app, its API and the market stream.
 # PULSE_SITE_ADDRESS is the domain in production (Caddy gets a Let's Encrypt certificate
 # for it automatically) or ":80" for a plain-HTTP local run.
+{
+	servers {
+		# The Cloudflare tunnel reaches Caddy from inside the Docker network and names the visitor
+		# in Cf-Connecting-IP. Only such private neighbours are believed; a visitor connecting
+		# directly cannot claim another address. Behind proxied Cloudflare DNS on a VPS, add
+		# Cloudflare's ranges here.
+		trusted_proxies static private_ranges
+		client_ip_headers Cf-Connecting-IP X-Forwarded-For
+	}
+}
+
 {$PULSE_SITE_ADDRESS} {
 	encode zstd gzip
 
 	@backend path /api/* /ws/*
 	handle @backend {
-		reverse_proxy backend:8080
+		reverse_proxy backend:8080 {
+			# the backend limits each visitor by this; always overwritten, never passed through
+			header_up X-Client-IP {client_ip}
+		}
 	}
 
 	handle {
@@ -29,6 +43,11 @@
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		# Everything is served from here: bundled scripts and fonts, the API and the stream.
+		# Inline styles stay allowed because markup built in code sets style attributes.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss://{hostport} ws://{hostport}; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		-Server
 	}
 

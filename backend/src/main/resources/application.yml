@@ -95,6 +95,13 @@ pulse:
     min-volume24h: 5000000
     # a repeat inside the cooldown still fires if it is this much stronger
     escalation: 1.5
+  limits:
+    # the terminal makes a dozen calls on load and a few every ten seconds after
+    requests-per-minute: 120
+    burst: 60
+    # each stream client costs a ~450 KB snapshot and then ~40 KB/s before compression
+    stream-clients: 300
+    stream-clients-per-address: 8
   telegram:
     enabled: ${PULSE_TELEGRAM_ENABLED:false}
     token: ${PULSE_TELEGRAM_TOKEN:}

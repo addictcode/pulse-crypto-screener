@@ -316,7 +316,8 @@ test('settings keep the risk, and a saved file brings everything back', async ({
   await page.locator('#set-reset').click();
   await expect(page.locator('#set-reset')).toHaveText('Click again to erase everything');
   await page.locator('#set-reset').click();
-  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
+  // the page reloads from scratch; with every test running in parallel that can take a while
+  await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length, { timeout: 15_000 });
   expect(await page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBeNull();
 
   await page.locator('#settings-btn').click();

@@ -45,6 +45,6 @@ public class CandleController {
         ExchangeAdapter exchange = exchanges.stream().findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "no exchange connected"));
         return cache.get(symbol, interval, limit,
-                () -> exchange.candles(symbol, interval, limit).stream().map(CandleDto::from).toList());
+                depth -> exchange.candles(symbol, interval, depth).stream().map(CandleDto::from).toList());
     }
 }

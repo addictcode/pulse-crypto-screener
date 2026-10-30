@@ -32,6 +32,7 @@ public class PositioningController {
     static final Set<String> PERIODS = Set.of("5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d");
     static final long TTL_MS = 60_000;
     static final int MAX_ENTRIES = 200;
+    static final int DEPTH = 500;
 
     private record Entry(long storedAt, Positioning value) {
     }
@@ -43,7 +44,7 @@ public class PositioningController {
     @GetMapping
     public Positioning positioning(@RequestParam String symbol,
                                    @RequestParam(defaultValue = "5m") String period,
-                                   @RequestParam(defaultValue = "300") @Min(10) @Max(500) int limit) {
+                                   @RequestParam(defaultValue = "300") @Min(10) @Max(DEPTH) int limit) {
         if (!PERIODS.contains(period)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "period must be one of " + PERIODS);
         }
@@ -53,17 +54,26 @@ public class PositioningController {
         }
         ExchangeAdapter exchange = exchanges.stream().findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "no exchange connected"));
-        String key = symbol + ":" + period + ":" + limit;
+        // always the full depth, cut afterwards: otherwise every limit would be its own five requests
+        String key = symbol + ":" + period;
         long now = System.currentTimeMillis();
         Entry cached = cache.get(key);
-        if (cached != null && now - cached.storedAt() < TTL_MS) {
-            return cached.value();
+        if (cached == null || now - cached.storedAt() >= TTL_MS) {
+            if (cache.size() >= MAX_ENTRIES) {
+                cache.clear(); // crude but bounded, like the candle cache
+            }
+            cached = new Entry(now, exchange.positioning(symbol, period, DEPTH));
+            cache.put(key, cached);
         }
-        Positioning fresh = exchange.positioning(symbol, period, limit);
-        if (cache.size() >= MAX_ENTRIES) {
-            cache.clear(); // crude but bounded, like the candle cache
-        }
-        cache.put(key, new Entry(now, fresh));
-        return fresh;
+        return latest(cached.value(), limit);
+    }
+
+    static Positioning latest(Positioning p, int limit) {
+        return new Positioning(tail(p.openInterest(), limit), tail(p.longShortAccounts(), limit),
+                tail(p.longShortTop(), limit), tail(p.takerBuySell(), limit), tail(p.funding(), limit));
+    }
+
+    private static <T> List<T> tail(List<T> list, int limit) {
+        return list.subList(Math.max(0, list.size() - limit), list.size());
     }
 }

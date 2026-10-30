@@ -7,7 +7,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("pulse")
 public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Density density, Signals signals, Setups setups,
-                              Telegram telegram) {
+                              Telegram telegram, Limits limits) {
+
+    /**
+     * What one visitor may take, so a script cannot spend the exchange budget or the upload of
+     * the server on everyone else's behalf.
+     *
+     * @param requestsPerMinute         steady rate of API calls per client address
+     * @param burst                     calls a client may make at once, e.g. a page load
+     * @param streamClients             market stream connections in total
+     * @param streamClientsPerAddress   market stream connections from one address (tabs, a household)
+     */
+    public record Limits(int requestsPerMinute, int burst, int streamClients, int streamClientsPerAddress) {
+    }
 
     /**
      * @param streamUrl       combined-stream endpoint. Binance moved market data to {@code /market/stream};
