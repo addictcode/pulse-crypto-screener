@@ -7,6 +7,7 @@
 //   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter)
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
@@ -20,6 +21,9 @@ const { values } = parseArgs({
   options: {
     template: { type: 'string', default: 'event,guess,top3,counter' },
     max: { type: 'string', default: '1000' },
+    only: { type: 'string' },
+    out: { type: 'string' },
+    force: { type: 'boolean', default: false },
     stills: { type: 'boolean', default: false },
   },
 });
@@ -77,7 +81,7 @@ for (let i = 0; i < Math.max(guesses.length, counters.length, tops.length); i++)
 }
 const jobs = [...memes, ...mixed];
 
-const out = new URL('../out/', import.meta.url).pathname;
+const out = values.out ? `${values.out.replace(/\/$/, '')}/` : new URL('../out/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
 const TAGS = '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины';
 const name = (i) => `pulse-${String(i + 1).padStart(3, '0')}`;
@@ -87,7 +91,8 @@ const wanted = new Set(values.template.split(','));
 const todo = jobs
   .map((job, i) => ({ ...job, file: name(i), number: i + 1 }))
   .filter((job) => wanted.has(job.template) && job.number <= Number(values.max))
-  .filter((job) => values.stills || !existsSync(`${out}${job.file}.mp4`));
+  .filter((job) => !values.only || values.only.split(',').map(Number).includes(job.number))
+  .filter((job) => values.stills || values.force || !existsSync(`${out}${job.file}.mp4`));
 console.log(`${jobs.length} videos in the plan, ${todo.length} to render now`);
 
 const serveUrl = await bundle({ entryPoint: new URL('../src/index.ts', import.meta.url).pathname });
@@ -101,16 +106,27 @@ for (const [k, job] of todo.entries()) {
     console.log(`stills ${job.file} (${job.template})`);
     continue;
   }
-  await renderMedia({
-    serveUrl,
-    composition,
-    inputProps: job.props,
-    codec: 'h264',
-    crf: 18,
-    outputLocation: `${out}${job.file}.mp4`,
-    // more tabs at once ran the Mac out of memory and Chrome returned a broken frame now and then
-    concurrency: Number(process.env.CONCURRENCY ?? 2),
-    ...browser,
-  });
+  // Chrome now and then hands over a frame of the wrong size, which shows as the screen tiled for
+  // one frame. One tab at a time stopped it in every test; each video is still checked, and
+  // rendered again if a broken frame got through.
+  for (let attempt = 1; ; attempt++) {
+    await renderMedia({
+      serveUrl,
+      composition,
+      inputProps: job.props,
+      codec: 'h264',
+      crf: 18,
+      outputLocation: `${out}${job.file}.mp4`,
+      concurrency: Number(process.env.CONCURRENCY ?? 1),
+      ...browser,
+    });
+    const check = spawnSync('python3', [new URL('./check.py', import.meta.url).pathname, `${out}${job.file}.mp4`], { encoding: 'utf8' });
+    if (check.status === 0) break;
+    if (attempt === 3) {
+      console.error(`${job.file}.mp4 still has broken frames after ${attempt} tries: ${check.stdout.trim()}`);
+      break;
+    }
+    console.warn(`${job.file}.mp4 had broken frames, rendering it again`);
+  }
   console.log(`video ${job.file}.mp4, ${job.template} (${k + 1}/${todo.length})`);
 }

@@ -34,7 +34,7 @@ video spread; a sound baked into the file is neither.
 3. Render:
 
    ```bash
-   caffeinate -i npm run render      # everything not rendered yet (about 75 s a video)
+   caffeinate -i npm run render      # everything not rendered yet (about 30 s a video)
    npm run render -- --template guess,top3   # some templates only
    npm run render -- --max 10        # only numbers up to 10
    npm run render -- --stills --max 4  # three PNG frames per video, to check the look quickly
@@ -45,6 +45,17 @@ video spread; a sound baked into the file is neither.
    post description and hashtags for each. A stopped render picks up where it left off: finished
    files are skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
    from sleeping meanwhile.
+
+## Broken frames
+
+With two or more render tabs at once, Chrome now and then handed over a frame of the wrong size
+and the video showed the whole screen tiled for one frame, which reads as a flicker. Rendering
+uses one tab (it is also faster on this Mac), and every video is checked by `scripts/check.py`
+right after rendering and rendered again if a broken frame got through. To check files by hand:
+
+```bash
+python3 scripts/check.py out/pulse-*.mp4
+```
 
 ## Templates
 
