@@ -1,1 +1,1 @@
-https://journal-predict-over-thu.trycloudflare.com
+https://api.trycloudflare.com
