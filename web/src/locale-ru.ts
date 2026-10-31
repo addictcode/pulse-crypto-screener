@@ -555,4 +555,33 @@ export const RU: Record<string, string> = {
   'move': 'выбор',
   'open': 'открыть',
   'close': 'закрыть',
+
+  // ---------- signal record page ----------
+  '90d': '90д',
+  'Record': 'Статистика',
+  'Home': 'Главная',
+  'Pulse signal record': 'Pulse: статистика сигналов',
+  'The record': 'Статистика',
+  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. This is what followed, all of it, including the signals that went the wrong way.':
+    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Здесь всё, что было после, целиком, включая сигналы, которые не сработали.',
+  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. The full record, including the ones that went the wrong way.':
+    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Полная статистика, включая сигналы, которые не сработали.',
+  'Signals measured': 'Измерено сигналов',
+  'Went their way within an hour': 'Пошли в сторону сигнала за час',
+  'Average move their way, 1 hour': 'Средний ход в сторону сигнала за час',
+  '{share} their way': '{share} в его сторону',
+  'no direction to check': 'нет направления для проверки',
+  'last {days} days': 'за последние дни: {days}',
+  'No measured signals in this period yet.': 'За этот период измеренных сигналов пока нет.',
+  'The record is kept by the Pulse server; this demo runs without one.': 'Статистику ведёт сервер Pulse, а это демо работает без него.',
+  'The record is not available right now.': 'Статистика сейчас недоступна.',
+  'How it is counted': 'Как считается',
+  'The price at the moment a signal fires is compared with the price 5 minutes, 15 minutes and an hour later. Nothing is removed afterwards.':
+    'Цена в момент сигнала сравнивается с ценой через 5 минут, 15 минут и час. Задним числом ничего не удаляется.',
+  'Each cell shows the average move in the direction the signal pointed and how often the price went that way. A dump followed by a fall counts as right.':
+    'В каждой ячейке средний ход цены в сторону сигнала и как часто цена туда пошла. Дамп, после которого цена упала дальше, считается верным.',
+  'Signals without a direction, like a volume spike on a flat price, are left out of the totals. Kinds with fewer than ten signals are dimmed: that is too few to call a pattern.':
+    'Сигналы без направления, например всплеск объёма при стоящей цене, в итог не входят. Виды, где сигналов меньше десяти, приглушены: это слишком мало, чтобы говорить о закономерности.',
+  'Fees, slippage and the time it takes to react are not included. A signal that was right on average can still lose money in practice.':
+    'Комиссии, проскальзывание и время на реакцию не учтены. Сигнал, верный в среднем, на практике всё равно может приносить убыток.',
 };

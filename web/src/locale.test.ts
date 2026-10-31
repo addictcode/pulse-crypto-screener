@@ -59,6 +59,7 @@ describe('Russian locale', () => {
     ...codeKeys(),
     ...htmlKeys(join(src, '../app/index.html')),
     ...htmlKeys(join(src, '../index.html')),
+    ...htmlKeys(join(src, '../record/index.html')),
     ...dynamicKeys(),
   ];
 

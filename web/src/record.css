@@ -1,0 +1,37 @@
+/* The signal record page: the landing's type and colours, on a plain page without the planet. */
+
+.rec { max-width: 1100px; margin: 0 auto; padding: clamp(40px, 8svh, 96px) var(--gutter) 96px; }
+.rec-title { font: 800 clamp(40px, 7vw, 88px) / 1 var(--f-display); text-transform: uppercase; letter-spacing: -.025em; margin-bottom: 22px; }
+.rec .lede { color: var(--ink-2); }
+
+.rec-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin: 40px 0 18px; }
+.rec-seg { display: inline-flex; border: 1px solid var(--rule-strong); }
+.rec-seg button { height: 34px; padding: 0 14px; color: var(--ink-2); font-size: 13px; font-weight: 600; transition: color .2s, background .2s; }
+.rec-seg button:hover { color: var(--ink); }
+.rec-seg button[aria-pressed="true"] { color: var(--bg-0); background: var(--ink); }
+.rec .mute { color: var(--ink-3); font-size: 13.5px; }
+
+.rec-kpi { border: 1px solid var(--rule); margin-bottom: 18px; background: var(--bg-1); }
+.rec-kpi dd.up { color: var(--up); }
+.rec-kpi dd.down { color: var(--down); }
+
+.rec-table { border: 1px solid var(--rule); background: var(--bg-1); overflow-x: auto; }
+.rec-table .mini th { height: 40px; padding: 0 18px; text-align: left; font-weight: 500; font-size: 12.5px; color: var(--ink-3); border-bottom: 1px solid var(--rule-soft); white-space: nowrap; }
+.rec-table .mini td { height: 52px; border-bottom: 1px solid var(--rule-soft); }
+.rec-table .mini tr:last-child td { border-bottom: 0; }
+.rec-table .mini td .up { color: var(--up); }
+.rec-table .mini td .down { color: var(--down); }
+.rec-table .mini tr.thin td { opacity: .45; }
+.rec-share { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+
+.rec-how { margin-top: 56px; max-width: 72ch; }
+.rec-how h2 { font: 700 18px / 1.3 var(--f-display); text-transform: uppercase; margin-bottom: 14px; }
+.rec-how ul { list-style: none; display: grid; gap: 12px; }
+.rec-how li { padding-left: 18px; position: relative; color: var(--ink-2); }
+.rec-how li::before { content: ""; position: absolute; left: 0; top: .7em; width: 8px; height: 1px; background: var(--ink-3); }
+
+@media (max-width: 700px) {
+  .rec-kpi { grid-template-columns: 1fr; }
+  .rec-kpi > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
+  .rec-table .mini th, .rec-table .mini td { padding: 0 12px; }
+}

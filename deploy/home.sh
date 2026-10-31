@@ -38,6 +38,15 @@ alive() {
   curl -fsS -m 10 -o /dev/null "$1/api/status" 2>/dev/null
 }
 
+# Uptime monitoring that survives a changing address: a check on healthchecks.io (free) expects a
+# ping every minute and alerts by mail or Telegram once they stop, whatever the reason (the Mac
+# asleep, Docker down, the tunnel dead). Put its ping URL in .env as PULSE_HEARTBEAT_URL.
+heartbeat() {
+  local url
+  url=$(grep -E '^PULSE_HEARTBEAT_URL=' .env 2>/dev/null | cut -d= -f2- || true)
+  [ -n "$url" ] && curl -fsS -m 10 -o /dev/null "$url" 2>/dev/null || true
+}
+
 publish() {
   local address=$1 repo sha
   if ! command -v gh >/dev/null || ! repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null); then
@@ -74,6 +83,7 @@ case "${1:-up}" in
     while sleep 60; do
       if alive "$current"; then
         failures=0
+        heartbeat
         continue
       fi
       failures=$((failures + 1))
