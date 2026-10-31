@@ -40,6 +40,7 @@ type Text = {
   guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
   top3: { hooks: string[]; captions: string[] };
   counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  split: { hooks: string[]; before: (m: number) => string; after: string; end: (m: number, calm: number, move: number) => string; captions: string[] };
   timelapse: { hooks: string[]; label: string; speed: string; hours: (h: number) => string; end: (day: number, move: number) => string; captions: string[] };
   /** at the end of every post description */
   note: string;
@@ -126,6 +127,13 @@ export const TEXT: Record<Lang, Text> = {
       after: (h) => `А за следующий час:\n${pct(h)}`,
       captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
     },
+    split: {
+      hooks: ['Одна и та же монета.\nРазница — 5 минут', 'Было / стало', 'До и после.\n5 минут между ними', 'Слева — тишина.\nСправа — 5 минут', 'Найди\nотличия 👇'],
+      before: (m) => `${m} минут до`,
+      after: '5 минут',
+      end: (m, calm, move) => `${m} минут: ${pct(calm)}\n5 минут: ${pct(move)}`,
+      captions: ['Было / стало за 5 минут', 'Одна монета, два мира', 'Тишина перед бурей', 'Долго ничего, потом это', 'Найди отличия'],
+    },
     timelapse: {
       hooks: ['24 часа\nза 6 секунд', 'Сутки на рынке.\nУскорено.', 'Найди момент,\nкогда всё случилось 👇', 'Целый день.\nИ пять минут.', 'Весь день\nв одном ролике'],
       label: '24 часа · свечи по 5 мин',
@@ -199,6 +207,13 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
       after: (h) => `And the next hour:\n${pct(h)}`,
       captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    split: {
+      hooks: ['Same coin.\nThe difference:\n5 minutes', 'Before / after', 'Before and after.\n5 minutes apart', 'Left: silence.\nRight: 5 minutes', 'Spot the\ndifference 👇'],
+      before: (m) => `${m} min before`,
+      after: '5 minutes',
+      end: (m, calm, move) => `${m} minutes: ${pct(calm)}\n5 minutes: ${pct(move)}`,
+      captions: ['Before / after in 5 minutes', 'Same coin, two worlds', 'The calm before the storm', 'Nothing for ages, then this', 'Spot the difference'],
     },
     timelapse: {
       hooks: ['24 hours\nin 6 seconds', 'A day in the market.\nSped up.', 'Spot the moment\nit all happened 👇', 'A whole day.\nAnd five minutes.', 'A full day\nin one clip'],
