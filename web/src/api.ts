@@ -1,5 +1,5 @@
 import { connect, type Market } from './market';
-import type { CandleDto, OutcomeStats, Positioning, SetupBoard, Signal, VenueGap } from './types';
+import type { CandleDto, OutcomeStats, Positioning, SetupBoard, Signal, TelegramLinks, VenueGap } from './types';
 
 /**
  * Built as the standalone demo: no Pulse server, the page talks to the exchanges itself. Set at
@@ -49,6 +49,11 @@ export async function signalHistory(limit: number): Promise<Signal[]> {
 
 export async function setupBoard(): Promise<SetupBoard> {
   return STANDALONE ? { open: [], closed: [], stats: [], since: null } : getJson('/api/setups');
+}
+
+/** The bot and the channel the site may link to; the demo has neither. */
+export async function telegramLinks(): Promise<TelegramLinks> {
+  return STANDALONE ? { bot: '', channel: '' } : getJson('/api/links');
 }
 
 export async function signalStats(days: number): Promise<OutcomeStats[]> {

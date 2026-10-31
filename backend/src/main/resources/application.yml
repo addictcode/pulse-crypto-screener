@@ -114,3 +114,5 @@ pulse:
     channel-delay: 5m
     channel-per-hour: 6
     channel-strength: 2
+    # for the Telegram buttons on the site; empty means the name Telegram reports for the token
+    bot-username: ${PULSE_TELEGRAM_BOT_USERNAME:}

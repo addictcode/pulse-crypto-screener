@@ -170,6 +170,8 @@
 
 ### B2. Кнопки Telegram на сайте (~1 ч)
 
+- [x] Сделано: ветка `claude/b2-telegram-links` (от B1).
+
 - `GET /api/links` → `{bot, channel}` из `PULSE_TELEGRAM_BOT_USERNAME` (или имени из `getMe`)
   и `PULSE_TELEGRAM_CHANNEL`; пустые поля, если не заданы.
 - Лендинг (первый экран и финал), `/record/` и кадр `#clip`: кнопки «Сигналы в Telegram» и

@@ -13,6 +13,8 @@ public enum VisitSource {
     TELEGRAM("telegram"),
     GOOGLE("google"),
     DIRECT("direct"),
+    /** The bot opened from a button on our own site. */
+    SITE("site"),
     OTHER("other");
 
     private final String key;
@@ -45,7 +47,10 @@ public enum VisitSource {
         if (value.contains("google")) {
             return GOOGLE;
         }
-        if (value.equals("direct") || value.equals("site")) {
+        if (value.equals("site")) {
+            return SITE;
+        }
+        if (value.equals("direct")) {
             return DIRECT;
         }
         return OTHER;

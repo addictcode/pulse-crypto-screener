@@ -1,6 +1,6 @@
 import type { Page, WebSocketRoute } from '@playwright/test';
 
-import type { CandleDto, StreamMessage, SymbolMetrics } from '../src/types';
+import type { CandleDto, StreamMessage, SymbolMetrics, TelegramLinks } from '../src/types';
 
 const row = (symbol: string, price: number, ch24h: number, vol24h: number, over: Partial<SymbolMetrics> = {}): SymbolMetrics => ({
   symbol, price, ch1m: 0.05, ch5m: 0.3, ch15m: 0.6, ch1h: 1.1, ch24h, high24h: price * 1.04, low24h: price * 0.95, vol24h,
@@ -41,7 +41,7 @@ export interface FakeBackend {
 }
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
-export async function fakeBackend(page: Page): Promise<FakeBackend> {
+export async function fakeBackend(page: Page, options: { links?: TelegramLinks } = {}): Promise<FakeBackend> {
   // tests start as a returning visitor: the first-visit card would sit on top of what they click
   await page.addInitScript(() => {
     if (!localStorage.getItem('pulse.welcomed')) localStorage.setItem('pulse.welcomed', 'true');
@@ -67,6 +67,7 @@ export async function fakeBackend(page: Page): Promise<FakeBackend> {
     hits.push(route.request().postDataJSON() as FakeBackend['hits'][number]);
     return route.fulfill({ status: 204 });
   });
+  await page.route('**/api/links', (route) => route.fulfill({ json: options.links ?? { bot: '', channel: '' } }));
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/signals**', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/setups**', (route) =>

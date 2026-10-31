@@ -880,6 +880,7 @@ body[data-view="clip"][data-idle], body[data-view="clip"][data-idle] * { cursor:
 .clip-events time { color: var(--ink-3); font-size: .82em; font-variant-numeric: tabular-nums; flex: none; }
 .clip-events .clip-wait { color: var(--ink-3); border: 0; }
 .clip-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--ink-3); font-size: 11.5px; }
+.clip-tg { color: var(--ink-2); text-decoration: none; }
 body[data-idle] .clip-esc { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
   .clip-events li.fresh { animation: clip-in .5s cubic-bezier(.16, 1, .3, 1); }
