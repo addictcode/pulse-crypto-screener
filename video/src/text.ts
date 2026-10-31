@@ -40,6 +40,7 @@ type Text = {
   guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
   top3: { hooks: string[]; captions: string[] };
   counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  timelapse: { hooks: string[]; label: string; speed: string; hours: (h: number) => string; end: (day: number, move: number) => string; captions: string[] };
   /** at the end of every post description */
   note: string;
   tags: string;
@@ -125,6 +126,14 @@ export const TEXT: Record<Lang, Text> = {
       after: (h) => `А за следующий час:\n${pct(h)}`,
       captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
     },
+    timelapse: {
+      hooks: ['24 часа\nза 6 секунд', 'Сутки на рынке.\nУскорено.', 'Найди момент,\nкогда всё случилось 👇', 'Целый день.\nИ пять минут.', 'Весь день\nв одном ролике'],
+      label: '24 часа · свечи по 5 мин',
+      speed: 'ускорено ×14 400',
+      hours: (h) => `${h} ч`,
+      end: (day, move) => `За сутки: ${pct(day)}\nИз них 5 минут:\n${pct(move)}`,
+      captions: ['Сутки за 6 секунд', 'Успел заметить до паузы?', 'Весь день и пять минут из него', 'Вот так выглядит день на фьючерсах', 'Ускорено в 14 400 раз'],
+    },
     note: 'Реальный график, реальные цифры. Не финансовый совет.',
     tags: '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины',
   },
@@ -190,6 +199,14 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
       after: (h) => `And the next hour:\n${pct(h)}`,
       captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    timelapse: {
+      hooks: ['24 hours\nin 6 seconds', 'A day in the market.\nSped up.', 'Spot the moment\nit all happened 👇', 'A whole day.\nAnd five minutes.', 'A full day\nin one clip'],
+      label: '24 hours · 5m candles',
+      speed: 'sped up ×14,400',
+      hours: (h) => `${h} h`,
+      end: (day, move) => `The whole day: ${pct(day)}\n5 of those minutes:\n${pct(move)}`,
+      captions: ['A day in 6 seconds', 'Did you spot it before the pause?', 'A whole day and five minutes of it', 'This is a day on futures', 'Sped up 14,400 times'],
     },
     note: 'Real chart, real numbers. Not financial advice.',
     tags: '#crypto #trading #bitcoin #altcoins #futures #binance',
