@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-signals-from-the-fix
+      author: pulse
+      comment: >
+        Checked against Binance's minute candles, 54 of 80 random pumps and dumps stored before the
+        stream connection fix were false (a frame spliced from two coins), against none of 77 after
+        it. Every kind of signal and every outcome before then rests on the same prices, so the
+        record starts again at the moment the fixed backend went live, 31 October 2026 13:51:28 UTC.
+        A dump of the database from before this change is kept.
+      changes:
+        - sql:
+            sql: DELETE FROM signal WHERE fired_at < '2026-10-31 13:51:28+00'
