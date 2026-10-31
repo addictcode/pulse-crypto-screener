@@ -12,25 +12,34 @@ video spread; a sound baked into the file is neither.
 
 ## Making a batch
 
+Events come from one of two sources, or both: they all land in `public/events.json`.
+
+### From Binance's archive (anywhere, no database)
+
+```bash
+npm run archive -- --days 30 --max 60
+```
+
+`scripts/archive-events.mjs` takes the 120 most traded USDT perpetuals of the newest archived day
+(`--pairs`), reads their minute candles from Binance's public archive for the last 30 days
+(`--days`) and finds minutes where the price moved at least 5% in five minutes (`--min`). Per coin
+and day only the strongest move is kept, at most three per coin (`--per-coin`); up to 60
+(`--max`) of them, strongest first and pumps and dumps in turn, are **added** to
+`public/events.json`. Events already there stay, the same coin and minute is never added twice.
+
+What is thrown away: fresh listings (less than 100 minutes of history before the move, or a gap
+in the minutes), a start price outside the day's range before the move (the rule Pulse's own
+signals follow), and a crash with a rebound that would read as a pump. Every event then passes the
+same candle check as the database ones (`confirm` in `scripts/archive.mjs`), and `npm test`
+checks the whole file again.
+
+The archive is `data.binance.vision`; the script reads the same bucket at its S3 address, which
+some networks let through when the CDN is blocked (`ARCHIVE_URL` overrides it). Files appear about
+a day late. Zips are cached in `.cache/`, so a second run downloads only what is new.
+
+### From Pulse's signal table (on the Mac with the live database)
+
 1. Candidates from the signal table (strongest pump or dump per coin over the last 25 days):
-
-   ```bash
-   docker exec pulse-postgres-1 psql -U pulse -d pulse -At -c "
-   select coalesce(json_agg(e), '[]') from (
-     select distinct on (symbol) symbol, type, (extract(epoch from fired_at)*1000)::bigint as time, price, value, ret_5m, ret_15m, ret_1h
-     from signal where type in ('PUMP','DUMP') and fired_at > now() - interval '25 days' and ret_1h is not null and value >= 4
-     order by symbol, value desc) e" > scripts/candidates.json
-   ```
-
-2. Check them against Binance's minute candles; only moves the candles confirm are kept:
-
-   ```bash
-   npm run events -- 40
-   ```
-
-   Before 31 October 2026 most stored pumps and dumps were false (a spliced stream frame put one
-   coin's price on another), so this check is not optional.
-
 3. Render:
 
    ```bash

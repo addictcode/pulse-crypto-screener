@@ -5,8 +5,10 @@
   "description": "Short vertical videos of real market events seen by Pulse, rendered with Remotion",
   "scripts": {
     "events": "node scripts/events.mjs",
+    "archive": "node scripts/archive-events.mjs",
     "studio": "remotion studio",
     "render": "node scripts/render.mjs",
+    "test": "node --test \"scripts/*.test.mjs\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
