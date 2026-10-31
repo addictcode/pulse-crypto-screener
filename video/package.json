@@ -1,0 +1,25 @@
+{
+  "name": "pulse-video",
+  "private": true,
+  "type": "module",
+  "description": "Short vertical videos of real market events seen by Pulse, rendered with Remotion",
+  "scripts": {
+    "events": "node scripts/events.mjs",
+    "studio": "remotion studio",
+    "render": "node scripts/render.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

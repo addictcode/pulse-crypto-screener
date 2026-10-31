@@ -1,0 +1,4 @@
+node_modules/
+out/
+# a query result from the local database; regenerate it (README.md)
+scripts/candidates.json
