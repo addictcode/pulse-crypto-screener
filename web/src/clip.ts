@@ -1,3 +1,4 @@
+import { ClipRecorder, type RecordingState } from './clip-recorder';
 import { base, hms, pct, px, tone, usd } from './format';
 import { t } from './i18n';
 import type { Market } from './market';
@@ -31,9 +32,19 @@ export class ClipFrame {
   private idle = 0;
   private frame = 0;
   private shown = new Set<string>();
+  /** Outside the frame, so it never ends up in the video it reports on. */
+  private readonly badge = document.createElement('div');
+  private readonly recorder = new ClipRecorder(
+    (state) => this.showRecording(state),
+    () => this.say(t('This browser cannot record the screen. Chrome can.')),
+  );
 
   constructor(market: Market) {
     this.market = market;
+    this.badge.className = 'clip-rec';
+    this.badge.hidden = true;
+    this.badge.setAttribute('role', 'status');
+    document.body.append(this.badge);
     market.delta.on((changes) => {
       if (this.active && changes.some(([, row]) => row.symbol === this.symbol)) this.schedule();
     });
@@ -56,12 +67,40 @@ export class ClipFrame {
     clearInterval(this.clock);
     if (!active) {
       delete document.body.dataset.idle;
+      this.recorder.stop();
       return;
     }
     this.tick();
     this.clock = window.setInterval(() => this.tick(), 1_000);
     this.wake();
     this.schedule();
+  }
+
+  /** Starts or stops writing the frame to a video file. */
+  toggleRecording() {
+    if (this.active) void this.recorder.toggle(document.querySelector('.desk')!, this.symbol);
+  }
+
+  private showRecording(state: RecordingState) {
+    document.body.toggleAttribute('data-recording', state.recording);
+    const time = `${Math.floor(state.seconds / 60)}:${String(state.seconds % 60).padStart(2, '0')}`;
+    document.title = state.recording ? `● ${time} · Pulse` : t('Pulse terminal');
+    if (!state.recording) {
+      this.badge.hidden = true;
+      return;
+    }
+    // only where the window leaves room beside the frame: inside it the badge would be filmed,
+    // and the tab title and the browser's own sharing bar already say a recording runs
+    const room = document.querySelector('.desk')!.getBoundingClientRect().left - 24;
+    this.badge.hidden = state.cropped && room < 140;
+    this.badge.style.maxWidth = state.cropped ? `${room}px` : '';
+    this.badge.innerHTML = `<i></i>${time}<span>${state.cropped ? t('R stops and saves the video') : t('Recording the whole tab: this browser cannot cut it to the frame. R stops.')}</span>`;
+  }
+
+  private say(message: string) {
+    this.badge.hidden = false;
+    this.badge.textContent = message;
+    setTimeout(() => (this.badge.hidden = true), 5_000);
   }
 
   private tick() {

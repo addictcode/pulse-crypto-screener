@@ -566,7 +566,11 @@ export const RU: Record<string, string> = {
   'longs liquidated': 'лонгов ликвидировано',
   'shorts liquidated': 'шортов ликвидировано',
   'Market data, not financial advice.': 'Рыночные данные, не инвестиционный совет.',
-  'Esc leaves the frame': 'Esc — выйти из кадра',
+  'R records a video, Esc leaves': 'R — записать видео, Esc — выйти',
+  'In the frame: record it to a video file': 'В кадре: записать его в видеофайл',
+  'R stops and saves the video': 'R — остановить и сохранить видео',
+  'Recording the whole tab: this browser cannot cut it to the frame. R stops.': 'Пишется вся вкладка: этот браузер не умеет обрезать запись по кадру. R — стоп.',
+  'This browser cannot record the screen. Chrome can.': 'Этот браузер не умеет записывать экран. Chrome умеет.',
 
   // ---------- signal record page ----------
   '90d': '90д',

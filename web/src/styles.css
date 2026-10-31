@@ -887,3 +887,11 @@ body[data-idle] .clip-esc { visibility: hidden; }
 }
 @keyframes clip-in { from { opacity: 0; transform: translateY(-8px); background: color-mix(in srgb, var(--ink) 8%, transparent); } }
 @keyframes clip-pulse { 50% { opacity: .35; } }
+/* recording: the badge sits in the window's corner, the frame shows nothing extra */
+.clip-rec { position: fixed; z-index: 80; left: 12px; top: 12px; display: flex; align-items: center; gap: 8px; max-width: min(320px, 40vw); padding: 7px 11px; border: 1px solid var(--rule-strong); border-radius: var(--r); background: var(--bg-2); color: var(--ink); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.clip-rec i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--down); }
+.clip-rec span { color: var(--ink-2); }
+body[data-recording] .clip-esc { visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) { .clip-rec i { animation: clip-pulse 1s ease-in-out infinite; } }
+.clip-bar { white-space: nowrap; }
+@container (width < 420px) { .clip-live span { display: none; } }

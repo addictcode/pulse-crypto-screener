@@ -212,7 +212,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(18);
+  await expect(page.locator('#keys dt')).toHaveCount(19);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();

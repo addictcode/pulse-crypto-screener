@@ -154,6 +154,16 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command, { label: t('Setups'), icon: 'view', run: go('setups') } satisfies Command]),
   { label: t('Chart only'), icon: 'expand', hint: 'F', run: toggleFocus },
   { label: t('Vertical frame for recording a video'), icon: 'camera', hint: 'V', run: toggleClip },
+  {
+    label: t('In the frame: record it to a video file'),
+    icon: 'camera',
+    hint: 'R',
+    run: () => {
+      if (currentView() !== 'clip') toggleClip();
+      // the permission prompt needs the frame on screen; give the view a moment to switch
+      setTimeout(() => clip.toggleRecording(), 300);
+    },
+  },
   { label: t('Show or hide the pair list'), icon: 'sidebar', hint: 'L', run: () => layout.toggleList() },
   { label: t('Show or hide the feeds under the chart'), icon: 'dock', hint: 'B', run: () => layout.toggleDock() },
   { label: t('All columns in the list'), icon: 'columns', run: () => screener.setWide(!screener.wide) },
@@ -187,6 +197,10 @@ document.addEventListener('keydown', (e) => {
   if (target?.matches('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key.toLowerCase() === 'v' || (e.key === 'Escape' && currentView() === 'clip')) {
     toggleClip();
+    return;
+  }
+  if (e.key.toLowerCase() === 'r' && currentView() === 'clip') {
+    clip.toggleRecording();
     return;
   }
   if (e.key.toLowerCase() === 'f') {
