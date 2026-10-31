@@ -4,6 +4,11 @@ import { defineConfig } from '@playwright/test';
 // stream and the API are played from fixtures (e2e/backend.ts), so the tests are deterministic
 // and need neither Java nor the exchange.
 const PORT = 5199;
+/**
+ * The production build, for measurements that only make sense on it: the dev server injects CSS
+ * from scripts, so its first frame is unstyled and every page "shifts" when the styles land.
+ */
+export const BUILD_PORT = 5198;
 
 export default defineConfig({
   testDir: 'e2e',
@@ -19,9 +24,17 @@ export default defineConfig({
     viewport: { width: 1440, height: 900 },
     trace: 'retain-on-failure',
   },
-  webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}/app/`,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: `npx vite --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}/app/`,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `npx vite build --outDir dist-e2e --emptyOutDir && npx vite preview --outDir dist-e2e --port ${BUILD_PORT} --strictPort`,
+      url: `http://localhost:${BUILD_PORT}/`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+  ],
 });
