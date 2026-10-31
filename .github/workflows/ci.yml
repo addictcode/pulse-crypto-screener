@@ -34,6 +34,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      # what ships to visitors must have no known high or critical holes; dev tools are not shipped
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run build
       # end-to-end: the real frontend in a real browser against a fake backend (web/e2e)
