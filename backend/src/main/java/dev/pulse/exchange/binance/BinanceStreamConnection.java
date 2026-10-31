@@ -129,8 +129,20 @@ final class BinanceStreamConnection implements WebSocket.Listener {
                 });
     }
 
+    /*
+     * One listener outlives many sockets, and an old socket can still call back after a new one
+     * opened: the watchdog aborts it, its late onClose schedules one more reconnect, and two live
+     * sockets end up writing into one fragment buffer. Half a kline frame of one coin plus the end
+     * of another's is still valid JSON, which once put a 0.046 price on BTC. So only the current
+     * socket is listened to, and any other one is closed.
+     */
+
     @Override
     public void onOpen(WebSocket ws) {
+        WebSocket previous = socket;
+        if (previous != null && previous != ws) {
+            previous.abort();
+        }
         socket = ws;
         attempt = 0;
         lastFrameAt = System.currentTimeMillis();
@@ -143,6 +155,10 @@ final class BinanceStreamConnection implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onText(WebSocket ws, CharSequence data, boolean last) {
+        if (ws != socket) {
+            ws.abort(); // a leftover socket; never request more from it
+            return null;
+        }
         partial.append(data);
         if (last) {
             String frame = partial.toString();
@@ -160,6 +176,9 @@ final class BinanceStreamConnection implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onClose(WebSocket ws, int statusCode, String reason) {
+        if (ws != socket) {
+            return null; // an old socket finally closing; its replacement is already on the way
+        }
         log.info("[{}] closed by server: {} {}", name, statusCode, reason);
         scheduleReconnect();
         return null;
@@ -167,6 +186,9 @@ final class BinanceStreamConnection implements WebSocket.Listener {
 
     @Override
     public void onError(WebSocket ws, Throwable error) {
+        if (ws != socket) {
+            return;
+        }
         log.warn("[{}] error: {}", name, error.getMessage());
         scheduleReconnect();
     }

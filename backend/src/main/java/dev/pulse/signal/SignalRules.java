@@ -28,7 +28,23 @@ public final class SignalRules {
     static final double WALL_MIN_SIZE = 500_000;
     static final double WALL_MIN_MULTIPLE = 10;
 
+    /** The exchange's 24 hour range is rounded and a second late; this much slack covers both. */
+    static final double RANGE_SLACK = 0.02;
+
     private SignalRules() {
+    }
+
+    /**
+     * The price five minutes ago, as the candles say, must have been inside the exchange's own
+     * 24 hour range. Fresh listings start with broken candles and kept "dumping 35%" on a flat
+     * day; a candle from a bad frame would do the same.
+     */
+    static boolean withinDay(SymbolMetrics m) {
+        if (m.high24h() == null || m.low24h() == null || m.high24h() <= 0) {
+            return true;
+        }
+        double before = m.price() / (1 + m.ch5m() / 100);
+        return before <= m.high24h() * (1 + RANGE_SLACK) && before >= m.low24h() * (1 - RANGE_SLACK);
     }
 
     /**
@@ -44,10 +60,11 @@ public final class SignalRules {
         }
         String sym = base(m.symbol());
 
-        if (m.ch5m() != null && m.ch5m() >= SignalType.PUMP.floor()) {
+        boolean moveIsReal = m.ch5m() != null && withinDay(m);
+        if (moveIsReal && m.ch5m() >= SignalType.PUMP.floor()) {
             signals.add(signal(SignalType.PUMP, m, now, m.ch5m(), 1, sym + " jumps " + num(m.ch5m(), 1) + "% in five minutes"));
         }
-        if (m.ch5m() != null && -m.ch5m() >= SignalType.DUMP.floor()) {
+        if (moveIsReal && -m.ch5m() >= SignalType.DUMP.floor()) {
             signals.add(signal(SignalType.DUMP, m, now, -m.ch5m(), -1, sym + " falls " + num(-m.ch5m(), 1) + "% in five minutes"));
         }
         if (m.surge() != null && m.surge() >= SignalType.VOLUME.floor() && m.vol24h() >= minVolume24h * VOLUME_LIQUIDITY_FACTOR) {

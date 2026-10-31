@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-drop-spliced-prices
+      author: pulse
+      comment: >
+        Two kinds of impossible pumps and dumps got into the table. Until the stream connection was
+        fixed, two sockets could write into one fragment buffer after a reconnect, and a frame
+        spliced from two coins put one coin's price on another (BTC at 0.046, ME up 155,000%).
+        And fresh listings with broken early candles kept firing 35% dumps on a flat day.
+        A perpetual does not fall 90% or quadruple in five minutes, and a five minute move of
+        20% or more that the day's change does not even half show was measured against a wrong
+        price, as is one undone within five minutes, since a spliced price lasts a moment. An
+        outcome of -99% or worse, or above +100% within an hour, has a spliced price too.
+      changes:
+        - sql:
+            sql: >
+              DELETE FROM signal
+              WHERE (type = 'DUMP' AND value >= 90) OR (type = 'PUMP' AND value >= 300)
+        - sql:
+            sql: >
+              DELETE FROM signal s
+              USING (
+                SELECT id, replace(substring(detail from '([−+-]?[0-9.]+)% on the day'), '−', '-')::numeric AS day
+                FROM signal WHERE type IN ('PUMP', 'DUMP') AND value >= 20
+              ) d
+              WHERE s.id = d.id
+                AND (d.day IS NULL
+                  OR (s.type = 'DUMP' AND d.day > -s.value / 2)
+                  OR (s.type = 'PUMP' AND d.day < s.value / 2))
+        # a spliced price lasts a moment: five minutes later the move is undone almost to the cent
+        - sql:
+            sql: >
+              DELETE FROM signal
+              WHERE value >= 20 AND ret_5m IS NOT NULL
+                AND ((type = 'PUMP' AND ret_5m <= -0.8 * 100 * value / (100 + value))
+                  OR (type = 'DUMP' AND ret_5m >= 0.8 * 100 * value / (100 - value)))
+        - sql:
+            sql: >
+              UPDATE signal SET
+                ret_5m = CASE WHEN ret_5m <= -99 OR ret_5m > 100 THEN NULL ELSE ret_5m END,
+                ret_15m = CASE WHEN ret_15m <= -99 OR ret_15m > 100 THEN NULL ELSE ret_15m END,
+                ret_1h = CASE WHEN ret_1h <= -99 OR ret_1h > 100 THEN NULL ELSE ret_1h END
+              WHERE ret_5m <= -99 OR ret_15m <= -99 OR ret_1h <= -99
+                 OR ret_5m > 100 OR ret_15m > 100 OR ret_1h > 100

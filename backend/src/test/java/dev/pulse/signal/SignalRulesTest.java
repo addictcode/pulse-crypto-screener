@@ -94,6 +94,22 @@ class SignalRulesTest {
                 .singleElement().extracting(Signal::title).isEqualTo("WIF trades 0.25% above a $2.1M bid wall");
     }
 
+    @Test
+    void aMoveFromAPriceOutsideTheDaysRangeIsNotBelieved() {
+        // a fresh listing: candles say 0.043 five minutes ago, the exchange's day never went above 0.029
+        SymbolMetrics listing = new SymbolMetrics("NEWUSDT", 0.02817, 0.0, -35.0, -35.0, -35.0, -2.3, 0.029, 0.027,
+                1_180_000_000, 1.0, 1.4, 0.01, null, null, null, 0);
+
+        assertThat(evaluate(listing, 0, 0, null)).noneMatch(s -> s.type() == SignalType.DUMP);
+    }
+
+    @Test
+    void aRealMoveStartsInsideTheDaysRange() {
+        assertThat(SignalRules.withinDay(row(-2.5, 1, 0, 0.01))).isTrue();
+        assertThat(SignalRules.withinDay(row(3.0, 1, 0, 0.01))).isTrue();
+        assertThat(SignalRules.withinDay(row(-30, 1, 0, 0.01))).as("1.20 five minutes ago, day high 0.86").isFalse();
+    }
+
     private static List<Signal> evaluate(SymbolMetrics m, double longs, double shorts, Wall wall) {
         return SignalRules.evaluate(m, longs, shorts, wall, MIN_VOLUME, 1_000);
     }
