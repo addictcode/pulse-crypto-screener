@@ -1,1 +1,1 @@
-https://api.trycloudflare.com
+https://framework-exercises-teenage-plan.trycloudflare.com
