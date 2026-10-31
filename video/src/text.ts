@@ -40,6 +40,7 @@ type Text = {
   guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
   top3: { hooks: string[]; captions: string[] };
   counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  traps: { hooks: string[]; label: (n: number) => string; breakout: (up: boolean) => string; back: (hour: number) => string; end: string; captions: string[] };
   volume: { hooks: string[]; label: string; average: string; end: (n: number, move: number) => string; captions: string[] };
   split: { hooks: string[]; before: (m: number) => string; after: string; end: (m: number, calm: number, move: number) => string; captions: string[] };
   timelapse: { hooks: string[]; label: string; speed: string; hours: (h: number) => string; end: (day: number, move: number) => string; captions: string[] };
@@ -128,6 +129,14 @@ export const TEXT: Record<Lang, Text> = {
       after: (h) => `А за следующий час:\n${pct(h)}`,
       captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
     },
+    traps: {
+      hooks: ['3 раза за неделю\nрынок сделал это', 'Пробой… и назад.\nТри раза', 'Ловушка.\nЛовушка.\nЛовушка.', 'Купил пробой?\nСмотри, что дальше', 'Любимый трюк\nрынка'],
+      label: (n) => `Ловушка ${n}/3`,
+      breakout: (up) => (up ? 'Пробой вверх…' : 'Пробой вниз…'),
+      back: (hour) => `…и назад:\n${pct(hour)} за час`,
+      end: '3 из 3\nразвернулись',
+      captions: ['Пробой, который не пробой ×3', 'Не гонись за свечой', 'Три ловушки за неделю', 'Узнаёшь этот трюк?', 'Ловушка срабатывает снова и снова'],
+    },
     volume: {
       hooks: ['Смотри на объём,\nне на цену', 'Объём\nвзорвался 💥', 'Сначала объём.\nПотом цена.', 'Это не цена.\nЭто объём.', 'Обычные минуты?\nСмотри внимательно'],
       label: 'объём · 1 мин',
@@ -215,6 +224,14 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
       after: (h) => `And the next hour:\n${pct(h)}`,
       captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    traps: {
+      hooks: ['The market did this\n3 times in a week', 'Breakout… and back.\nThree times', 'Trap.\nTrap.\nTrap.', 'Bought the breakout?\nWatch this', "The market's\nfavourite trick"],
+      label: (n) => `Trap ${n}/3`,
+      breakout: (up) => (up ? 'Breakout…' : 'Breakdown…'),
+      back: (hour) => `…and back:\n${pct(hour)} in an hour`,
+      end: '3 out of 3\nreversed',
+      captions: ["The breakout that wasn't ×3", 'Never chase a candle', 'Three traps in a week', 'Recognise this trick?', 'The trap works again and again'],
     },
     volume: {
       hooks: ['Watch the volume,\nnot the price', 'Volume\nexploded 💥', 'Volume first.\nThen price.', "This isn't price.\nThis is volume.", 'Just normal minutes?\nLook closer'],
