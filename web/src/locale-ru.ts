@@ -556,6 +556,8 @@ export const RU: Record<string, string> = {
   'open': 'открыть',
   'close': 'закрыть',
 
+  'Share of the largest': 'Доля от крупнейшей',
+
   // ---------- recording frame ----------
   'Recording frame': 'Кадр для записи',
   'Vertical frame for recording a video': 'Вертикальный кадр для записи видео',

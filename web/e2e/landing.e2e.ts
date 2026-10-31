@@ -32,8 +32,8 @@ test('the setups panel shows the journal the server keeps', async ({ page }) => 
   await expect(page.locator('#su-n')).toHaveText('3', { timeout: 20_000 });
   await expect(page.locator('#su-win')).toHaveText('67%');
   await expect(page.locator('#su-net')).toHaveText('+4.7R');
-  await expect(page.locator('#su-open tr')).toHaveCount(1);
-  await expect(page.locator('#su-open tr')).toContainText('SOL');
+  await expect(page.locator('#su-open tbody tr')).toHaveCount(1);
+  await expect(page.locator('#su-open tbody tr')).toContainText('SOL');
   await expect(page.locator('#su-note')).toBeHidden();
 });
 

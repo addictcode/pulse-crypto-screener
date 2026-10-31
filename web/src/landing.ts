@@ -237,7 +237,9 @@ function renderWalls() {
     .slice(0, 7);
   if (!walls.length) return;
   const max = walls[0].size;
-  $('walls-preview').innerHTML = `<tbody>${walls
+  // headers only for screen readers: the columns explain themselves on screen
+  const head = `<thead class="sr"><tr><th>${t('Symbol')}</th><th>${t('Side')}</th><th>${t('Size')}</th><th>${t('Share of the largest')}</th><th>${t('Distance')}</th><th>${t('Age')}</th></tr></thead>`;
+  $('walls-preview').innerHTML = `${head}<tbody>${walls
     .map(
       (w) => `<tr>
         <td>${base(w.symbol)}</td>
