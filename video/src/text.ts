@@ -1,0 +1,197 @@
+/**
+ * Every word the videos say, in frames and in post descriptions, by language. The English set is
+ * written for English-speaking crypto TikTok (POV, "Nobody: / The market:", "Expectation /
+ * Reality"), not translated line by line.
+ *
+ * Nothing here may date a video or name a coin: no ticker, no date, no time of day. The numbers
+ * come from the candles; nothing is promised.
+ */
+
+export type Lang = 'ru' | 'en';
+export const LANGS: Lang[] = ['ru', 'en'];
+
+/** rocket: kept going; trap: turned against the move; flat: neither */
+export type Plot = 'rocket' | 'trap' | 'flat';
+
+/** What a hook or punchline may use: the real numbers of the event, signed percent. */
+export type Numbers = { hour: number; further: number; move: number };
+
+/** A hook and its punchline go together, with the post description that fits them. */
+export type Pair = { hook: (n: Numbers) => string; punch: (n: Numbers) => string; caption: string };
+
+export type PlotKey = `${Plot}-${'up' | 'down'}`;
+
+export const pct = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}%`;
+export const abs = (v: number) => `${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}%`;
+
+type Text = {
+  /** the meme template's tellings, five per plot and direction */
+  pairs: Record<PlotKey, Pair[]>;
+  /** the quiet beat before the chart */
+  calm: string[];
+  /** the label over every chart */
+  chartLabel: string;
+  /** under the stamped percent */
+  in5: string;
+  /** Pulse's notification: what happened, and when */
+  notice: (up: boolean, size: string) => string;
+  now: string;
+  outro: { tagline: string; link: string; note: string; guess: string; top3: string };
+  guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
+  top3: { hooks: string[]; captions: string[] };
+  counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  /** at the end of every post description */
+  note: string;
+  tags: string;
+};
+
+const ruFlat: Pair[] = [
+  { hook: () => 'Что произошло,\nпока ты моргнул:', punch: (s) => `А через час ${pct(s.hour)}.\nНу и кто тут умный?`, caption: 'Моргнул — пропустил' },
+  { hook: () => 'Никто:\n\nРынок:', punch: (s) => `Через час: ${pct(s.hour)}`, caption: 'Рынок просто так' },
+  { hook: () => '5 минут.\nВсего 5 минут.', punch: (s) => `${abs(s.move)} за 5 минут.\nЧерез час: ${pct(s.hour)}`, caption: 'Пять минут, которые всё решили' },
+  { hook: () => 'Когда отошёл\nза кофе ☕', punch: (s) => `Пока пил кофе:\n${pct(s.move)}`, caption: 'Никогда не отходи за кофе' },
+  { hook: () => 'Скорость этого рынка:', punch: (s) => `${pct(s.move)} за 5 минут.\nЭто не баг.`, caption: 'Фьючерсы не ждут' },
+];
+
+const enFlat: Pair[] = [
+  { hook: () => 'What happened\nwhile you blinked:', punch: (s) => `An hour later: ${pct(s.hour)}.\nSo who's the genius?`, caption: 'Blink and you miss it' },
+  { hook: () => 'Nobody:\n\nThe market:', punch: (s) => `One hour later: ${pct(s.hour)}`, caption: 'The market, just because' },
+  { hook: () => '5 minutes.\nJust 5 minutes.', punch: (s) => `${abs(s.move)} in 5 minutes.\nAn hour later: ${pct(s.hour)}`, caption: 'Five minutes that changed everything' },
+  { hook: () => 'When you step away\nfor coffee ☕', punch: (s) => `While you got coffee:\n${pct(s.move)}`, caption: 'Never step away for coffee' },
+  { hook: () => 'The speed of\nthis market:', punch: (s) => `${pct(s.move)} in 5 minutes.\nNot a bug.`, caption: "Futures don't wait" },
+];
+
+export const TEXT: Record<Lang, Text> = {
+  ru: {
+    pairs: {
+      'rocket-up': [
+        { hook: () => 'POV: ты продал\nза минуту до этого', punch: (s) => `…и это было только начало:\nещё ${pct(s.further)}`, caption: 'Классика: продал ровно перед ракетой' },
+        { hook: () => 'Поставил тейк\nна +2% 😌', punch: (s) => `Рынок:\nещё ${pct(s.further)}`, caption: 'Тейк на +2% — это стратегия' },
+        { hook: () => 'Шортисты:\n«ну теперь-то откат» 😎', punch: (s) => `Откат через час:\nещё ${pct(s.further)} 💀`, caption: 'Шортить ракету — смелое решение' },
+        { hook: () => 'Ты: «уже слишком\nвысоко, не зайду»', punch: (s) => `График через час:\nещё ${pct(s.further)}`, caption: 'Слишком высоко — говорили они' },
+        { hook: () => 'Никто:\n\nАльткоины внезапно:', punch: (s) => `И не остановились:\nещё ${pct(s.further)}`, caption: 'Пока ты спишь, рынок не спит' },
+      ],
+      'rocket-down': [
+        { hook: () => 'POV: ты зашёл в лонг\n«на откате»', punch: (s) => `…и это было только начало:\nещё ${pct(s.further)}`, caption: 'Откат, говорили они' },
+        { hook: () => '«Это просто\nкоррекция»', punch: (s) => `Коррекция через час:\nещё ${pct(s.further)} 💀`, caption: 'Здоровая коррекция' },
+        { hook: () => 'Лонгисты:\n«ниже уже некуда» 😎', punch: (s) => `Нашлось куда:\nещё ${pct(s.further)}`, caption: 'Ниже некуда — всегда есть куда' },
+        { hook: () => 'Когда купил дип', punch: (s) => `У дипа был\nещё один дип: ${pct(s.further)}`, caption: 'Buy the dip, они сказали' },
+        { hook: () => 'Никто:\n\nАльткоины внезапно:', punch: (s) => `И это не дно:\nещё ${pct(s.further)}`, caption: 'Рынок не прощает' },
+      ],
+      'trap-up': [
+        { hook: () => 'Купил на пробое 🚀', punch: (s) => `Через час: ${pct(s.hour)} 🤡`, caption: 'Пробой, который не пробой' },
+        { hook: (s) => `${pct(s.move)} за 5 минут.\nТы: заходишь`, punch: (s) => `Ты через час:\n${pct(s.hour)}`, caption: 'FOMO — лучший индикатор. Наоборот' },
+        { hook: () => 'Ожидание:', punch: (s) => `Реальность:\n${pct(s.hour)} за час`, caption: 'Ожидание vs реальность' },
+        { hook: () => 'Когда наконец\nрешился войти', punch: (s) => `Рынок через час:\n${pct(s.hour)}`, caption: 'Рынок ждал только тебя' },
+        { hook: () => 'FOMO включилось', punch: (s) => `FOMO через час:\n${pct(s.hour)} 🫠`, caption: 'Не гонись за свечой' },
+      ],
+      'trap-down': [
+        { hook: () => 'Продал на самом дне', punch: (s) => `Через час: ${pct(s.hour)} 🤡`, caption: 'Продал дно — классика' },
+        { hook: (s) => `${pct(s.move)} за 5 минут.\nТы: шортишь`, punch: (s) => `Ты через час:\n${pct(s.hour)} против тебя`, caption: 'Шорт в самый низ' },
+        { hook: () => 'Ожидание:', punch: (s) => `Реальность:\n${pct(s.hour)} за час`, caption: 'Ожидание vs реальность' },
+        { hook: () => 'Паника.\nПродаю всё.', punch: (s) => `Через час:\n${pct(s.hour)} 🫠`, caption: 'Паника — плохой советник' },
+        { hook: () => 'Шорт с идеальной\nточкой входа', punch: (s) => `Идеальная точка\nчерез час: ${pct(s.hour)}`, caption: 'Идеальный вход, неидеальный рынок' },
+      ],
+      'flat-up': ruFlat,
+      'flat-down': ruFlat,
+    },
+    calm: ['Ничего не предвещало.', 'Тихо.\nСлишком тихо.', 'Обычный день\nна рынке.', 'Спокойный флэт…', 'Ничего\nне происходит.'],
+    chartLabel: 'фьючерсы · 1 мин',
+    in5: 'за 5 минут',
+    notice: (up, size) => `${up ? 'Резкий рост' : 'Резкое падение'}: ${size} за пять минут`,
+    now: 'сейчас',
+    outro: {
+      tagline: 'радар всего рынка фьючерсов',
+      link: 'ссылка в профиле',
+      note: 'Реальные данные Binance. Не финансовый совет.',
+      guess: 'подпишись, чтобы угадать следующую',
+      top3: 'такие свечи Pulse ловит каждый день',
+    },
+    guess: {
+      hooks: ['Угадай,\nчто дальше 👇', 'Лонг или шорт?', 'Куда пойдёт\nцена?', 'Ты бы зашёл?', 'Проверим\nтвою интуицию'],
+      question: 'Что дальше?',
+      up: '⬆ ВВЕРХ',
+      down: '⬇ ВНИЗ',
+      comment: 'Пиши ответ в комменты 👇',
+      answer: (h) => (Math.abs(h) < 1 ? `Никуда 🙃\n${pct(h)} за час` : h > 0 ? `⬆ Вверх:\n${pct(h)} за час` : `⬇ Вниз:\n${pct(h)} за час`),
+      captions: ['Угадал? Пиши в комменты', 'Лонг или шорт — отвечай честно', 'Проверь себя: вверх или вниз?', 'Зашёл бы?', 'Интуиция или удача?'],
+    },
+    top3: {
+      hooks: ['Топ-3 самых\nрезких свечей', '3 свечи,\nот которых трясёт', '5 минут.\nТри раза.', 'Самые резкие\n5 минут рынка', 'Три свечи,\nкоторые никто не ждал'],
+      captions: ['Какая из трёх страшнее?', 'Номер один — это жесть', 'Три свечи, пять минут каждая', 'Ты бы удержал позицию?', 'Рынок не спит'],
+    },
+    counter: {
+      hooks: ['Засекай.\n5 минут.', 'Как выглядят\n5 минут на фьючерсах', 'Смотри\nна цифру 👇', 'Пять минут.\nНе моргай.', 'Что рынок\nделает за 5 минут'],
+      after: (h) => `А за следующий час:\n${pct(h)}`,
+      captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
+    },
+    note: 'Реальный график, реальные цифры. Не финансовый совет.',
+    tags: '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины',
+  },
+  en: {
+    pairs: {
+      'rocket-up': [
+        { hook: () => 'POV: you sold\none minute before this', punch: (s) => `…and that was just the start:\n${pct(s.further)} more`, caption: 'Sold right before the rocket. Classic' },
+        { hook: () => 'Me: takes profit\nat +2% 😌', punch: (s) => `The market:\n${pct(s.further)} more`, caption: 'Taking profit at +2% is a strategy' },
+        { hook: () => 'Shorts:\n"ok NOW it pulls back" 😎', punch: (s) => `The pullback:\n${pct(s.further)} more 💀`, caption: 'Shorting a rocket is a bold move' },
+        { hook: () => 'Me: "too high,\nI\'ll skip this one"', punch: (s) => `The chart an hour later:\n${pct(s.further)} more`, caption: 'Too high, they said' },
+        { hook: () => 'Nobody:\n\nAltcoins out\nof nowhere:', punch: (s) => `And it didn't stop:\n${pct(s.further)} more`, caption: 'The market never sleeps' },
+      ],
+      'rocket-down': [
+        { hook: () => 'POV: you longed\n"the dip"', punch: (s) => `…and that was just the start:\n${pct(s.further)} more`, caption: 'Buying the dip, they said' },
+        { hook: () => '"It\'s just a\nhealthy correction"', punch: (s) => `The correction:\n${pct(s.further)} more 💀`, caption: 'Very healthy correction' },
+        { hook: () => 'Longs:\n"it can\'t go\nany lower" 😎', punch: (s) => `It could:\n${pct(s.further)} more`, caption: 'There is always a lower' },
+        { hook: () => 'When you\nbuy the dip', punch: (s) => `The dip had\nanother dip: ${pct(s.further)}`, caption: 'Buy the dip, they said' },
+        { hook: () => 'Nobody:\n\nThe market out\nof nowhere:', punch: (s) => `And that wasn't the bottom:\n${pct(s.further)} more`, caption: 'The market does not forgive' },
+      ],
+      'trap-up': [
+        { hook: () => 'Bought the\nbreakout 🚀', punch: (s) => `One hour later:\n${pct(s.hour)} 🤡`, caption: "The breakout that wasn't" },
+        { hook: (s) => `${pct(s.move)} in 5 minutes.\nMe: apes in`, punch: (s) => `Me an hour later:\n${pct(s.hour)}`, caption: 'FOMO is the best indicator. Inverted' },
+        { hook: () => 'Expectation:', punch: (s) => `Reality:\n${pct(s.hour)} in an hour`, caption: 'Expectation vs reality' },
+        { hook: () => 'When you finally\nfind the courage\nto enter', punch: (s) => `The market an hour later:\n${pct(s.hour)}`, caption: 'The market was waiting just for you' },
+        { hook: () => 'FOMO:\nactivated', punch: (s) => `FOMO an hour later:\n${pct(s.hour)} 🫠`, caption: 'Never chase a candle' },
+      ],
+      'trap-down': [
+        { hook: () => 'Sold the\nexact bottom', punch: (s) => `One hour later:\n${pct(s.hour)} 🤡`, caption: 'Sold the bottom. Classic' },
+        { hook: (s) => `${pct(s.move)} in 5 minutes.\nMe: shorts it`, punch: (s) => `Me an hour later:\n${pct(s.hour)} against me`, caption: 'Shorting the bottom' },
+        { hook: () => 'Expectation:', punch: (s) => `Reality:\n${pct(s.hour)} in an hour`, caption: 'Expectation vs reality' },
+        { hook: () => 'Panic.\nSell everything.', punch: (s) => `One hour later:\n${pct(s.hour)} 🫠`, caption: 'Panic is a terrible advisor' },
+        { hook: () => 'A short with the\nperfect entry', punch: (s) => `The perfect entry\nan hour later: ${pct(s.hour)}`, caption: 'Perfect entry, imperfect market' },
+      ],
+      'flat-up': enFlat,
+      'flat-down': enFlat,
+    },
+    calm: ['Nothing to\nsee here.', 'Quiet.\nToo quiet.', 'Just another day\nin the market.', 'Calm and\nsideways…', 'Nothing is\nhappening.'],
+    chartLabel: 'futures · 1m',
+    in5: 'in 5 minutes',
+    notice: (up, size) => `${up ? 'Sharp pump' : 'Sharp dump'}: ${size} in five minutes`,
+    now: 'now',
+    outro: {
+      tagline: 'a radar for the whole futures market',
+      link: 'link in bio',
+      note: 'Real Binance data. Not financial advice.',
+      guess: 'follow to guess the next one',
+      top3: 'Pulse catches candles like these every day',
+    },
+    guess: {
+      hooks: ['Guess what\nhappens next 👇', 'Long or short?', 'Where does\nit go next?', 'Would you\nenter here?', "Let's test\nyour instinct"],
+      question: "What's next?",
+      up: '⬆ UP',
+      down: '⬇ DOWN',
+      comment: 'Drop your answer below 👇',
+      answer: (h) => (Math.abs(h) < 1 ? `Nowhere 🙃\n${pct(h)} in an hour` : h > 0 ? `⬆ Up:\n${pct(h)} in an hour` : `⬇ Down:\n${pct(h)} in an hour`),
+      captions: ['Called it? Tell me in the comments', 'Long or short, be honest', 'Test yourself: up or down?', 'Would you take this trade?', 'Instinct or luck?'],
+    },
+    top3: {
+      hooks: ['Top 3 most\nviolent candles', '3 candles that\nwill shake you', '5 minutes.\nThree times.', 'The wildest\n5 minutes', 'Three candles\nnobody saw coming'],
+      captions: ['Which one is the scariest?', 'Number one is insane', 'Three candles, five minutes each', 'Would you hold through this?', 'The market never sleeps'],
+    },
+    counter: {
+      hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
+      after: (h) => `And the next hour:\n${pct(h)}`,
+      captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    note: 'Real chart, real numbers. Not financial advice.',
+    tags: '#crypto #trading #bitcoin #altcoins #futures #binance',
+  },
+};

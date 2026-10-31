@@ -47,12 +47,14 @@ a day late. Zips are cached in `.cache/`, so a second run downloads only what is
    npm run render -- --template guess,top3   # some templates only
    npm run render -- --max 10        # only numbers up to 10
    npm run render -- --stills --max 4  # three PNG frames per video, to check the look quickly
+   npm run render -- --lang en       # the English set, to out/en/
    npm run studio                    # Remotion Studio, to work on the design
    ```
 
    Videos land in `out/` as `pulse-001.mp4`, `pulse-002.mp4`, ..., next to `captions.txt` with a
    post description and hashtags for each. A stopped render picks up where it left off: finished
-   files are skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
+   files are skipped. `out/manifest.json` remembers which video each file holds: when new events
+   shift the plan, a number that now means another video is rendered again, not skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
    from sleeping meanwhile.
 
 ### In GitHub Actions (no Mac)
@@ -86,13 +88,22 @@ python3 scripts/check.py out/pulse-*.mp4
 - **Counter** ("Засекай: 5 минут"): a stopwatch from 00:00 to 05:00 and a huge running percent,
   counted from the price at 00:00, with the candles drawing underneath.
 
-From 101 on the three take turns, so neighbouring videos never share a format.
+The four take turns from number 1 on (event, guess, counter, top3, event, ...), so neighbouring
+videos never share a format and any first few show all of them.
+
+## Languages
+
+Every word in the frames and the post descriptions lives in `src/text.ts`, by language: `ru` (in
+`out/`) and `en` (in `out/en/`, the same numbers and events). The English set is written as memes
+for English-speaking crypto TikTok (POV, "Nobody: / The market:", "Expectation / Reality"), not
+translated line by line; its hashtags are #crypto #trading #bitcoin #altcoins #futures #binance.
+A new line of text goes into both languages.
 
 ## How a video is told
 
 `src/story.ts` reads the hour after the signal from the candles and picks the plot: a rocket (it
 kept going), a trap (it turned against the move) or flat. Each plot has five hook and punchline
-pairs that belong together ("Ожидание:" then "Реальность:"); videos next to each other always get
+pairs per language that belong together ("Ожидание:" then "Реальность:"); videos next to each other always get
 different ones. The numbers in every caption are the real ones.
 
 Remotion is free for individuals and companies of up to three people.
