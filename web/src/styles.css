@@ -827,3 +827,63 @@ body:not([data-view="screener"]) .book .ladder { flex: none; }
 
 /* ---------- standalone demo: no server, so no stored signals ---------- */
 body[data-mode="lite"] .view[data-view="signals"], body[data-mode="lite"] .view[data-view="setups"] { display: none; }
+
+/* ---------- recording frame (#clip): one pair in 9:16 for a short video ----------
+   Everything of the terminal steps aside; the frame is as tall as the window and centred, so a
+   screen recording cropped to it is ready to post. Written after the phone rules on purpose:
+   on a phone the frame simply fills the screen. */
+.cliphead, .clipfeed { display: none; }
+body[data-view="clip"] { background: #000; overflow: hidden; }
+body[data-view="clip"] :is(.top, .statusbar, .toasts) { display: none; }
+body[data-view="clip"] .desk,
+body[data-view="clip"][data-view] .desk {
+  display: grid;
+  width: min(100vw, calc(100dvh * 9 / 16));
+  height: 100dvh;
+  margin: 0 auto;
+  padding: 0;
+  gap: 0;
+  background: var(--bg-0);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "cliphead" "ins" "clipfeed";
+  --clip-pad: clamp(16px, 4.5cqw, 28px);
+  container-type: inline-size;
+}
+body[data-view="clip"] .desk > .panel { display: none; border: 0; background: var(--bg-0); }
+body[data-view="clip"] .desk > :is(.instrument, .cliphead, .clipfeed) { display: flex; }
+body[data-view="clip"] .cliphead { grid-area: cliphead; padding: var(--clip-pad) var(--clip-pad) 10px; gap: 6px; }
+body[data-view="clip"] .clipfeed { grid-area: clipfeed; padding: 6px var(--clip-pad) var(--clip-pad); }
+body[data-view="clip"] .instrument :is(.ins-top, .chart-bar, .bt, .plan-tools, .tools) { display: none; }
+body[data-view="clip"] .chart-area { flex: 1; height: auto; padding: 0 6px; grid-template-columns: minmax(0, 1fr); border-top: 0; }
+body[data-view="clip"] .welcome { display: none; }
+body[data-view="clip"][data-idle], body[data-view="clip"][data-idle] * { cursor: none !important; }
+
+.clip-bar { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--ink-2); }
+.clip-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 600; font-size: 15px; }
+.clip-brand svg { width: 20px; height: 20px; }
+.clip-live { display: inline-flex; align-items: center; gap: 7px; }
+.clip-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--down); }
+.clip-clock { margin-left: auto; font-variant-numeric: tabular-nums; }
+.clip-id { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; color: var(--ink-3); font-size: 14px; }
+.clip-id b { font: 800 clamp(40px, 13cqw, 72px) / 1 var(--f-display); color: var(--ink); text-transform: uppercase; letter-spacing: -.02em; }
+.clip-quote { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.clip-price { font: 600 clamp(28px, 9cqw, 48px) / 1.1 var(--f-ui); font-variant-numeric: tabular-nums; }
+.clip-ch { font-size: clamp(18px, 5cqw, 26px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.clip-moves { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.clip-moves > div { padding: 8px 0; }
+.clip-moves > div + div { padding-left: 12px; border-left: 1px solid var(--rule); }
+.clip-moves dt { color: var(--ink-3); font-size: 12px; }
+.clip-moves dd { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.clip-events { list-style: none; display: grid; gap: 2px; min-height: calc(4 * 30px); }
+.clip-events li { display: flex; gap: 12px; align-items: baseline; padding: 5px 0; font-size: clamp(14px, 3.9cqw, 17px); border-bottom: 1px solid var(--rule-soft); }
+.clip-events time { color: var(--ink-3); font-size: .82em; font-variant-numeric: tabular-nums; flex: none; }
+.clip-events .clip-wait { color: var(--ink-3); border: 0; }
+.clip-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--ink-3); font-size: 11.5px; }
+body[data-idle] .clip-esc { visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .clip-events li.fresh { animation: clip-in .5s cubic-bezier(.16, 1, .3, 1); }
+  .clip-live i { animation: clip-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes clip-in { from { opacity: 0; transform: translateY(-8px); background: color-mix(in srgb, var(--ink) 8%, transparent); } }
+@keyframes clip-pulse { 50% { opacity: .35; } }

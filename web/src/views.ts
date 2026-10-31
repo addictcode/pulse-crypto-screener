@@ -1,6 +1,7 @@
-export type View = 'screener' | 'grid' | 'heatmap' | 'densities' | 'signals' | 'setups';
+export type View = 'screener' | 'grid' | 'heatmap' | 'densities' | 'signals' | 'setups' | 'clip';
 
-const VIEWS: View[] = ['screener', 'grid', 'heatmap', 'densities', 'signals', 'setups'];
+/** `clip` has no tab: it is the vertical frame for screen recordings, entered with V. */
+const VIEWS: View[] = ['screener', 'grid', 'heatmap', 'densities', 'signals', 'setups', 'clip'];
 
 /**
  * What the address bar says: `#heatmap`, `#screener:SOLUSDT`. The pair is optional and rides

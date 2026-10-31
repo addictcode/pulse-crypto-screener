@@ -5,6 +5,7 @@ import './styles.css';
 import { Alerts } from './alerts';
 import { STANDALONE, startFeed, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
+import { ClipFrame } from './clip';
 import { Densities } from './densities';
 import { ChartGrid } from './grid';
 import { Heatmap } from './heatmap';
@@ -43,6 +44,7 @@ const alerts = new Alerts(market, (symbol) => selectSymbol(symbol));
 const chart = new PriceChart(market, alerts);
 new Masthead(market);
 new LiquidationsPanel(market);
+const clip = new ClipFrame(market);
 
 // the screener owns the selection; every other view selects through it so they stay in step
 let densities: Densities | null = null;
@@ -53,6 +55,7 @@ const screener = new Screener(market, (symbol) => {
   instrument.show(symbol);
   chart.show(symbol);
   alerts.show(symbol);
+  clip.setSymbol(symbol);
   densities?.setSelected(symbol);
   record?.setSelected(symbol);
   heatmap?.setSelected(symbol);
@@ -88,6 +91,7 @@ initViews(
     record?.setActive(view === 'signals');
     setups?.setActive(view === 'setups');
     heatmap?.setActive(view === 'heatmap');
+    clip.setActive(view === 'clip');
   },
   (symbol) => {
     if (symbol !== screener.selected) selectSymbol(symbol);
@@ -109,6 +113,9 @@ const toggleFocus = () => {
   setFocus(!('focus' in document.body.dataset));
 };
 focusButton.addEventListener('click', toggleFocus);
+
+// the vertical frame for recording a short video of one pair; Esc or V again brings the terminal back
+const toggleClip = () => (location.hash = `#${currentView() === 'clip' ? 'screener' : 'clip'}:${screener.selected}`);
 
 /** Downloads the chart as a PNG; the button shows a tick for a moment so the click is not silent. */
 function saveSnapshot() {
@@ -146,6 +153,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: t('Densities'), icon: 'view', run: go('densities') },
   ...(STANDALONE ? [] : [{ label: t('Signals'), icon: 'view', run: go('signals') } satisfies Command, { label: t('Setups'), icon: 'view', run: go('setups') } satisfies Command]),
   { label: t('Chart only'), icon: 'expand', hint: 'F', run: toggleFocus },
+  { label: t('Vertical frame for recording a video'), icon: 'camera', hint: 'V', run: toggleClip },
   { label: t('Show or hide the pair list'), icon: 'sidebar', hint: 'L', run: () => layout.toggleList() },
   { label: t('Show or hide the feeds under the chart'), icon: 'dock', hint: 'B', run: () => layout.toggleDock() },
   { label: t('All columns in the list'), icon: 'columns', run: () => screener.setWide(!screener.wide) },
@@ -177,6 +185,10 @@ document.addEventListener('keydown', (e) => {
   }
   const target = e.target instanceof HTMLElement ? e.target : null;
   if (target?.matches('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.toLowerCase() === 'v' || (e.key === 'Escape' && currentView() === 'clip')) {
+    toggleClip();
+    return;
+  }
   if (e.key.toLowerCase() === 'f') {
     toggleFocus();
     return;

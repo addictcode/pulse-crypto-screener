@@ -43,7 +43,8 @@ test('switches to Russian and remembers it', async ({ page }) => {
 
   await page.locator('#lang [data-lang="ru"]').click();
 
-  await expect(page.locator('.view[data-view="screener"]')).toHaveText('Терминал');
+  // the switch reloads the page; with every test running in parallel that can take a while
+  await expect(page.locator('.view[data-view="screener"]')).toHaveText('Терминал', { timeout: 15_000 });
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   await page.reload();
   await expect(page.locator('.view[data-view="heatmap"]')).toHaveText('Карта рынка');
@@ -211,7 +212,7 @@ test('a question mark lists the shortcuts', async ({ page }) => {
 
   await page.keyboard.press('?');
   await expect(page.locator('#keys')).toBeVisible();
-  await expect(page.locator('#keys dt')).toHaveCount(17);
+  await expect(page.locator('#keys dt')).toHaveCount(18);
 
   await page.keyboard.press('Escape');
   await expect(page.locator('#keys')).toBeHidden();
@@ -441,4 +442,24 @@ test('a key takes a drawing tool, and with the pin on it stays for the next figu
   await expect(page.locator('#tools [data-tool="hline"]')).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('Escape');
   await expect(page.locator('#tools [data-tool="hline"]')).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('V turns the chart into a vertical frame for recording, and Esc brings the terminal back', async ({ page }) => {
+  await openTerminal(page);
+  const symbol = await page.locator('#ins-sym').innerText();
+  await page.keyboard.press('v');
+
+  await expect(page).toHaveURL(/#clip:/);
+  await expect(page.locator('.cliphead')).toBeVisible();
+  await expect(page.locator('.top')).toBeHidden();
+  await expect(page.locator('#clip-sym')).toHaveText(symbol);
+  const frame = (await page.locator('.desk').boundingBox())!;
+  expect(frame.width / frame.height).toBeCloseTo(9 / 16, 1);
+  // the chart gets the whole width of the frame, not the drawing toolbar's column
+  expect((await page.locator('#chart').boundingBox())!.width).toBeGreaterThan(frame.width * 0.8);
+
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL(/#screener:/);
+  await expect(page.locator('.cliphead')).toBeHidden();
+  await expect(page.locator('.top')).toBeVisible();
 });

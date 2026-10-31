@@ -556,6 +556,18 @@ export const RU: Record<string, string> = {
   'open': 'открыть',
   'close': 'закрыть',
 
+  // ---------- recording frame ----------
+  'Recording frame': 'Кадр для записи',
+  'Vertical frame for recording a video': 'Вертикальный кадр для записи видео',
+  'Binance futures, live': 'Фьючерсы Binance, вживую',
+  'USDT perpetual': 'бессрочный USDT',
+  'What happened on this pair': 'Что происходило с парой',
+  'Watching {sym}: pumps, liquidations and walls show up here as they happen.': 'Следим за {sym}: пампы, ликвидации и стены появятся здесь, как только случатся.',
+  'longs liquidated': 'лонгов ликвидировано',
+  'shorts liquidated': 'шортов ликвидировано',
+  'Market data, not financial advice.': 'Рыночные данные, не инвестиционный совет.',
+  'Esc leaves the frame': 'Esc — выйти из кадра',
+
   // ---------- signal record page ----------
   '90d': '90д',
   'Record': 'Статистика',
