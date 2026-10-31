@@ -55,6 +55,15 @@ a day late. Zips are cached in `.cache/`, so a second run downloads only what is
    files are skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
    from sleeping meanwhile.
 
+### In GitHub Actions (no Mac)
+
+The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub's runner: Actions
+→ video → Run workflow. Inputs: `templates`, `max` (numbers up to), `refresh_events` (search the
+archive for new events first, `days` of it). Every video is checked by `scripts/check.py`, and
+the batch comes out as the artifact `pulse-videos-<run>`: the videos, `captions.txt` and the
+`events.json` they were made from. Artifacts are kept 14 days. A pull request that changes the
+workflow renders six videos to prove it still works.
+
 ## Broken frames
 
 With two or more render tabs at once, Chrome now and then handed over a frame of the wrong size
