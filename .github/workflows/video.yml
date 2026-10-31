@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       templates:
-        description: Templates, comma separated (event, guess, top3, counter, timelapse, split, volume, traps)
-        default: event,guess,top3,counter,timelapse,split,volume,traps
+        description: Templates, comma separated (event, guess, top3, counter, timelapse, split, volume, traps, pulse)
+        default: event,guess,top3,counter,timelapse,split,volume,traps,pulse
       max:
         description: Render only video numbers up to this
         default: "1000"
@@ -37,7 +37,7 @@ jobs:
       run:
         working-directory: video
     env:
-      TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter,timelapse,split,volume,traps' }}
+      TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter,timelapse,split,volume,traps,pulse' }}
       MAX: ${{ inputs.max || '6' }}
       LANGS: ${{ inputs.lang == 'ru' && 'ru' || inputs.lang == 'en' && 'en' || 'ru en' }}
     steps:

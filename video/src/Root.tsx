@@ -7,6 +7,8 @@ import { GUESS_DURATION, GuessVideo, type GuessVideoProps } from './GuessVideo';
 import { TRAPS_DURATION, TrapsVideo, type TrapsVideoProps } from './TrapsVideo';
 import { trapSeries } from './traps.ts';
 import { VOLUME_DURATION, VolumeVideo, type VolumeVideoProps } from './VolumeVideo';
+import { PULSE_DURATION, PulseVideo, type PulseVideoProps } from './PulseVideo';
+import pulse from '../public/pulse.json';
 import { SPLIT_DURATION, SplitVideo, type SplitVideoProps } from './SplitVideo';
 import { TIMELAPSE_DURATION, TimelapseVideo, type TimelapseVideoProps } from './TimelapseVideo';
 import { TOP3_DURATION, Top3Video, type Top3VideoProps } from './Top3Video';
@@ -16,6 +18,7 @@ import type { MarketEvent } from './story';
 
 const all = events as MarketEvent[];
 const withDay = all.find((e) => e.id in days) ?? all[0];
+const withHour = all.find((e) => e.id in pulse) ?? all[0];
 const vertical = { fps: 30, width: 1080, height: 1920 } as const;
 
 /** One composition per template; the render script passes the events and the telling as props. */
@@ -28,6 +31,7 @@ export const RemotionRoot = () => (
     <Composition id="Split" component={SplitVideo} durationInFrames={SPLIT_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies SplitVideoProps} />
     <Composition id="Volume" component={VolumeVideo} durationInFrames={VOLUME_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies VolumeVideoProps} />
     <Composition id="Traps" component={TrapsVideo} durationInFrames={TRAPS_DURATION} {...vertical} defaultProps={{ events: trapSeries(all)[0] ?? all.slice(0, 3), variant: 0, lang: 'ru' } satisfies TrapsVideoProps} />
+    <Composition id="Pulse" component={PulseVideo} durationInFrames={PULSE_DURATION} {...vertical} defaultProps={{ event: withHour, hour: (pulse as Record<string, PulseVideoProps['hour']>)[withHour.id], variant: 0, lang: 'ru' } satisfies PulseVideoProps} />
     <Composition id="Counter" component={CounterVideo} durationInFrames={COUNTER_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies CounterVideoProps} />
   </>
 );

@@ -6,7 +6,7 @@
 // holds, and a file whose number now means another video (new events shift the plan) is
 // rendered again instead of skipped.
 //   node scripts/render.mjs                       everything not rendered yet
-//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter, timelapse, split, volume, traps)
+//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter, timelapse, split, volume, traps, pulse)
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 //   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
@@ -26,7 +26,7 @@ import { LANGS, TEXT } from '../src/text.ts';
 
 const { values } = parseArgs({
   options: {
-    template: { type: 'string', default: 'event,guess,top3,counter,timelapse,split,volume,traps' },
+    template: { type: 'string', default: 'event,guess,top3,counter,timelapse,split,volume,traps,pulse' },
     max: { type: 'string', default: '1000' },
     only: { type: 'string' },
     out: { type: 'string' },
@@ -50,6 +50,7 @@ const browser = {
 
 const events = JSON.parse(readFileSync(new URL('../public/events.json', import.meta.url)));
 // the day around each event, for the time-lapse (scripts/days.mjs)
+const pulse = existsSync(new URL('../public/pulse.json', import.meta.url)) ? JSON.parse(readFileSync(new URL('../public/pulse.json', import.meta.url))) : {};
 const days = existsSync(new URL('../public/days.json', import.meta.url)) ? JSON.parse(readFileSync(new URL('../public/days.json', import.meta.url))) : {};
 
 /** A fixed shuffle, so the groups of three are the same on every run. */
@@ -110,7 +111,17 @@ const volumes = events
   .map((event, i) => ({ template: 'volume', id: 'Volume', props: { event, variant: (i + 4) % 5, lang }, caption: text.volume.captions[i % 5] }));
 // threes of traps within a week each
 const trapJobs = trapSeries(events).map((three, i) => ({ template: 'traps', id: 'Traps', props: { events: three, variant: i % 5, lang }, caption: text.traps.captions[i % 5] }));
-const jobs = turns([memes, guesses, counters, tops, timelapses, splits, volumes, trapJobs]);
+// one pulse of the market per event with its hour of neighbours (scripts/pulse.mjs), when its
+// tile is the one that exploded: at least 4% at the event and the biggest of the thirty
+const pulseFits = (hour) => {
+  if (!hour) return false;
+  const at = hour.tiles.map((t) => Math.abs(t[50]));
+  return at[hour.focus] >= 4 && at[hour.focus] === Math.max(...at);
+};
+const pulses = events
+  .filter((event) => pulseFits(pulse[event.id]))
+  .map((event, i) => ({ template: 'pulse', id: 'Pulse', props: { event, hour: pulse[event.id], variant: (i + 2) % 5, lang }, caption: text.pulse.captions[i % 5] }));
+const jobs = turns([memes, guesses, counters, tops, timelapses, splits, volumes, trapJobs, pulses]);
 /** What a file holds: the template, its events, the telling and the language. */
 const key = (job) => [job.template, ...(job.props.events ?? [job.props.event]).map((e) => e.id), job.props.variant, lang].join(':');
 
