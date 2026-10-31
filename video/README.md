@@ -34,8 +34,9 @@ video spread; a sound baked into the file is neither.
 3. Render:
 
    ```bash
-   caffeinate -i npm run render      # every event in five tellings, at most 100 videos (~2 hours)
-   npm run render -- --max 10        # the first ten
+   caffeinate -i npm run render      # everything not rendered yet (about 75 s a video)
+   npm run render -- --template guess,top3   # some templates only
+   npm run render -- --max 10        # only numbers up to 10
    npm run render -- --stills --max 4  # three PNG frames per video, to check the look quickly
    npm run studio                    # Remotion Studio, to work on the design
    ```
@@ -44,6 +45,19 @@ video spread; a sound baked into the file is neither.
    post description and hashtags for each. A stopped render picks up where it left off: finished
    files are skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
    from sleeping meanwhile.
+
+## Templates
+
+- **Event** (1-100): meme hook, a quiet beat, the chart to the signal candle, the punchline.
+- **Guess** ("Угадай, что дальше"): the chart stops at the signal candle, a 3-2-1 countdown asks
+  up or down, then the real next hour plays. Made for comments. Until the answer the price scale
+  knows only the past, so it cannot give the answer away.
+- **Top3**: three real moves counted down to the biggest, on light paper so it does not look like
+  the rest of the feed.
+- **Counter** ("Засекай: 5 минут"): a stopwatch from 00:00 to 05:00 and a huge running percent,
+  counted from the price at 00:00, with the candles drawing underneath.
+
+From 101 on the three take turns, so neighbouring videos never share a format.
 
 ## How a video is told
 

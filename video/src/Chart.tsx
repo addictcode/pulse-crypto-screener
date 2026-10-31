@@ -13,10 +13,12 @@ type Props = {
   rangeTo: number;
   /** index of the signal minute, marked with a line */
   mark: number | null;
+  /** gridlines; the default suits the dark theme */
+  grid?: string;
 };
 
 /** Minute candles with volume underneath, drawn as SVG so every frame renders the same way. */
-export const Chart = ({ candles, shown, width, height, rangeTo, mark }: Props) => {
+export const Chart = ({ candles, shown, width, height, rangeTo, mark, grid = '#1a1b1f' }: Props) => {
   const visible = candles.slice(0, Math.ceil(shown));
   const ranged = candles.slice(0, Math.max(1, rangeTo));
   const hi = Math.max(...ranged.map((c) => c.h));
@@ -32,10 +34,10 @@ export const Chart = ({ candles, shown, width, height, rangeTo, mark }: Props) =
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       {[0.2, 0.4, 0.6, 0.8].map((f) => (
-        <line key={f} x1={0} x2={width} y1={priceH * f} y2={priceH * f} stroke="#1a1b1f" strokeWidth={2} />
+        <line key={f} x1={0} x2={width} y1={priceH * f} y2={priceH * f} stroke={grid} strokeWidth={2} />
       ))}
       {mark !== null && shown > mark ? (
-        <line x1={slot * (mark + 0.5)} x2={slot * (mark + 0.5)} y1={0} y2={height} stroke="#ffffff" strokeOpacity={0.35} strokeWidth={3} strokeDasharray="10 10" />
+        <line x1={slot * (mark + 0.5)} x2={slot * (mark + 0.5)} y1={0} y2={height} stroke={grid === '#1a1b1f' ? '#ffffff' : '#000000'} strokeOpacity={0.35} strokeWidth={3} strokeDasharray="10 10" />
       ) : null}
       {visible.map((c, i) => {
         // the newest candle grows from its open, like a live one

@@ -1,73 +1,14 @@
-import { AbsoluteFill, Easing, Series, interpolate, random, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 
 import { Chart } from './Chart';
+import { BG, Brand, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
 import { type MarketEvent, pct, story } from './story';
 
 export type EventVideoProps = { event: MarketEvent; variant: number };
 
-const BG = '#070708';
-const INK = '#e9eaec';
-const MUTE = '#8b8e96';
-const UP = '#2ebd85';
-const DOWN = '#f6465d';
-const DISPLAY = 'Unbounded, sans-serif';
-const UI = 'Onest, sans-serif';
-
 /** Scene lengths in frames at 30 fps: short and hard-cut, the way the feed is watched. */
 export const SCENES = { hook: 42, calm: 24, replay: 96, punch: 48, outro: 45 };
 export const DURATION = Object.values(SCENES).reduce((a, b) => a + b, 0);
-
-/** A few frames of decaying jitter, for impacts. */
-function shake(frame: number, seed: string, strength = 26) {
-  const decay = Math.max(0, 1 - frame / 9);
-  return {
-    x: (random(`${seed}x${frame}`) - 0.5) * strength * decay,
-    y: (random(`${seed}y${frame}`) - 0.5) * strength * decay,
-  };
-}
-
-/** Text that slams in: starts large and lands in four frames. */
-const Slam = ({ children, size, color = INK, seed }: { children: string; size: number; color?: string; seed: string }) => {
-  const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 4], [1.6, 1], { extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
-  const { x, y } = shake(frame - 3, seed);
-  return (
-    <div
-      style={{
-        fontFamily: DISPLAY,
-        fontWeight: 800,
-        fontSize: size,
-        lineHeight: 1.08,
-        color,
-        textAlign: 'center',
-        whiteSpace: 'pre-line',
-        textTransform: 'uppercase',
-        letterSpacing: '-0.02em',
-        transform: `translate(${x}px, ${y}px) scale(${scale})`,
-        padding: '0 70px',
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-/** Two white frames: the cut the eye feels. */
-const Flash = ({ at }: { at: number }) => {
-  const frame = useCurrentFrame();
-  const o = interpolate(frame, [at, at + 1, at + 3], [0, 0.9, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  return <AbsoluteFill style={{ background: '#fff', opacity: o }} />;
-};
-
-const Brand = ({ size = 40 }: { size?: number }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: size * 0.35, fontFamily: UI, fontWeight: 600, fontSize: size, color: INK }}>
-    <svg width={size * 1.2} height={size * 1.2} viewBox="0 0 24 24">
-      <path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" strokeWidth={1.5} />
-      <path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" strokeWidth={1.5} opacity={0.55} />
-    </svg>
-    Pulse
-  </div>
-);
 
 const Hook = ({ text, id }: { text: string; id: string }) => (
   <AbsoluteFill style={{ background: BG, justifyContent: 'center', alignItems: 'center' }}>
@@ -165,24 +106,6 @@ const Punch = ({ event, text, further }: { event: MarketEvent; text: string; fur
         </Slam>
       </AbsoluteFill>
       <Flash at={0} />
-    </AbsoluteFill>
-  );
-};
-
-const Outro = () => {
-  const frame = useCurrentFrame();
-  const o = interpolate(frame, [0, 6], [0, 1], { extrapolateRight: 'clamp' });
-  return (
-    <AbsoluteFill style={{ background: BG, justifyContent: 'center', alignItems: 'center', gap: 34, opacity: o }}>
-      <Brand size={96} />
-      <div style={{ fontFamily: UI, fontSize: 50, color: INK, textAlign: 'center', lineHeight: 1.3 }}>
-        радар всего рынка фьючерсов
-        <br />
-        <span style={{ color: MUTE }}>ссылка в профиле</span>
-      </div>
-      <div style={{ position: 'absolute', bottom: 380, fontFamily: UI, fontSize: 30, color: MUTE }}>
-        Реальные данные Binance. Не финансовый совет.
-      </div>
     </AbsoluteFill>
   );
 };

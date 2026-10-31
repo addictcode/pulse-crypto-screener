@@ -1,24 +1,25 @@
-// Renders the videos: the confirmed events in public/events.json, each told several ways, to
-// out/pulse-001.mp4, pulse-002.mp4, ... with out/captions.txt holding a post description for each.
-// Videos are numbered, not named after a coin: they are posted later, in any order.
-//   node scripts/render.mjs                  every event in every telling, at most 100 videos
-//   node scripts/render.mjs --max 20         the first 20 of that list
-//   node scripts/render.mjs --tellings 2     only the first two tellings of each event
-//   node scripts/render.mjs --stills         three PNG frames per video instead, to check the look
-//   node scripts/render.mjs --from 41        resume numbering (and skip what is done) after a stop
+// Renders the videos to out/pulse-001.mp4, pulse-002.mp4, ... with out/captions.txt holding a post
+// description for each. Videos are numbered, not named after a coin: they are posted later, in
+// any order. The numbering is fixed: 1-100 are the meme template (each confirmed event told five
+// ways), from 101 the other templates take turns, so a feed never shows the same format twice in
+// a row. Finished files are skipped, so a stopped render picks up where it left off.
+//   node scripts/render.mjs                       everything not rendered yet
+//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter)
+//   node scripts/render.mjs --max 120             only numbers up to 120
+//   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 
+import { CAPTIONS } from '../src/captions.ts';
 import { TELLINGS, story } from '../src/story.ts';
 
 const { values } = parseArgs({
   options: {
-    max: { type: 'string', default: '100' },
-    tellings: { type: 'string', default: String(TELLINGS) },
-    from: { type: 'string', default: '1' },
+    template: { type: 'string', default: 'event,guess,top3,counter' },
+    max: { type: 'string', default: '1000' },
     stills: { type: 'boolean', default: false },
   },
 });
@@ -32,55 +33,84 @@ const browser = {
 };
 
 const events = JSON.parse(readFileSync(new URL('../public/events.json', import.meta.url)));
+const NOTE = 'Реальный график, реальные цифры. Не финансовый совет.';
 
-// every event in the first telling, then every event in the second, ...: neighbouring videos
-// never show the same chart
-const jobs = [];
-for (let round = 0; round < Number(values.tellings); round++) {
-  // shifted by the event's place too, so neighbours in a round are told differently
-  events.forEach((event, i) => jobs.push({ event, variant: (round + i) % TELLINGS }));
+/** A fixed shuffle, so the groups of three are the same on every run. */
+function shuffled(list, seed) {
+  const out = [...list];
+  let s = seed;
+  for (let i = out.length - 1; i > 0; i--) {
+    s = (s * 16807) % 2147483647;
+    const j = s % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
-jobs.splice(Number(values.max));
+
+// 1-100: the meme template, every event in the first telling, then the second, ... shifted by the
+// event's place, so neighbours are told differently
+const memes = [];
+for (let round = 0; round < TELLINGS; round++) {
+  events.forEach((event, i) => {
+    const variant = (round + i) % TELLINGS;
+    memes.push({ template: 'event', id: 'Event', props: { event, variant }, caption: story(event, variant).caption });
+  });
+}
+memes.splice(100);
+
+// from 101: one "guess" per event with a clear answer, one "counter" per event, and groups of three
+const guesses = events
+  .filter((event) => Math.abs(story(event, 0).hour) >= 1)
+  .map((event, i) => ({ template: 'guess', id: 'Guess', props: { event, variant: i % 5 }, caption: CAPTIONS.guess[i % 5] }));
+const counters = events.map((event, i) => ({ template: 'counter', id: 'Counter', props: { event, variant: (i + 2) % 5 }, caption: CAPTIONS.counter[i % 5] }));
+const tops = [];
+for (const seed of [7, 11]) {
+  const order = shuffled(events, seed);
+  for (let i = 0; i + 3 <= order.length; i += 3) {
+    const n = tops.length;
+    tops.push({ template: 'top3', id: 'Top3', props: { events: order.slice(i, i + 3), variant: n % 5 }, caption: CAPTIONS.top3[n % 5] });
+  }
+}
+const mixed = [];
+for (let i = 0; i < Math.max(guesses.length, counters.length, tops.length); i++) {
+  for (const list of [guesses, counters, tops]) if (list[i]) mixed.push(list[i]);
+}
+const jobs = [...memes, ...mixed];
 
 const out = new URL('../out/', import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
 const TAGS = '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины';
-writeFileSync(
-  `${out}captions.txt`,
-  jobs
-    .map(({ event, variant }, i) => {
-      const s = story(event, variant);
-      return `pulse-${String(i + 1).padStart(3, '0')}.mp4\n${s.caption}. Реальный график, реальные цифры. Не финансовый совет.\n${TAGS}\n`;
-    })
-    .join('\n'),
-);
+const name = (i) => `pulse-${String(i + 1).padStart(3, '0')}`;
+writeFileSync(`${out}captions.txt`, jobs.map((job, i) => `${name(i)}.mp4\n${job.caption}. ${NOTE}\n${TAGS}\n`).join('\n'));
+
+const wanted = new Set(values.template.split(','));
+const todo = jobs
+  .map((job, i) => ({ ...job, file: name(i), number: i + 1 }))
+  .filter((job) => wanted.has(job.template) && job.number <= Number(values.max))
+  .filter((job) => values.stills || !existsSync(`${out}${job.file}.mp4`));
+console.log(`${jobs.length} videos in the plan, ${todo.length} to render now`);
 
 const serveUrl = await bundle({ entryPoint: new URL('../src/index.ts', import.meta.url).pathname });
 
-for (const [i, { event, variant }] of jobs.entries()) {
-  const number = i + 1;
-  const name = `pulse-${String(number).padStart(3, '0')}`;
-  if (number < Number(values.from) || (!values.stills && existsSync(`${out}${name}.mp4`))) continue;
-  const inputProps = { event, variant };
-  const composition = await selectComposition({ serveUrl, id: 'Event', inputProps, ...browser });
+for (const [k, job] of todo.entries()) {
+  const composition = await selectComposition({ serveUrl, id: job.id, inputProps: job.props, ...browser });
   if (values.stills) {
-    // the hook, the hit on the signal candle, the punchline
-    for (const frame of [20, 130, 190]) {
-      await renderStill({ serveUrl, composition, inputProps, frame, output: `${out}${name}-f${frame}.png`, ...browser });
+    for (const frame of [20, Math.round(composition.durationInFrames * 0.45), Math.round(composition.durationInFrames * 0.7)]) {
+      await renderStill({ serveUrl, composition, inputProps: job.props, frame, output: `${out}${job.file}-f${frame}.png`, ...browser });
     }
-    console.log(`stills ${name}`);
+    console.log(`stills ${job.file} (${job.template})`);
     continue;
   }
   await renderMedia({
     serveUrl,
     composition,
-    inputProps,
+    inputProps: job.props,
     codec: 'h264',
     crf: 18,
-    outputLocation: `${out}${name}.mp4`,
+    outputLocation: `${out}${job.file}.mp4`,
     // more tabs at once ran the Mac out of memory and Chrome returned a broken frame now and then
     concurrency: Number(process.env.CONCURRENCY ?? 2),
     ...browser,
   });
-  console.log(`video ${name}.mp4 (${number}/${jobs.length})`);
+  console.log(`video ${job.file}.mp4, ${job.template} (${k + 1}/${todo.length})`);
 }
