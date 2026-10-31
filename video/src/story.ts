@@ -2,6 +2,9 @@
  * What a video says about one market event. The story comes from the candles alone: how far the
  * move went in five minutes and what the price did over the next hour. The captions are meme
  * formats with the real numbers in them; nothing is promised, nothing is made up.
+ *
+ * Videos are posted later and in any order, so nothing in them dates them or ties them to a coin:
+ * no ticker, no date, no clock. The chart and the numbers are real, the coin stays anonymous.
  */
 
 export type Candle = { t: number; o: number; h: number; l: number; c: number; v: number };
@@ -32,53 +35,75 @@ export type Story = {
   further: number;
   /** the five minute move itself, signed percent */
   move: number;
+  /** the quiet beat before the chart */
+  calm: string;
   hook: string;
   punch: string;
-  clock: string;
-  clockLater: string;
+  /** a description for the post */
+  caption: string;
 };
 
 const HOUR = 60;
 
-const pct = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}%`;
-const hhmm = (t: number) => new Date(t).toISOString().slice(11, 16);
+export const pct = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}%`;
+const abs = (v: number) => `${Math.abs(v).toFixed(Math.abs(v) >= 10 ? 0 : 1)}%`;
 
-/** The same event can be told several ways; the variant picks one. */
-const HOOKS: Record<Plot, Array<(s: Story, sym: string) => string>> = {
-  rocket: [
-    (s, sym) => (s.up ? `POV: ты продал ${sym}\nза минуту до этого` : `POV: ты зашёл в лонг\nпо ${sym}`),
-    (s, sym) => `Никто:\n\n${sym} в ${s.clock}:`,
-    (s, sym) => (s.up ? `Шортисты ${sym}\nв ${s.clock}: 😎` : `Лонгисты ${sym}\nв ${s.clock}: 😎`),
+type Pair = { hook: (s: Story) => string; punch: (s: Story) => string; caption: string };
+
+/**
+ * Hook and punchline go together, so each telling is a pair. Keyed by plot and by whether the
+ * move was up or down: "bought the breakout" only makes sense for a pump.
+ */
+const PAIRS: Record<`${Plot}-${'up' | 'down'}`, Pair[]> = {
+  'rocket-up': [
+    { hook: () => 'POV: ты продал\nза минуту до этого', punch: (s) => `…и это было только начало:\nещё ${pct(s.further)}`, caption: 'Классика: продал ровно перед ракетой' },
+    { hook: () => 'Поставил тейк\nна +2% 😌', punch: (s) => `Рынок:\nещё ${pct(s.further)}`, caption: 'Тейк на +2% — это стратегия' },
+    { hook: () => 'Шортисты:\n«ну теперь-то откат» 😎', punch: (s) => `Откат через час:\nещё ${pct(s.further)} 💀`, caption: 'Шортить ракету — смелое решение' },
+    { hook: () => 'Ты: «уже слишком\nвысоко, не зайду»', punch: (s) => `График через час:\nещё ${pct(s.further)}`, caption: 'Слишком высоко — говорили они' },
+    { hook: () => 'Никто:\n\nАльткоины в 3 ночи:', punch: (s) => `И не остановились:\nещё ${pct(s.further)}`, caption: 'Пока ты спишь, рынок не спит' },
   ],
-  trap: [
-    (s, sym) => (s.up ? `Купил ${sym}\nна пробое 🚀` : `Продал ${sym}\nна самом дне`),
-    (s, sym) => `${sym}: ${pct(s.move)} за 5 минут\nТы: заходишь`,
-    (_s, sym) => `${sym}.\nОжидание:`,
+  'rocket-down': [
+    { hook: () => 'POV: ты зашёл в лонг\n«на откате»', punch: (s) => `…и это было только начало:\nещё ${pct(s.further)}`, caption: 'Откат, говорили они' },
+    { hook: () => '«Это просто\nкоррекция»', punch: (s) => `Коррекция через час:\nещё ${pct(s.further)} 💀`, caption: 'Здоровая коррекция' },
+    { hook: () => 'Лонгисты:\n«ниже уже некуда» 😎', punch: (s) => `Нашлось куда:\nещё ${pct(s.further)}`, caption: 'Ниже некуда — всегда есть куда' },
+    { hook: () => 'Когда купил дип', punch: (s) => `У дипа был\nещё один дип: ${pct(s.further)}`, caption: 'Buy the dip, они сказали' },
+    { hook: () => 'Никто:\n\nАльткоины в 3 ночи:', punch: (s) => `И это не дно:\nещё ${pct(s.further)}`, caption: 'Ночной рынок не прощает' },
   ],
-  flat: [
-    (_s, sym) => `${sym} за 5 минут:`,
-    (s, sym) => `Никто:\n\n${sym} в ${s.clock}:`,
-    (_s, sym) => `Что сделал ${sym},\nпока ты моргнул:`,
+  'trap-up': [
+    { hook: () => 'Купил на пробое 🚀', punch: (s) => `Через час: ${pct(s.hour)} 🤡`, caption: 'Пробой, который не пробой' },
+    { hook: (s) => `${pct(s.move)} за 5 минут.\nТы: заходишь`, punch: (s) => `Ты через час:\n${pct(s.hour)}`, caption: 'FOMO — лучший индикатор. Наоборот' },
+    { hook: () => 'Ожидание:', punch: (s) => `Реальность:\n${pct(s.hour)} за час`, caption: 'Ожидание vs реальность' },
+    { hook: () => 'Когда наконец\nрешился войти', punch: (s) => `Рынок через час:\n${pct(s.hour)}`, caption: 'Рынок ждал только тебя' },
+    { hook: () => 'FOMO включилось', punch: (s) => `FOMO через час:\n${pct(s.hour)} 🫠`, caption: 'Не гонись за свечой' },
+  ],
+  'trap-down': [
+    { hook: () => 'Продал на самом дне', punch: (s) => `Через час: ${pct(s.hour)} 🤡`, caption: 'Продал дно — классика' },
+    { hook: (s) => `${pct(s.move)} за 5 минут.\nТы: шортишь`, punch: (s) => `Ты через час:\n${pct(s.hour)} против тебя`, caption: 'Шорт в самый низ' },
+    { hook: () => 'Ожидание:', punch: (s) => `Реальность:\n${pct(s.hour)} за час`, caption: 'Ожидание vs реальность' },
+    { hook: () => 'Паника.\nПродаю всё.', punch: (s) => `Через час:\n${pct(s.hour)} 🫠`, caption: 'Паника — плохой советник' },
+    { hook: () => 'Шорт с идеальной\nточкой входа', punch: (s) => `Идеальная точка\nчерез час: ${pct(s.hour)}`, caption: 'Идеальный вход, неидеальный рынок' },
+  ],
+  'flat-up': [
+    { hook: () => 'Что произошло,\nпока ты моргнул:', punch: (s) => `А через час ${pct(s.hour)}.\nНу и кто тут умный?`, caption: 'Моргнул — пропустил' },
+    { hook: () => 'Никто:\n\nРынок:', punch: (s) => `Через час: ${pct(s.hour)}`, caption: 'Рынок просто так' },
+    { hook: () => '5 минут.\nВсего 5 минут.', punch: (s) => `${abs(s.move)} за 5 минут.\nЧерез час: ${pct(s.hour)}`, caption: 'Пять минут, которые всё решили' },
+    { hook: () => 'Когда отошёл\nза кофе ☕', punch: (s) => `Пока пил кофе:\n${pct(s.move)}`, caption: 'Никогда не отходи за кофе' },
+    { hook: () => 'Скорость этого рынка:', punch: (s) => `${pct(s.move)} за 5 минут.\nЭто не баг.`, caption: 'Фьючерсы не ждут' },
+  ],
+  'flat-down': [
+    { hook: () => 'Что произошло,\nпока ты моргнул:', punch: (s) => `А через час ${pct(s.hour)}.\nНу и кто тут умный?`, caption: 'Моргнул — пропустил' },
+    { hook: () => 'Никто:\n\nРынок:', punch: (s) => `Через час: ${pct(s.hour)}`, caption: 'Рынок просто так' },
+    { hook: () => '5 минут.\nВсего 5 минут.', punch: (s) => `${abs(s.move)} за 5 минут.\nЧерез час: ${pct(s.hour)}`, caption: 'Пять минут, которые всё решили' },
+    { hook: () => 'Когда отошёл\nза кофе ☕', punch: (s) => `Пока пил кофе:\n${pct(s.move)}`, caption: 'Никогда не отходи за кофе' },
+    { hook: () => 'Скорость этого рынка:', punch: (s) => `${pct(s.move)} за 5 минут.\nЭто не баг.`, caption: 'Фьючерсы не ждут' },
   ],
 };
 
-const PUNCHES: Record<Plot, Array<(s: Story) => string>> = {
-  rocket: [
-    (s) => `…и это было только начало:\nещё ${pct(s.further)}`,
-    (s) => `${s.clockLater}: ещё ${pct(s.further)} 💀`,
-    (s) => (s.up ? `Шортисты в ${s.clockLater}: 💀` : `Лонгисты в ${s.clockLater}: 💀`),
-  ],
-  trap: [
-    (s) => `Через час: ${pct(s.hour)} 🤡`,
-    (s) => `Реальность, ${s.clockLater}:\n${pct(s.hour)}`,
-    (s) => `Реальность:\n${pct(s.hour)} за час`,
-  ],
-  flat: [
-    (s) => `А через час ${pct(s.hour)}.\nНу и кто тут умный?`,
-    (s) => `Через час: ${pct(s.hour)}`,
-    (s) => `Через час: ${pct(s.hour)}`,
-  ],
-};
+/** The quiet beat before the chart: the calm the move breaks. */
+const CALM = ['Ничего не предвещало.', 'Тихо.\nСлишком тихо.', 'Обычный день\nна рынке.', 'Спокойный флэт…', 'Ничего\nне происходит.'];
+
+/** How many ways one event can be told. */
+export const TELLINGS = 5;
 
 export function story(e: MarketEvent, variant: number): Story {
   const up = e.type === 'PUMP';
@@ -91,22 +116,9 @@ export function story(e: MarketEvent, variant: number): Story {
   // a third of the move given back against it is a trap; another half again its way is a rocket
   const plot: Plot =
     hour * sign <= -Math.abs(e.move) / 3 ? 'trap' : further * sign >= Math.abs(e.move) / 2 ? 'rocket' : 'flat';
-  const s: Story = {
-    plot,
-    up,
-    hour,
-    further,
-    move: e.move,
-    hook: '',
-    punch: '',
-    clock: hhmm(e.time),
-    clockLater: hhmm(e.time + HOUR * 60_000),
-  };
-  const hooks = HOOKS[plot];
-  const punches = PUNCHES[plot];
-  s.hook = hooks[variant % hooks.length](s, e.base);
-  s.punch = punches[variant % punches.length](s);
+  const pair = PAIRS[`${plot}-${up ? 'up' : 'down'}`][variant % TELLINGS];
+  const s: Story = { plot, up, hour, further, move: e.move, calm: CALM[(variant + e.id.charCodeAt(0)) % CALM.length], hook: '', punch: '', caption: pair.caption };
+  s.hook = pair.hook(s);
+  s.punch = pair.punch(s);
   return s;
 }
-
-export { pct };

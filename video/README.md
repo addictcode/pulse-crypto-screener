@@ -1,8 +1,11 @@
 # Pulse videos
 
 Short vertical videos (1080×1920, 8.5 s, no sound) of real market events Pulse caught: a meme
-caption, the ticker, the chart racing up to the signal candle, the move stamped on it with the
+caption, a quiet beat, the chart racing up to the signal candle, the move stamped on it with the
 Pulse notification, then what the price really did over the next hour.
+
+They are meant to be posted later and in any order, so none of them names the coin or shows a
+date or a clock: the chart and every number are real, the coin stays anonymous.
 
 Sound is left to TikTok: a trending sound picked there is licensed for the platform and helps the
 video spread; a sound baked into the file is neither.
@@ -31,19 +34,22 @@ video spread; a sound baked into the file is neither.
 3. Render:
 
    ```bash
-   npm run render                    # every event
-   npm run render -- --only zil,t    # some events
-   npm run render -- --variants 3    # each event told three ways
-   npm run render -- --stills        # three PNG frames per video, to check the look quickly
+   caffeinate -i npm run render      # every event in five tellings, at most 100 videos (~2 hours)
+   npm run render -- --max 10        # the first ten
+   npm run render -- --stills --max 4  # three PNG frames per video, to check the look quickly
    npm run studio                    # Remotion Studio, to work on the design
    ```
 
-   Videos land in `out/`. Rendering uses the Chrome installed on the Mac.
+   Videos land in `out/` as `pulse-001.mp4`, `pulse-002.mp4`, ..., next to `captions.txt` with a
+   post description and hashtags for each. A stopped render picks up where it left off: finished
+   files are skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
+   from sleeping meanwhile.
 
 ## How a video is told
 
 `src/story.ts` reads the hour after the signal from the candles and picks the plot: a rocket (it
-kept going), a trap (it turned against the move) or flat, then a caption pair for it. The numbers
-in every caption are the real ones.
+kept going), a trap (it turned against the move) or flat. Each plot has five hook and punchline
+pairs that belong together ("Ожидание:" then "Реальность:"); videos next to each other always get
+different ones. The numbers in every caption are the real ones.
 
 Remotion is free for individuals and companies of up to three people.

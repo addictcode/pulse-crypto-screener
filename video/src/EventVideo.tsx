@@ -14,7 +14,7 @@ const DISPLAY = 'Unbounded, sans-serif';
 const UI = 'Onest, sans-serif';
 
 /** Scene lengths in frames at 30 fps: short and hard-cut, the way the feed is watched. */
-export const SCENES = { hook: 42, ticker: 24, replay: 96, punch: 48, outro: 45 };
+export const SCENES = { hook: 42, calm: 24, replay: 96, punch: 48, outro: 45 };
 export const DURATION = Object.values(SCENES).reduce((a, b) => a + b, 0);
 
 /** A few frames of decaying jitter, for impacts. */
@@ -77,17 +77,14 @@ const Hook = ({ text, id }: { text: string; id: string }) => (
   </AbsoluteFill>
 );
 
-const Ticker = ({ event }: { event: MarketEvent }) => {
+/** The quiet beat before the move: a flat line and a calm sentence, cut short by the chart. */
+const Calm = ({ text, id }: { text: string; id: string }) => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 24], [1.15, 1]);
+  const o = interpolate(frame, [0, 3], [0, 1], { extrapolateRight: 'clamp' });
   return (
-    <AbsoluteFill style={{ background: BG, justifyContent: 'center', alignItems: 'center', gap: 20 }}>
-      {/* Unbounded is wide: a long ticker gets a smaller size instead of running off the screen */}
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: Math.min(260, 1000 / event.base.length), color: INK, transform: `scale(${scale})`, letterSpacing: '-0.03em' }}>
-        {event.base}
-      </div>
-      <div style={{ fontFamily: UI, fontSize: 46, color: MUTE }}>
-        {new Date(event.time).toISOString().slice(0, 10)} · {new Date(event.time).toISOString().slice(11, 16)} UTC · Binance
+    <AbsoluteFill style={{ background: BG, justifyContent: 'center', alignItems: 'center', opacity: o }}>
+      <div key={id} style={{ fontFamily: UI, fontWeight: 600, fontSize: 76, color: MUTE, textAlign: 'center', whiteSpace: 'pre-line', lineHeight: 1.2 }}>
+        {text}
       </div>
     </AbsoluteFill>
   );
@@ -113,7 +110,7 @@ const Replay = ({ event, line }: { event: MarketEvent; line: string }) => {
   return (
     <AbsoluteFill style={{ background: BG }}>
       <div style={{ position: 'absolute', top: 120, left: 70, right: 70, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 92, color: INK }}>{event.base}</span>
+        <span style={{ fontFamily: UI, fontWeight: 600, fontSize: 44, color: MUTE }}>фьючерсы · 1 мин</span>
         <span style={{ fontFamily: UI, fontWeight: 600, fontSize: 64, color: INK, fontVariantNumeric: 'tabular-nums' }}>{price}</span>
       </div>
       <div style={{ position: 'absolute', top: 330, left: 20, transform: `translate(${x}px, ${y}px) scale(${punch})`, transformOrigin: '70% 50%' }}>
@@ -193,15 +190,15 @@ const Outro = () => {
 export const EventVideo = ({ event, variant }: EventVideoProps) => {
   const s = story(event, variant);
   const size = Math.abs(event.move);
-  const line = `${event.base} ${event.type === 'PUMP' ? 'вырос' : 'упал'} на ${size.toFixed(size >= 10 ? 0 : 1)}% за пять минут`;
+  const line = `${event.type === 'PUMP' ? 'Резкий рост' : 'Резкое падение'}: ${size.toFixed(size >= 10 ? 0 : 1)}% за пять минут`;
   return (
     <AbsoluteFill style={{ background: BG }}>
       <Series>
         <Series.Sequence durationInFrames={SCENES.hook}>
           <Hook text={s.hook} id={event.id} />
         </Series.Sequence>
-        <Series.Sequence durationInFrames={SCENES.ticker}>
-          <Ticker event={event} />
+        <Series.Sequence durationInFrames={SCENES.calm}>
+          <Calm text={s.calm} id={event.id} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={SCENES.replay}>
           <Replay event={event} line={line} />
