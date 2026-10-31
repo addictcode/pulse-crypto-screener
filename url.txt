@@ -1,1 +1,1 @@
-https://api.trycloudflare.com
+https://vid-fitness-occasional-adam.trycloudflare.com
