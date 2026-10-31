@@ -9,5 +9,7 @@ interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
 
     Optional<UserAccount> findByTelegramChatId(long chatId);
 
-    List<UserAccount> findByTelegramChatIdIsNotNull();
+    List<UserAccount> findByTelegramChatIdIsNotNullAndSubscribedTrue();
+
+    long countBySubscribedTrue();
 }

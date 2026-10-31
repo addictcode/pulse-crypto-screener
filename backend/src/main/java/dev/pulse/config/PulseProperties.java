@@ -87,9 +87,21 @@ public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Densi
     }
 
     /**
-     * @param ownerChatId the only chat the bot talks to; when empty the bot just tells each
-     *                    sender their chat id so the owner can configure it
+     * @param ownerChatId   gets setups and everything instantly; in a closed bot the only chat it
+     *                      talks to. When empty the bot just tells each sender their chat id so the
+     *                      owner can configure it
+     * @param open          anyone may /start the bot and get signals with their own settings
+     * @param channel       public channel for the free showcase, "@name" or numeric id; empty for none.
+     *                      The bot must be an admin there
+     * @param channelDelay  how long after the bot the channel gets a signal
+     * @param channelPerHour at most this many channel posts an hour; a backlog goes out as one
+     * @param channelStrength the channel takes only signals this many times past the system floor
      */
-    public record Telegram(boolean enabled, String token, Long ownerChatId, String apiUrl) {
+    public record Telegram(boolean enabled, String token, Long ownerChatId, String apiUrl, boolean open, String channel,
+                           Duration channelDelay, int channelPerHour, double channelStrength) {
+
+        public boolean hasChannel() {
+            return channel != null && !channel.isBlank();
+        }
     }
 }

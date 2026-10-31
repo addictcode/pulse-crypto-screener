@@ -1,7 +1,10 @@
 package dev.pulse.telegram;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,37 +23,53 @@ import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.MarketStore;
 import dev.pulse.setup.SetupClosed;
 import dev.pulse.setup.SetupOpened;
+import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalHistory;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Personal Telegram bot: answers commands from its owner and pushes signals to them.
+ * The Telegram bot, and the public channel it posts to.
  * <p>
- * Until an owner chat id is configured, the bot tells whoever writes to it their own chat id
- * (and nothing else), which is how the owner finds theirs. Everybody else is told the bot is
- * private, once.
+ * Closed (the default), it answers only its owner. Open, anyone can /start it and gets signals
+ * with their own settings; /stop or blocking the bot ends that. The owner alone also gets Pulse
+ * Setups. Until an owner chat id is configured, a closed bot tells whoever writes to it their own
+ * chat id (and nothing else), which is how the owner finds theirs.
+ * <p>
+ * The channel, when configured, is the free showcase: strong signals only, a few minutes late.
  */
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "pulse.telegram", name = "enabled", havingValue = "true")
 class TelegramBot {
 
+    /** Commands one chat may send a minute before the bot stops answering it for a while. */
+    static final int COMMANDS_PER_MINUTE = 20;
+    private static final long CHANNEL_TICK_MS = 15_000;
+
     private final PulseProperties.Telegram config;
     private final AccountService accounts;
+    private final MarketStore market;
     private final BotCommands commands;
     private final Set<Long> toldPrivate = ConcurrentHashMap.newKeySet();
+    private final Map<Long, long[]> commandCounts = new HashMap<>();
+    private final ChannelFeed channel;
 
     private TelegramApi api;
     private TelegramSender sender;
+    private String username = "";
     private volatile boolean running;
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
                 OrderBookStore books, DensityScanner density, AlertService alerts) {
         this.config = properties.telegram();
         this.accounts = accounts;
+        this.market = market;
         this.commands = new BotCommands(accounts, history, market, books, density, alerts);
+        this.channel = config.hasChannel()
+                ? new ChannelFeed(config.channelDelay(), config.channelPerHour(), config.channelStrength())
+                : null;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -60,33 +79,41 @@ class TelegramBot {
             return;
         }
         api = new TelegramApi(config.apiUrl(), config.token());
-        sender = new TelegramSender(api);
+        sender = new TelegramSender(api, accounts::unsubscribe);
         running = true;
         if (config.ownerChatId() != null) {
             accounts.telegramUser(config.ownerChatId());
-        } else {
+        } else if (!config.open()) {
             log.warn("Telegram: no owner chat id yet; message the bot and it will tell you yours");
         }
         try {
             api.setMyCommands(BotCommands.MENU);
+            username = api.username();
         } catch (RuntimeException e) {
-            log.warn("Telegram: could not set the command menu: {}", api.redact(e.getMessage()));
+            log.warn("Telegram: could not set up the bot profile: {}", api.redact(e.getMessage()));
         }
         sender.start();
         Thread.ofVirtual().name("telegram-poll").start(this::poll);
-        log.info("Telegram: bot started");
+        if (channel != null) {
+            Thread.ofVirtual().name("telegram-channel").start(this::postToChannel);
+        }
+        log.info("Telegram: bot @{} started, {}{}", username, config.open() ? "open to everyone" : "owner only",
+                channel == null ? "" : ", channel " + config.channel());
     }
 
     /** Delivery: hand each fired signal to the sender for every recipient who wants it. */
     @EventListener
     void onSignal(SignalFired event) {
-        if (!running || config.ownerChatId() == null) {
+        if (!running) {
             return;
+        }
+        if (channel != null) {
+            channel.offer(event.signal());
         }
         Instant now = Instant.now();
         for (DeliverySettings recipient : accounts.telegramRecipients()) {
-            // single-user mode: only the configured owner, even if an old chat is still in the table
-            if (config.ownerChatId().equals(recipient.telegramChatId()) && recipient.wants(event.signal(), now)) {
+            // a closed bot serves only the owner, even if other chats are still in the table
+            if ((config.open() || isOwner(recipient.telegramChatId())) && recipient.wants(event.signal(), now)) {
                 sender.enqueue(recipient.telegramChatId(), event.signal());
             }
         }
@@ -95,12 +122,9 @@ class TelegramBot {
     /** A price alert goes out at once, on its own thread: it is rare and must not wait behind a digest. */
     @EventListener
     void onAlert(AlertFired event) {
-        Long owner = config.ownerChatId();
-        if (!running || owner == null) {
-            return;
-        }
-        if (owner.equals(accounts.settings(event.alert().userId()).telegramChatId())) {
-            Thread.ofVirtual().name("telegram-alert").start(() -> reply(owner, TelegramFormat.alert(event)));
+        Long chat = accounts.settings(event.alert().userId()).telegramChatId();
+        if (running && chat != null && (config.open() || isOwner(chat))) {
+            Thread.ofVirtual().name("telegram-alert").start(() -> reply(chat, TelegramFormat.alert(event)));
         }
     }
 
@@ -121,6 +145,10 @@ class TelegramBot {
         }
     }
 
+    private boolean isOwner(Long chatId) {
+        return chatId != null && chatId.equals(config.ownerChatId());
+    }
+
     private void poll() {
         long offset = 0;
         int failures = 0;
@@ -130,7 +158,7 @@ class TelegramBot {
                 failures = 0;
                 for (TelegramUpdate update : updates) {
                     offset = update.updateId() + 1;
-                    handle(update);
+                    handle(update, System.currentTimeMillis());
                 }
             } catch (RuntimeException e) {
                 long backoff = Math.min(60_000, 1_000L << Math.min(failures++, 6));
@@ -140,31 +168,86 @@ class TelegramBot {
         }
     }
 
-    private void handle(TelegramUpdate update) {
+    private void handle(TelegramUpdate update, long now) {
         if (update.text() == null) {
             return;
         }
-        Long owner = config.ownerChatId();
-        if (owner == null) {
-            log.info("Telegram: message from chat {} (@{}) while no owner is configured", update.chatId(), update.username());
-            reply(update.chatId(), "Your chat id is <code>" + update.chatId() + "</code>.\n"
-                    + "Set PULSE_TELEGRAM_OWNER_CHAT_ID to it and restart Pulse to make this your bot.");
-            return;
-        }
-        if (owner != update.chatId()) {
-            if (toldPrivate.add(update.chatId())) {
-                log.info("Telegram: ignoring chat {} (@{}), not the owner", update.chatId(), update.username());
-                reply(update.chatId(), "This is a private bot.");
+        long chat = update.chatId();
+        boolean owner = isOwner(chat);
+        if (!owner && !config.open()) {
+            if (config.ownerChatId() == null) {
+                log.info("Telegram: message from chat {} (@{}) while no owner is configured", chat, update.username());
+                reply(chat, "Your chat id is <code>" + chat + "</code>.\n"
+                        + "Set PULSE_TELEGRAM_OWNER_CHAT_ID to it and restart Pulse to make this your bot.");
+            } else if (toldPrivate.add(chat)) {
+                log.info("Telegram: ignoring chat {} (@{}), not the owner", chat, update.username());
+                reply(chat, "This is a private bot.");
             }
             return;
         }
-        long userId = accounts.telegramUser(owner).getId();
-        reply(owner, commands.handle(userId, update.text()));
+        // groups and channels have negative ids; signals are personal, so only private chats
+        if (chat < 0 || !owner && !allowCommand(chat, now)) {
+            return;
+        }
+        String command = update.text().trim().split("\\s+")[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
+        switch (command) {
+            case "/start" -> {
+                boolean fresh = accounts.subscribe(chat);
+                reply(chat, (fresh ? "" : "Welcome back.\n\n") + BotCommands.welcome());
+            }
+            case "/stop" -> {
+                accounts.unsubscribe(chat);
+                reply(chat, "Stopped. Your settings are kept; /start turns signals back on.");
+            }
+            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text()));
+        }
+    }
+
+    /** Keeps one chat from hogging the bot: a script sending commands nonstop gets ignored. */
+    boolean allowCommand(long chat, long now) {
+        synchronized (commandCounts) {
+            if (commandCounts.size() > 10_000) {
+                commandCounts.values().removeIf(c -> now - c[0] >= 60_000);
+            }
+            long[] window = commandCounts.computeIfAbsent(chat, k -> new long[] {now, 0});
+            if (now - window[0] >= 60_000) {
+                window[0] = now;
+                window[1] = 0;
+            }
+            return ++window[1] <= COMMANDS_PER_MINUTE;
+        }
+    }
+
+    private void postToChannel() {
+        long delayMinutes = channel.delayMs() / 60_000;
+        long tick = Math.min(CHANNEL_TICK_MS, Math.max(200, channel.delayMs() / 4));
+        while (running) {
+            sleep(tick);
+            List<Signal> due = channel.takeDue(System.currentTimeMillis());
+            if (due.isEmpty()) {
+                continue;
+            }
+            Map<String, Double> prices = new HashMap<>();
+            due.forEach(s -> {
+                Double price = market.price(s.symbol());
+                if (price != null) {
+                    prices.put(s.symbol(), price);
+                }
+            });
+            try {
+                api.sendMessage((Object) config.channel(), TelegramFormat.channel(due, prices, delayMinutes, username));
+            } catch (RuntimeException e) {
+                // most often the bot is not an admin of the channel
+                log.warn("Telegram: channel post failed: {}", api.redact(e.getMessage()));
+            }
+        }
     }
 
     private void reply(long chatId, String html) {
         try {
             api.sendMessage(chatId, html);
+        } catch (TelegramApi.Blocked e) {
+            accounts.unsubscribe(chatId);
         } catch (RuntimeException e) {
             log.warn("Telegram: reply failed: {}", api.redact(e.getMessage()));
         }

@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-app-user-subscribed
+      author: pulse
+      comment: >
+        The bot is open to anyone. /stop, or blocking the bot, ends delivery without losing the
+        person's settings; /start brings them back.
+      changes:
+        - addColumn:
+            tableName: app_user
+            columns:
+              - column: { name: subscribed, type: boolean, defaultValueBoolean: true, constraints: { nullable: false } }

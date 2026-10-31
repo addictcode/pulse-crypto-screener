@@ -44,10 +44,15 @@ public class UserAccount {
     @Column(name = "watchlist_only", nullable = false)
     private boolean watchlistOnly;
 
+    /** False after /stop or once the person blocked the bot; settings are kept either way. */
+    @Column(name = "subscribed", nullable = false)
+    private boolean subscribed;
+
     public static UserAccount forTelegram(long chatId) {
         UserAccount user = new UserAccount();
         user.telegramChatId = chatId;
         user.createdAt = Instant.now();
+        user.subscribed = true;
         return user;
     }
 }

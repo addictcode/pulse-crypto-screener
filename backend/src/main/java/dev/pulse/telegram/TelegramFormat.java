@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import dev.pulse.alert.AlertFired;
 import dev.pulse.alert.PriceAlert;
@@ -35,6 +37,41 @@ final class TelegramFormat {
             text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
         }
         return text.toString();
+    }
+
+    /**
+     * A channel post: signals the bot sent a few minutes ago and how the price went since.
+     *
+     * @param prices current price by symbol; a symbol without one shows no follow-up
+     * @param bot    the bot's username, without "@"; empty when unknown
+     */
+    static String channel(List<Signal> signals, Map<String, Double> prices, long delayMinutes, String bot) {
+        StringBuilder text = new StringBuilder();
+        if (signals.size() == 1) {
+            Signal s = signals.getFirst();
+            text.append("<b>").append(escape(s.title())).append("</b>\n")
+                    .append(escape(s.detail())).append('\n');
+            since(s, prices.get(s.symbol())).ifPresent(line -> text.append("Since then: ").append(line).append(".\n"));
+            text.append("<i>").append(s.type().label()).append(", ").append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append(" UTC</i>");
+        } else {
+            text.append("<b>").append(signals.size()).append(" signals</b>\n");
+            for (Signal s : signals) {
+                text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
+                since(s, prices.get(s.symbol())).ifPresent(line -> text.append(", since then ").append(line));
+            }
+        }
+        text.append("\n\n");
+        if (!bot.isEmpty()) {
+            text.append("The bot sent this ").append(delayMinutes).append(" min earlier: @").append(bot).append('\n');
+        }
+        return text.append("<i>Market data, not financial advice.</i>").toString();
+    }
+
+    private static Optional<String> since(Signal s, Double now) {
+        if (now == null || s.price() <= 0) {
+            return Optional.empty();
+        }
+        return Optional.of(Text.pct((now / s.price() - 1) * 100, 2));
     }
 
     static String alert(AlertFired fired) {

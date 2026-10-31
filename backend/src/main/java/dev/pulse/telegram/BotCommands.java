@@ -39,7 +39,8 @@ final class BotCommands {
             new TelegramApi.Command("alerts", "Your price alerts; set one with /alert BTC 85000"),
             new TelegramApi.Command("mute", "Pause signals: /mute 1h, /mute off"),
             new TelegramApi.Command("watchlist", "Your watchlist"),
-            new TelegramApi.Command("help", "All commands"));
+            new TelegramApi.Command("help", "All commands"),
+            new TelegramApi.Command("stop", "Stop signals; /start brings them back"));
 
     private static final Pattern DURATION = Pattern.compile("(\\d{1,3})\\s*([mhd])");
     private static final int LAST_DEFAULT = 5;
@@ -72,7 +73,7 @@ final class BotCommands {
         String arg2 = parts.length > 2 ? parts[2] : null;
         try {
             return switch (command) {
-                case "/start", "/help" -> help();
+                case "/help" -> help();
                 case "/status" -> status(userId);
                 case "/signals" -> signals(userId);
                 case "/on" -> toggle(userId, arg1, true);
@@ -95,6 +96,23 @@ final class BotCommands {
         }
     }
 
+    /** The first message after /start. */
+    static String welcome() {
+        return """
+                <b>Pulse</b> watches every Binance USDT perpetual and tells you when something happens: \
+                a pump or dump, a volume spike, open interest jumping, liquidations, extreme funding, \
+                the price reaching a big order book wall.
+
+                Signals start now. Make them yours:
+                /signals - which types you get and from what size
+                /watch WIF and /scope watchlist - only your pairs
+                /alert BTC 85000 - a one-off price alert
+                /stats - what the price did after each kind of signal
+                /stop - pause everything
+
+                <i>Market data, not financial advice. Trade at your own risk.</i>""";
+    }
+
     private String help() {
         return """
                 <b>Pulse</b> sends you market signals from Binance futures.
@@ -109,7 +127,10 @@ final class BotCommands {
                 /alerts, /unalert <i>number | symbol</i> - your price alerts
                 /last <i>[n]</i> - latest signals
                 /stats <i>[days]</i> - what the price did after each kind of signal
-                /status - what the screener sees right now""";
+                /status - what the screener sees right now
+                /stop, /start - pause and resume signals
+
+                <i>Market data, not financial advice.</i>""";
     }
 
     private String status(long userId) {

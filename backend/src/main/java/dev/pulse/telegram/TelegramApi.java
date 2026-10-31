@@ -31,6 +31,13 @@ final class TelegramApi {
         }
     }
 
+    /** The chat is gone for us: the person blocked the bot or deleted their account. */
+    static final class Blocked extends RuntimeException {
+        Blocked(String message) {
+            super(message);
+        }
+    }
+
     record Command(String command, String description) {
     }
 
@@ -63,6 +70,11 @@ final class TelegramApi {
     }
 
     void sendMessage(long chatId, String html) {
+        sendMessage((Object) chatId, html);
+    }
+
+    /** @param chatId a numeric id, or "@name" for a public channel */
+    void sendMessage(Object chatId, String html) {
         post("/sendMessage", Map.of(
                 "chat_id", chatId,
                 "text", html,
@@ -72,6 +84,11 @@ final class TelegramApi {
 
     void setMyCommands(List<Command> commands) {
         post("/setMyCommands", Map.of("commands", commands));
+    }
+
+    /** The bot's own @username, for links back to it. */
+    String username() {
+        return http.get().uri("/getMe").retrieve().body(JsonNode.class).path("result").path("username").asString("");
     }
 
     /** The token is part of every URL; never let it reach a log line. */
@@ -86,6 +103,8 @@ final class TelegramApi {
             JsonNode error = e.getResponseBodyAs(JsonNode.class);
             long retryAfter = error == null ? 5 : error.path("parameters").path("retry_after").asLong(5);
             throw new RateLimited(retryAfter);
+        } catch (HttpClientErrorException.Forbidden e) {
+            throw new Blocked(redact(e.getMessage()));
         }
     }
 }

@@ -132,7 +132,7 @@ class BotCommandsIT {
 
     @Test
     void helpAndUnknownCommands() {
-        assertThat(commands.handle(userId, "/start")).contains("/threshold", "/mute");
+        assertThat(commands.handle(userId, "/help")).contains("/threshold", "/mute", "not financial advice");
         assertThat(commands.handle(userId, "/mute@PulseBot off")).isEqualTo("Unmuted. Signals are back on.");
         assertThat(commands.handle(userId, "hello")).startsWith("Unknown command");
     }

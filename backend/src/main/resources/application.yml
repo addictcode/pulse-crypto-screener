@@ -107,3 +107,10 @@ pulse:
     token: ${PULSE_TELEGRAM_TOKEN:}
     owner-chat-id: ${PULSE_TELEGRAM_OWNER_CHAT_ID:}
     api-url: https://api.telegram.org
+    # anyone can /start the bot; false keeps it to the owner
+    open: ${PULSE_TELEGRAM_OPEN:false}
+    # the free showcase: strong signals only, a few minutes after the bot, a few an hour
+    channel: ${PULSE_TELEGRAM_CHANNEL:}
+    channel-delay: 5m
+    channel-per-hour: 6
+    channel-strength: 2

@@ -33,9 +33,30 @@ public class AccountService {
         return users.findByTelegramChatId(chatId).orElseGet(() -> users.save(UserAccount.forTelegram(chatId)));
     }
 
+    /** Everyone who still wants signals. */
     @Transactional(readOnly = true)
     public List<DeliverySettings> telegramRecipients() {
-        return users.findByTelegramChatIdIsNotNull().stream().map(this::settings).toList();
+        return users.findByTelegramChatIdIsNotNullAndSubscribedTrue().stream().map(this::settings).toList();
+    }
+
+    /** @return false if the chat was subscribed already */
+    @Transactional
+    public boolean subscribe(long chatId) {
+        UserAccount user = telegramUser(chatId);
+        boolean was = user.isSubscribed();
+        user.setSubscribed(true);
+        return !was;
+    }
+
+    /** /stop, or Telegram telling us the person blocked the bot. Unknown chats are left alone. */
+    @Transactional
+    public void unsubscribe(long chatId) {
+        users.findByTelegramChatId(chatId).ifPresent(user -> user.setSubscribed(false));
+    }
+
+    @Transactional(readOnly = true)
+    public long subscribers() {
+        return users.countBySubscribedTrue();
     }
 
     @Transactional(readOnly = true)
