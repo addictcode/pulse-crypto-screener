@@ -24,6 +24,7 @@ import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
 import { currentView, initViews, parseHash, rememberSymbol } from './views';
+import { hit } from './visit';
 
 localize();
 mountIcons();
@@ -92,6 +93,8 @@ initViews(
     setups?.setActive(view === 'setups');
     heatmap?.setActive(view === 'heatmap');
     clip.setActive(view === 'clip');
+    // the 9:16 frame is what videos are recorded in; counted to see whether anyone else uses it
+    if (view === 'clip') hit('clip');
   },
   (symbol) => {
     if (symbol !== screener.selected) selectSymbol(symbol);
@@ -242,3 +245,4 @@ startFeed(market).catch(() => {
   status.textContent = t('Binance cannot be reached from this network');
 });
 watchVenues(market);
+hit('app');
