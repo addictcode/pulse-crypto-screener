@@ -21,6 +21,12 @@ public class MarketBroadcaster {
 
     /** At the default 500 ms tick, whole rows every 30 seconds. */
     static final int KEYFRAME_EVERY = 60;
+    /**
+     * The wall list goes out whole, and every wall's age and distance change each second, so a
+     * diff would still be the whole list. It was a third of the stream; walls within 5% of the
+     * price do not need a fresher picture than every three seconds.
+     */
+    static final long WALLS_EVERY_MS = 3_000;
 
     private final MarketStore store;
     private final MarketSocketHandler sockets;
@@ -52,7 +58,7 @@ public class MarketBroadcaster {
             sockets.broadcast(new StreamMessage.Liquidations(liquidations));
         }
         DensityScanner.DensityState walls = density.latest();
-        if (walls.ts() != lastWallsTs) {
+        if (walls.ts() != lastWallsTs && walls.ts() - lastWallsTs >= WALLS_EVERY_MS) {
             lastWallsTs = walls.ts();
             sockets.broadcast(new StreamMessage.Walls(walls.ts(), walls.walls(), walls.coverage()));
         }
