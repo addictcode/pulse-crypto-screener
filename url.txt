@@ -1,1 +1,1 @@
-https://value-automobile-eagle-traffic.trycloudflare.com
+https://api.trycloudflare.com
