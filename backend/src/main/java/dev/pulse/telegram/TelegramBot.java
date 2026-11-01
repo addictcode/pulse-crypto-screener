@@ -23,6 +23,8 @@ import dev.pulse.config.PulseProperties;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.market.MarketStore;
+import dev.pulse.premium.PremiumProperties;
+import dev.pulse.premium.PremiumService;
 import dev.pulse.setup.SetupClosed;
 import dev.pulse.setup.SetupOpened;
 import dev.pulse.signal.Signal;
@@ -52,6 +54,8 @@ class TelegramBot {
     /** Commands one chat may send a minute before the bot stops answering it for a while. */
     static final int COMMANDS_PER_MINUTE = 20;
     private static final long CHANNEL_TICK_MS = 15_000;
+    private static final java.time.format.DateTimeFormatter DAY =
+            java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC);
 
     private final PulseProperties.Telegram config;
     private final AccountService accounts;
@@ -62,6 +66,7 @@ class TelegramBot {
     private final ChannelFeed channel;
     private final VisitLog visits;
     private final TelegramLinks links;
+    private final PremiumService premium;
 
     private TelegramApi api;
     private TelegramSender sender;
@@ -69,7 +74,9 @@ class TelegramBot {
     private volatile boolean running;
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
-                OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits, TelegramLinks links) {
+                OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits, TelegramLinks links,
+                PremiumService premium) {
+        this.premium = premium;
         this.config = properties.telegram();
         this.visits = visits;
         this.links = links;
@@ -96,7 +103,7 @@ class TelegramBot {
             log.warn("Telegram: no owner chat id yet; message the bot and it will tell you yours");
         }
         try {
-            api.setMyCommands(BotCommands.MENU);
+            api.setMyCommands(BotCommands.menu(premium.enabled()));
             username = api.username();
             links.reported(username);
         } catch (RuntimeException e) {
@@ -179,11 +186,19 @@ class TelegramBot {
     }
 
     private void handle(TelegramUpdate update, long now) {
+        long chat = update.chatId();
+        boolean owner = isOwner(chat);
+        if (update.preCheckout() != null) {
+            answerPreCheckout(update.preCheckout(), config.open() || owner);
+            return;
+        }
+        if (update.payment() != null) {
+            onPayment(chat, update.payment());
+            return;
+        }
         if (update.text() == null) {
             return;
         }
-        long chat = update.chatId();
-        boolean owner = isOwner(chat);
         if (!owner && !config.open()) {
             if (config.ownerChatId() == null) {
                 log.info("Telegram: message from chat {} (@{}) while no owner is configured", chat, update.username());
@@ -201,6 +216,14 @@ class TelegramBot {
         }
         String[] words = update.text().trim().split("\\s+");
         String command = words[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
+        if (command.equals("/premium")) {
+            premium(chat);
+            return;
+        }
+        if (command.equals("/paysupport")) {
+            paySupport(chat, update);
+            return;
+        }
         if (owner && command.equals("/visits")) {
             reply(chat, visitReport(words.length > 1 ? words[1] : null));
             return;
@@ -219,6 +242,59 @@ class TelegramBot {
                 reply(chat, "Stopped. Your settings are kept; /start turns signals back on.");
             }
             default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text()));
+        }
+    }
+
+    /** What premium gives and, when it is on sale, an invoice in Stars. Switched off, it only says so. */
+    private void premium(long chat) {
+        PremiumProperties p = premium.properties();
+        if (!premium.enabled()) {
+            reply(chat, "Premium is not on sale. Pulse is free, and what you get now stays free.");
+            return;
+        }
+        StringBuilder text = new StringBuilder("<b>").append(TelegramFormat.escape(p.title())).append("</b>\n");
+        p.perks().forEach(perk -> text.append("• ").append(TelegramFormat.escape(perk)).append('\n'));
+        text.append('\n').append(p.priceStars()).append(" Stars for ").append(p.days()).append(" days.");
+        premium.activeUntil(chat, Instant.now()).ifPresent(until -> text.append(" Yours runs until ")
+                .append(DAY.format(until)).append(" UTC; paying now adds to it."));
+        text.append("\n<i>Questions about a payment: /paysupport.</i>");
+        reply(chat, text.toString());
+        try {
+            api.sendInvoice(chat, p.title(), p.description(), PremiumProperties.PAYLOAD, p.title() + ", " + p.days() + " days", p.priceStars());
+        } catch (RuntimeException e) {
+            log.warn("Telegram: invoice failed: {}", api.redact(e.getMessage()));
+        }
+    }
+
+    private void answerPreCheckout(TelegramUpdate.PreCheckout query, boolean allowed) {
+        boolean ok = allowed && premium.acceptable(query.payload(), query.currency(), query.amount());
+        try {
+            api.answerPreCheckoutQuery(query.id(), ok, ok ? null : "This invoice is no longer valid. Send /premium for a new one.");
+        } catch (RuntimeException e) {
+            log.warn("Telegram: pre-checkout answer failed: {}", api.redact(e.getMessage()));
+        }
+    }
+
+    /** The Stars are taken: record the period, thank the buyer, tell the owner. */
+    private void onPayment(long chat, TelegramUpdate.Payment payment) {
+        if (!PremiumProperties.PAYLOAD.equals(payment.payload()) || !"XTR".equals(payment.currency())) {
+            log.warn("Telegram: payment from chat {} for an unknown invoice ({} {})", chat, payment.amount(), payment.currency());
+            return;
+        }
+        Instant until = premium.recordPayment(chat, payment.chargeId(), payment.amount(), Instant.now());
+        reply(chat, "Thank you! Premium is on until " + DAY.format(until) + " UTC.");
+        tellOwner("telegram-premium", "Premium: chat " + chat + " paid " + payment.amount() + " Stars, until " + DAY.format(until)
+                + " UTC. Charge <code>" + TelegramFormat.escape(payment.chargeId()) + "</code>");
+    }
+
+    /** Telegram asks every bot that sells to answer /paysupport; the owner gets the message. */
+    private void paySupport(long chat, TelegramUpdate update) {
+        reply(chat, "Write what went wrong with the payment in the same message as /paysupport, e.g. "
+                + "<code>/paysupport paid twice</code>. The owner reads it and answers here; refunds go back in Stars.");
+        String text = update.text().trim();
+        if (text.contains(" ")) {
+            tellOwner("telegram-support", "Payment support from chat " + chat + (update.username() == null ? "" : " (@" + update.username() + ")")
+                    + ":\n" + TelegramFormat.escape(text.substring(text.indexOf(' ') + 1)));
         }
     }
 

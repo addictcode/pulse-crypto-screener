@@ -19,3 +19,5 @@ databaseChangeLog:
       file: db/changelog/changes/009-signals-from-the-fix.yaml
   - include:
       file: db/changelog/changes/010-visit-day.yaml
+  - include:
+      file: db/changelog/changes/011-premium.yaml

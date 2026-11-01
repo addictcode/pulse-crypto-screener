@@ -116,3 +116,15 @@ pulse:
     channel-strength: 2
     # for the Telegram buttons on the site; empty means the name Telegram reports for the token
     bot-username: ${PULSE_TELEGRAM_BOT_USERNAME:}
+  # Paid premium through Telegram Stars. Prepared, switched off: /premium only says it is not on
+  # sale, no invoice goes out, and nothing free users get changes either way.
+  premium:
+    enabled: ${PULSE_PREMIUM_ENABLED:false}
+    # price of one period in Telegram Stars (XTR)
+    price-stars: 250
+    days: 30
+    title: Pulse Premium
+    description: Support Pulse and get the extras below for 30 days. Market data, not financial advice.
+    # what premium gives, as shown in /premium; describing it does not switch anything on
+    perks:
+      - Supports the development of Pulse
