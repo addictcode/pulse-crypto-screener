@@ -114,7 +114,12 @@ python3 scripts/check.py out/pulse-*.mp4
   fit it, then the price underneath. Only bursts of five times the average or more
   (`src/volume.ts`).
 
-The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, volume, ...),
+- **Traps** ("Серия ловушек"): three moves that broke out and came back within the hour, one
+  after another, between caution tape. The three are always within a week of each other, because
+  one hook says "3 раза за неделю" (`src/traps.ts`); next threes share one event.
+
+The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, volume,
+traps, ...),
 so neighbouring videos never share a format and any first few show all of them.
 
 ## Languages

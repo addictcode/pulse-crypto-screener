@@ -4,6 +4,8 @@ import './fonts';
 import { COUNTER_DURATION, CounterVideo, type CounterVideoProps } from './CounterVideo';
 import { DURATION, EventVideo, type EventVideoProps } from './EventVideo';
 import { GUESS_DURATION, GuessVideo, type GuessVideoProps } from './GuessVideo';
+import { TRAPS_DURATION, TrapsVideo, type TrapsVideoProps } from './TrapsVideo';
+import { trapSeries } from './traps.ts';
 import { VOLUME_DURATION, VolumeVideo, type VolumeVideoProps } from './VolumeVideo';
 import { SPLIT_DURATION, SplitVideo, type SplitVideoProps } from './SplitVideo';
 import { TIMELAPSE_DURATION, TimelapseVideo, type TimelapseVideoProps } from './TimelapseVideo';
@@ -25,6 +27,7 @@ export const RemotionRoot = () => (
     <Composition id="Timelapse" component={TimelapseVideo} durationInFrames={TIMELAPSE_DURATION} {...vertical} defaultProps={{ event: withDay, day: (days as Record<string, TimelapseVideoProps['day']>)[withDay.id], variant: 0, lang: 'ru' } satisfies TimelapseVideoProps} />
     <Composition id="Split" component={SplitVideo} durationInFrames={SPLIT_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies SplitVideoProps} />
     <Composition id="Volume" component={VolumeVideo} durationInFrames={VOLUME_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies VolumeVideoProps} />
+    <Composition id="Traps" component={TrapsVideo} durationInFrames={TRAPS_DURATION} {...vertical} defaultProps={{ events: trapSeries(all)[0] ?? all.slice(0, 3), variant: 0, lang: 'ru' } satisfies TrapsVideoProps} />
     <Composition id="Counter" component={CounterVideo} durationInFrames={COUNTER_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies CounterVideoProps} />
   </>
 );
