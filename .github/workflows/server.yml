@@ -1,0 +1,23 @@
+name: server
+
+# The server scripts: shellcheck, and the Oracle setup run twice in a fresh Ubuntu container.
+on:
+  pull_request:
+    paths:
+      - deploy/**
+      - .env.example
+      - .github/workflows/server.yml
+  push:
+    branches: [main]
+    paths:
+      - deploy/**
+      - .env.example
+
+jobs:
+  oracle-setup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - run: shellcheck -S warning deploy/*.sh deploy/oracle/*.sh
+      - run: deploy/oracle/test-in-docker.sh

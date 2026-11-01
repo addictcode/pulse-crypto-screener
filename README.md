@@ -280,7 +280,7 @@ cd web && VITE_STANDALONE=1 npx vite build --base=./ --outDir dist-demo
 ```
 
 Полная версия бесплатно и круглосуточно без своего компьютера: Oracle Cloud Always Free (ARM-машина в
-европейском регионе) и шаги из раздела «Деплой» ниже. Бесплатные тарифы Render, Koyeb и
+европейском регионе), инструкция — [`deploy/oracle/README.md`](deploy/oracle/README.md). Бесплатные тарифы Render, Koyeb и
 подобных не подходят: бэкенду нужны постоянные соединения с биржей и около гигабайта памяти.
 
 ## Деплой
@@ -288,6 +288,9 @@ cd web && VITE_STANDALONE=1 npx vite build --base=./ --outDir dist-demo
 Прод — три контейнера из `compose.prod.yaml`: PostgreSQL (наружу не торчит), бэкенд и Caddy,
 который раздаёт фронт, проксирует `/api` и `/ws` и сам получает сертификат Let's Encrypt.
 Сервер нужен в ЕС или Азии: Binance отвечает 451 на запросы с американских IP.
+
+**Бесплатно на Oracle Cloud** — пошагово в [`deploy/oracle/README.md`](deploy/oracle/README.md):
+cloud-init сам ставит всё и запускает Pulse при первом включении машины. Ниже — то же на любом VPS.
 
 1. Заведи VPS с Ubuntu 24.04 и своим SSH-ключом (например, Hetzner CX22 в Германии или Финляндии).
 2. Направь домен на IP сервера (например, бесплатный поддомен на duckdns.org).
