@@ -19,6 +19,8 @@ export const currentView = (): View => (document.body.dataset.view as View) ?? '
 
 /** Puts the selected pair into the address bar without adding a history entry. */
 export function rememberSymbol(symbol: string) {
+  // the live feed keeps a bare address, so a reload brings the feed back and not the terminal
+  if (document.body.dataset.phone === 'feed') return;
   history.replaceState(null, '', `#${currentView()}:${symbol}`);
 }
 

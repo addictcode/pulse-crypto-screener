@@ -17,7 +17,7 @@ const KINDS: Record<TapeKind, [string, 'up' | 'down' | 'hot']> = {
   LIQ_SHORTS: [t('Shorts rekt'), 'up'],
 };
 
-const ALERT_TONE: Record<Signal['type'], 'up' | 'down' | 'hot'> = {
+export const ALERT_TONE: Record<Signal['type'], 'up' | 'down' | 'hot'> = {
   PUMP: 'up', DUMP: 'down', VOLUME: 'hot', OPEN_INTEREST: 'hot', FUNDING: 'hot', LIQUIDATIONS: 'down', WALL: 'hot',
 };
 
