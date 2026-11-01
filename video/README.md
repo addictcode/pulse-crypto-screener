@@ -69,8 +69,8 @@ The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub
 - Actions → video → Run workflow. Inputs: `templates`, `max` (numbers up to, 400 by default),
   `lang` (both, ru, en), `sfx`, `refresh_events` (search the archive for new events first, `days`
   of it), `shards` (parallel jobs per language, 8 by default);
-- or push a tag `video-batch-<anything>` (e.g. `git tag video-batch-1 && git push origin
-  video-batch-1`): the full batch on that commit's events, both languages, up to number 400;
+- or push a branch `video-batch/<anything>` (e.g. `git push origin HEAD:video-batch/1`): the
+  full batch on that commit's events, both languages, up to number 400;
 - a pull request that changes the workflow renders six videos to prove it still works.
 
 The videos are split over parallel jobs, one render tab each, and every one is checked by
