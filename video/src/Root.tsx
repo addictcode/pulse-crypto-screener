@@ -15,6 +15,8 @@ import { TOP3_DURATION, Top3Video, type Top3VideoProps } from './Top3Video';
 import days from '../public/days.json';
 import events from '../public/events.json';
 import type { MarketEvent } from './story';
+import { SERIES } from './series';
+import { SeriesVideo, type SeriesVideoProps, seriesFrames } from './SeriesVideo';
 
 const all = events as MarketEvent[];
 const withDay = all.find((e) => e.id in days) ?? all[0];
@@ -32,6 +34,8 @@ export const RemotionRoot = () => (
     <Composition id="Volume" component={VolumeVideo} durationInFrames={VOLUME_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies VolumeVideoProps} />
     <Composition id="Traps" component={TrapsVideo} durationInFrames={TRAPS_DURATION} {...vertical} defaultProps={{ events: trapSeries(all)[0] ?? all.slice(0, 3), variant: 0, lang: 'ru' } satisfies TrapsVideoProps} />
     <Composition id="Pulse" component={PulseVideo} durationInFrames={PULSE_DURATION} {...vertical} defaultProps={{ event: withHour, hour: (pulse as Record<string, PulseVideoProps['hour']>)[withHour.id], variant: 0, lang: 'ru' } satisfies PulseVideoProps} />
+    {/* the series sets its own length per episode: the render script passes it with calculateMetadata */}
+    <Composition id="Series" component={SeriesVideo} durationInFrames={seriesFrames(SERIES.ru[0])} {...vertical} defaultProps={{ episode: SERIES.ru[0], part: 1, lang: 'ru' } satisfies SeriesVideoProps} calculateMetadata={({ props }) => ({ durationInFrames: seriesFrames(props.episode) })} />
     <Composition id="Counter" component={CounterVideo} durationInFrames={COUNTER_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies CounterVideoProps} />
   </>
 );

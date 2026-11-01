@@ -65,6 +65,7 @@ final class TelegramApi {
             if (query.isObject()) {
                 updates.add(new TelegramUpdate(id, query.path("from").path("id").asLong(), null,
                         query.path("from").path("username").asString(null),
+                        query.path("from").path("language_code").asString(null),
                         new TelegramUpdate.PreCheckout(query.path("id").asString(""), query.path("currency").asString(""),
                                 query.path("total_amount").asInt(), query.path("invoice_payload").asString("")),
                         null));
@@ -81,6 +82,7 @@ final class TelegramApi {
                     message.path("chat").path("id").asLong(),
                     message.path("text").isString() ? message.path("text").asString() : null,
                     message.path("from").path("username").asString(null),
+                    message.path("from").path("language_code").asString(null),
                     null,
                     payment));
         }

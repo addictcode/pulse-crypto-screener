@@ -60,6 +60,7 @@ class OpenBotIT {
     private static final long VISITOR = 77;
     private static final long BLOCKED = 66;
     private static final long STARTER = 55;
+    private static final long RUSSIAN = 88;
 
     private static HttpServer telegram;
     private static final Queue<String> pendingUpdates = new ConcurrentLinkedQueue<>();
@@ -146,6 +147,16 @@ class OpenBotIT {
     }
 
     @Test
+    void aRussianTelegramIsGreetedInRussianAndToldPulseDoesNotPredict() {
+        message(RUSSIAN, "/start", "ru");
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":88") && body.contains("Сигналы уже идут")
+                && body.contains("а не куда он пойдёт"))).isTrue();
+
+        message(RUSSIAN, "/help", "ru");
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":88") && body.contains("Куда пойдёт цена, он не предсказывает"))).isTrue();
+    }
+
+    @Test
     void theSiteLinksToTheBotByTheNameTelegramReportsAndToTheChannel() {
         assertThat(await(() -> !links.links().bot().isEmpty())).isTrue();
 
@@ -193,8 +204,13 @@ class OpenBotIT {
     }
 
     private static void message(long chatId, String text) {
+        message(chatId, text, null);
+    }
+
+    private static void message(long chatId, String text, String language) {
+        String lang = language == null ? "" : ",\"language_code\":\"" + language + "\"";
         pendingUpdates.add("{\"update_id\":" + updateIds.incrementAndGet() + ",\"message\":{\"chat\":{\"id\":" + chatId
-                + "},\"from\":{\"username\":\"u" + chatId + "\"},\"text\":\"" + text + "\"}}");
+                + "},\"from\":{\"username\":\"u" + chatId + "\"" + lang + "},\"text\":\"" + text + "\"}}");
     }
 
     private static boolean awaitSent(Predicate<String> match) {

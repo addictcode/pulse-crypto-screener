@@ -3,6 +3,7 @@ package dev.pulse.telegram;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -66,6 +67,9 @@ class TelegramBot {
     private final ChannelFeed channel;
     private final VisitLog visits;
     private final TelegramLinks links;
+    private final SignalHistory history;
+    private final DensityScanner density;
+    private volatile LocalDate digestPostedFor;
     private final PremiumService premium;
 
     private TelegramApi api;
@@ -80,6 +84,8 @@ class TelegramBot {
         this.config = properties.telegram();
         this.visits = visits;
         this.links = links;
+        this.history = history;
+        this.density = density;
         this.accounts = accounts;
         this.market = market;
         this.commands = new BotCommands(accounts, history, market, books, density, alerts);
@@ -113,6 +119,9 @@ class TelegramBot {
         Thread.ofVirtual().name("telegram-poll").start(this::poll);
         if (channel != null) {
             Thread.ofVirtual().name("telegram-channel").start(this::postToChannel);
+            if (config.digestHour() != null) {
+                Thread.ofVirtual().name("telegram-digest").start(this::digestLoop);
+            }
         }
         log.info("Telegram: bot @{} started, {}{}", username, config.open() ? "open to everyone" : "owner only",
                 channel == null ? "" : ", channel " + config.channel());
@@ -224,6 +233,10 @@ class TelegramBot {
             paySupport(chat, update);
             return;
         }
+        if (command.equals("/digest")) {
+            reply(chat, digest(words.length > 1 && words[1].equalsIgnoreCase("ru")));
+            return;
+        }
         if (owner && command.equals("/visits")) {
             reply(chat, visitReport(words.length > 1 ? words[1] : null));
             return;
@@ -235,13 +248,15 @@ class TelegramBot {
                     // t.me/<bot>?start=site arrives as "/start site": the last step of the funnel
                     visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.BOT_START, VisitSource.of(words.length > 1 ? words[1] : null));
                 }
-                reply(chat, (fresh ? "" : "Welcome back.\n\n") + BotCommands.welcome());
+                boolean ru = update.russian();
+                reply(chat, (fresh ? "" : ru ? "С возвращением.\n\n" : "Welcome back.\n\n") + BotCommands.welcome(ru));
             }
             case "/stop" -> {
                 accounts.unsubscribe(chat);
-                reply(chat, "Stopped. Your settings are kept; /start turns signals back on.");
+                reply(chat, update.russian() ? "Остановлено. Настройки сохранены, /start включит сигналы снова."
+                        : "Stopped. Your settings are kept; /start turns signals back on.");
             }
-            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text()));
+            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text(), update.russian()));
         }
     }
 
@@ -341,6 +356,41 @@ class TelegramBot {
                 // most often the bot is not an admin of the channel
                 log.warn("Telegram: channel post failed: {}", api.redact(e.getMessage()));
             }
+        }
+    }
+
+    /** The digest as of now: the last 24 hours of signals and liquidations, the walls standing now. */
+    String digest(boolean ru) {
+        long now = System.currentTimeMillis();
+        List<Signal> moves = DailyDigest.sharpest(history.since(Instant.ofEpochMilli(now - DailyDigest.DAY_MS)), now, DailyDigest.MOVES);
+        return DailyDigest.format(moves, market.liquidatedSince(now - DailyDigest.DAY_MS),
+                DailyDigest.largest(density.latest().walls(), DailyDigest.WALLS), now, ru);
+    }
+
+    /** Once a day, in the configured hour: a restart inside that hour does not post it twice. */
+    static boolean digestDue(Integer hour, ZonedDateTime now, LocalDate lastPosted) {
+        return hour != null && now.getHour() == hour && !now.toLocalDate().equals(lastPosted);
+    }
+
+    /** Posts the digest to the channel if it is due at {@code now}; true if it went out. */
+    boolean postDigestIfDue(ZonedDateTime now) {
+        if (!running || channel == null || !digestDue(config.digestHour(), now, digestPostedFor)) {
+            return false;
+        }
+        digestPostedFor = now.toLocalDate();
+        try {
+            api.sendMessage((Object) config.channel(), digest(config.digestInRussian()));
+            return true;
+        } catch (RuntimeException e) {
+            log.warn("Telegram: digest post failed: {}", api.redact(e.getMessage()));
+            return false;
+        }
+    }
+
+    private void digestLoop() {
+        while (running) {
+            postDigestIfDue(ZonedDateTime.now(ZoneOffset.UTC));
+            sleep(30_000);
         }
     }
 

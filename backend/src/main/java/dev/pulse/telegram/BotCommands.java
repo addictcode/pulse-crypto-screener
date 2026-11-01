@@ -36,6 +36,7 @@ final class BotCommands {
             new TelegramApi.Command("last", "Latest signals"),
             new TelegramApi.Command("stats", "What the price did after each kind of signal"),
             new TelegramApi.Command("status", "What the screener sees right now"),
+            new TelegramApi.Command("digest", "The last 24 hours: sharpest moves, liquidations, walls"),
             new TelegramApi.Command("alerts", "Your price alerts; set one with /alert BTC 85000"),
             new TelegramApi.Command("mute", "Pause signals: /mute 1h, /mute off"),
             new TelegramApi.Command("watchlist", "Your watchlist"),
@@ -76,6 +77,11 @@ final class BotCommands {
     }
 
     String handle(long userId, String text) {
+        return handle(userId, text, false);
+    }
+
+    /** @param ru the sender's Telegram is in Russian: /help answers in Russian */
+    String handle(long userId, String text, boolean ru) {
         String[] parts = text.trim().split("\\s+");
         // "/mute@PulseBot 1h" in group chats carries the bot name
         String command = parts[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
@@ -83,7 +89,7 @@ final class BotCommands {
         String arg2 = parts.length > 2 ? parts[2] : null;
         try {
             return switch (command) {
-                case "/help" -> help();
+                case "/help" -> help(ru);
                 case "/status" -> status(userId);
                 case "/signals" -> signals(userId);
                 case "/on" -> toggle(userId, arg1, true);
@@ -108,10 +114,36 @@ final class BotCommands {
 
     /** The first message after /start. */
     static String welcome() {
+        return welcome(false);
+    }
+
+    /** The first message after /start, in Russian when {@code ru}. */
+    static String welcome(boolean ru) {
+        if (ru) {
+            return """
+                    <b>Pulse</b> следит за всеми USDT-фьючерсами Binance и пишет в ту же минуту, когда что-то \
+                    происходит: памп или дамп, всплеск объёма, скачок открытого интереса, ликвидации, крайний \
+                    фандинг, цена у крупной стены в стакане. Ты видишь это сразу, раньше, чем заметил бы сам.
+
+                    Pulse показывает, что делает рынок, а не куда он пойдёт: честная статистика — в /stats.
+
+                    Сигналы уже идут. Настрой их под себя:
+                    /signals — какие типы получать и с какого размера
+                    /watch WIF и /scope watchlist — только твои пары
+                    /alert BTC 85000 — разовый ценовой алерт
+                    /stats — что делала цена после каждого вида сигнала
+                    /stop — пауза для всего
+
+                    Сами сигналы и ответы на команды пока по-английски.
+
+                    <i>Рыночные данные, не прогноз и не финансовый совет.</i>""";
+        }
         return """
-                <b>Pulse</b> watches every Binance USDT perpetual and tells you when something happens: \
+                <b>Pulse</b> watches every Binance USDT perpetual and tells you the moment something happens: \
                 a pump or dump, a volume spike, open interest jumping, liquidations, extreme funding, \
-                the price reaching a big order book wall.
+                the price reaching a big order book wall. You see it as it happens, before you would notice it yourself.
+
+                Pulse shows what the market is doing, not where it goes next: /stats has the honest record.
 
                 Signals start now. Make them yours:
                 /signals - which types you get and from what size
@@ -120,12 +152,33 @@ final class BotCommands {
                 /stats - what the price did after each kind of signal
                 /stop - pause everything
 
-                <i>Market data, not financial advice. Trade at your own risk.</i>""";
+                <i>Market data, not a forecast and not financial advice.</i>""";
     }
 
-    private String help() {
+    static String help(boolean ru) {
+        if (ru) {
+            return """
+                    <b>Pulse</b> показывает, что происходит на фьючерсах Binance, в момент, когда это происходит. \
+                    Куда пойдёт цена, он не предсказывает.
+
+                    /signals — типы сигналов, вкл/выкл и пороги
+                    /on <i>тип</i>, /off <i>тип</i> — например, /off funding, /on all
+                    /threshold <i>тип значение</i> — например, /threshold pump 3, /threshold pump default
+                    /mute <i>30m | 2h | 1d | off</i> — пауза
+                    /watch <i>тикер</i>, /unwatch <i>тикер</i>, /watchlist
+                    /scope <i>all | watchlist</i> — по каким парам присылать сигналы
+                    /alert <i>тикер цена</i> — сообщить один раз, когда цена дойдёт, например /alert BTC 85000
+                    /alerts, /unalert <i>номер | тикер</i> — твои ценовые алерты
+                    /last <i>[n]</i> — последние сигналы
+                    /stats <i>[дни]</i> — что делала цена после каждого вида сигнала
+                    /status — что скринер видит прямо сейчас
+                    /stop, /start — пауза и возобновление
+
+                    <i>Рыночные данные, не прогноз и не финансовый совет.</i>""";
+        }
         return """
-                <b>Pulse</b> sends you market signals from Binance futures.
+                <b>Pulse</b> shows what is happening on Binance futures as it happens. \
+                It does not predict where the price goes.
 
                 /signals - signal types, on/off and thresholds
                 /on <i>type</i>, /off <i>type</i> - e.g. /off funding, /on all
@@ -138,9 +191,10 @@ final class BotCommands {
                 /last <i>[n]</i> - latest signals
                 /stats <i>[days]</i> - what the price did after each kind of signal
                 /status - what the screener sees right now
+                /digest <i>[ru]</i> - the last 24 hours: sharpest moves, liquidations, largest walls
                 /stop, /start - pause and resume signals
 
-                <i>Market data, not financial advice.</i>""";
+                <i>Market data, not a forecast and not financial advice.</i>""";
     }
 
     private String status(long userId) {

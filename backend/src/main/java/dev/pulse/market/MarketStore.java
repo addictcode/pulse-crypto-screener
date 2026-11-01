@@ -28,6 +28,7 @@ public class MarketStore implements MarketSink {
     private final Set<String> dirty = ConcurrentHashMap.newKeySet();
     private final Queue<Liquidation> pendingLiquidations = new ConcurrentLinkedQueue<>();
     private final Deque<Liquidation> recentLiquidations = new ArrayDeque<>();
+    private final LiquidationTally tally = new LiquidationTally(System.currentTimeMillis());
 
     @Override
     public void onInstruments(List<Instrument> instruments) {
@@ -68,6 +69,7 @@ public class MarketStore implements MarketSink {
     public void onLiquidation(Liquidation liquidation) {
         if (update(liquidation.symbol(), s -> s.applyLiquidation(liquidation))) {
             pendingLiquidations.add(liquidation);
+            tally.add(liquidation);
             synchronized (recentLiquidations) {
                 recentLiquidations.addFirst(liquidation);
                 while (recentLiquidations.size() > RECENT_LIQUIDATIONS) {
@@ -86,6 +88,11 @@ public class MarketStore implements MarketSink {
     public double volume24h(String symbol) {
         SymbolState state = states.get(symbol);
         return state == null ? 0 : state.quoteVolume24h();
+    }
+
+    /** USD liquidated across the market since {@code from}, by hour; see {@link LiquidationTally}. */
+    public LiquidationTally.Totals liquidatedSince(long from) {
+        return tally.since(from);
     }
 
     /** USD liquidated in the last 5 minutes as [longs, shorts]. */
