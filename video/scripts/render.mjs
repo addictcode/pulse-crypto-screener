@@ -6,7 +6,7 @@
 // holds, and a file whose number now means another video (new events shift the plan) is
 // rendered again instead of skipped.
 //   node scripts/render.mjs                       everything not rendered yet
-//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter, timelapse)
+//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter, timelapse, split)
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 //   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
@@ -18,12 +18,13 @@ import { parseArgs } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 
+import { splitFits } from '../src/split.ts';
 import { TELLINGS, story } from '../src/story.ts';
 import { LANGS, TEXT } from '../src/text.ts';
 
 const { values } = parseArgs({
   options: {
-    template: { type: 'string', default: 'event,guess,top3,counter,timelapse' },
+    template: { type: 'string', default: 'event,guess,top3,counter,timelapse,split' },
     max: { type: 'string', default: '1000' },
     only: { type: 'string' },
     out: { type: 'string' },
@@ -97,7 +98,11 @@ function turns(lists) {
 const timelapses = events
   .filter((event) => days[event.id])
   .map((event, i) => ({ template: 'timelapse', id: 'Timelapse', props: { event, day: days[event.id], variant: (i + 1) % 5, lang }, caption: text.timelapse.captions[i % 5] }));
-const jobs = turns([memes, guesses, counters, tops, timelapses]);
+// one before / after per event whose minutes before the move really were calm
+const splits = events
+  .filter(splitFits)
+  .map((event, i) => ({ template: 'split', id: 'Split', props: { event, variant: (i + 3) % 5, lang }, caption: text.split.captions[i % 5] }));
+const jobs = turns([memes, guesses, counters, tops, timelapses, splits]);
 /** What a file holds: the template, its events, the telling and the language. */
 const key = (job) => [job.template, ...(job.props.events ?? [job.props.event]).map((e) => e.id), job.props.variant, lang].join(':');
 

@@ -4,6 +4,7 @@ import './fonts';
 import { COUNTER_DURATION, CounterVideo, type CounterVideoProps } from './CounterVideo';
 import { DURATION, EventVideo, type EventVideoProps } from './EventVideo';
 import { GUESS_DURATION, GuessVideo, type GuessVideoProps } from './GuessVideo';
+import { SPLIT_DURATION, SplitVideo, type SplitVideoProps } from './SplitVideo';
 import { TIMELAPSE_DURATION, TimelapseVideo, type TimelapseVideoProps } from './TimelapseVideo';
 import { TOP3_DURATION, Top3Video, type Top3VideoProps } from './Top3Video';
 import days from '../public/days.json';
@@ -21,6 +22,7 @@ export const RemotionRoot = () => (
     <Composition id="Guess" component={GuessVideo} durationInFrames={GUESS_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies GuessVideoProps} />
     <Composition id="Top3" component={Top3Video} durationInFrames={TOP3_DURATION} {...vertical} defaultProps={{ events: all.slice(0, 3), variant: 0, lang: 'ru' } satisfies Top3VideoProps} />
     <Composition id="Timelapse" component={TimelapseVideo} durationInFrames={TIMELAPSE_DURATION} {...vertical} defaultProps={{ event: withDay, day: (days as Record<string, TimelapseVideoProps['day']>)[withDay.id], variant: 0, lang: 'ru' } satisfies TimelapseVideoProps} />
+    <Composition id="Split" component={SplitVideo} durationInFrames={SPLIT_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies SplitVideoProps} />
     <Composition id="Counter" component={CounterVideo} durationInFrames={COUNTER_DURATION} {...vertical} defaultProps={{ event: all[0], variant: 0, lang: 'ru' } satisfies CounterVideoProps} />
   </>
 );

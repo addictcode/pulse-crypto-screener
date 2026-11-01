@@ -104,7 +104,11 @@ python3 scripts/check.py out/pulse-*.mp4
   archive search runs it by itself; after `npm run events` run `node scripts/days.mjs`). Events
   without a full day in the archive get no time-lapse.
 
-The templates take turns from number 1 on (event, guess, counter, top3, timelapse, event, ...),
+- **Split** ("Было / стало"): the screen split down the middle, the minutes before the move in
+  grey on the left, the five minutes of the move in colour on the right, on one price scale. Only
+  events whose minutes before moved less than a third of the move get one (`src/split.ts`).
+
+The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, ...),
 so neighbouring videos never share a format and any first few show all of them.
 
 ## Languages
