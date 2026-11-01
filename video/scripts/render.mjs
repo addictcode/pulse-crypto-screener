@@ -6,7 +6,7 @@
 // holds, and a file whose number now means another video (new events shift the plan) is
 // rendered again instead of skipped.
 //   node scripts/render.mjs                       everything not rendered yet
-//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter)
+//   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter, timelapse)
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 //   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
@@ -23,7 +23,7 @@ import { LANGS, TEXT } from '../src/text.ts';
 
 const { values } = parseArgs({
   options: {
-    template: { type: 'string', default: 'event,guess,top3,counter' },
+    template: { type: 'string', default: 'event,guess,top3,counter,timelapse' },
     max: { type: 'string', default: '1000' },
     only: { type: 'string' },
     out: { type: 'string' },
@@ -46,6 +46,8 @@ const browser = {
 };
 
 const events = JSON.parse(readFileSync(new URL('../public/events.json', import.meta.url)));
+// the day around each event, for the time-lapse (scripts/days.mjs)
+const days = existsSync(new URL('../public/days.json', import.meta.url)) ? JSON.parse(readFileSync(new URL('../public/days.json', import.meta.url))) : {};
 
 /** A fixed shuffle, so the groups of three are the same on every run. */
 function shuffled(list, seed) {
@@ -91,7 +93,11 @@ function turns(lists) {
   }
   return out;
 }
-const jobs = turns([memes, guesses, counters, tops]);
+// one time-lapse per event that has its whole day in the archive
+const timelapses = events
+  .filter((event) => days[event.id])
+  .map((event, i) => ({ template: 'timelapse', id: 'Timelapse', props: { event, day: days[event.id], variant: (i + 1) % 5, lang }, caption: text.timelapse.captions[i % 5] }));
+const jobs = turns([memes, guesses, counters, tops, timelapses]);
 /** What a file holds: the template, its events, the telling and the language. */
 const key = (job) => [job.template, ...(job.props.events ?? [job.props.event]).map((e) => e.id), job.props.variant, lang].join(':');
 

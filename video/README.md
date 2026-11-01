@@ -97,8 +97,15 @@ python3 scripts/check.py out/pulse-*.mp4
 - **Counter** ("Засекай: 5 минут"): a stopwatch from 00:00 to 05:00 and a huge running percent,
   counted from the price at 00:00, with the candles drawing underneath.
 
-The four take turns from number 1 on (event, guess, counter, top3, event, ...), so neighbouring
-videos never share a format and any first few show all of them.
+- **Timelapse** ("24 часа за 6 секунд"): the whole day around the event as a glowing line on
+  night blue, a counter of hours gone (0 h to 24 h, never the time of day), and the day stopping
+  at the event with the five minute move stamped on it. The day comes from `public/days.json`:
+  24 hours of five minute bars per event, built from the archive by `scripts/days.mjs` (the
+  archive search runs it by itself; after `npm run events` run `node scripts/days.mjs`). Events
+  without a full day in the archive get no time-lapse.
+
+The templates take turns from number 1 on (event, guess, counter, top3, timelapse, event, ...),
+so neighbouring videos never share a format and any first few show all of them.
 
 ## Languages
 

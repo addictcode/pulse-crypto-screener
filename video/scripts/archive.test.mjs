@@ -129,3 +129,19 @@ test('a crash and a rebound in the same five minutes is not a pump', () => {
   assert.ok(moveAt(bars, 200).move > 20);
   assert.equal(findMoves(bars, { min: 5 }).some((m) => m.i === 200), false);
 });
+
+test('the day around an event: 288 five minute bars, the event two thirds in, none without a full day', async () => {
+  const { dayAround } = await import('./days.mjs');
+  const minutes = parseKlines(csv(3 * 1440, { [1440 + 600]: [100, 108, 100, 107] }));
+  const t = T0 + (1440 + 600) * MINUTE;
+  const day = dayAround(minutes, t);
+  assert.equal(day.bars.length, 288);
+  assert.equal(day.at, 192);
+  assert.equal(day.bars[day.at][1], 108);
+  // late in the data the day slides back to end with it
+  const late = dayAround(minutes, T0 + (3 * 1440 - 30) * MINUTE);
+  assert.equal(late.start + 288 * 5 * MINUTE, T0 + 3 * 1440 * MINUTE);
+  // a gap: no day
+  minutes.splice(1500, 30);
+  assert.equal(dayAround(minutes, t), null);
+});
