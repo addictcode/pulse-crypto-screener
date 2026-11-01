@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { DISPLAY, DOWN, Flash, Outro, PAPER, PAPER_INK, PAPER_MUTE, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type Top3VideoProps = { events: MarketEvent[]; variant: number; lang: Lang };
+export type Top3VideoProps = { events: MarketEvent[]; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * A countdown of three real moves, the biggest last. Light paper instead of the dark terminal, so
@@ -56,12 +57,14 @@ const Rank = ({ event, place, lang }: { event: MarketEvent; place: number; lang:
   );
 };
 
-export const Top3Video = ({ events, variant, lang }: Top3VideoProps) => {
+export const Top3Video = ({ events, variant, lang, sfx }: Top3VideoProps) => {
   const text = TEXT[lang];
   // the countdown ends on the biggest move
   const ranked = [...events].sort((a, b) => Math.abs(a.move) - Math.abs(b.move));
+  const cues = [...cuts([TOP3.hook, TOP3.rank, TOP3.rank, TOP3.rank, TOP3.outro]), ...[0, 1, 2].map((k) => ({ at: TOP3.hook + k * TOP3.rank + 40, kind: 'hit' as const }))];
   return (
     <AbsoluteFill style={{ background: PAPER }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={TOP3.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

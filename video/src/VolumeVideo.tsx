@@ -3,10 +3,11 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { DISPLAY, DOWN, Flash, INK, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 import { burst } from './volume.ts';
 
-export type VolumeVideoProps = { event: MarketEvent; variant: number; lang: Lang };
+export type VolumeVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "Volume exploded": volume bars fill the screen at a scale made for ordinary minutes, then the
@@ -81,10 +82,12 @@ const Burst = ({ event, lang }: { event: MarketEvent; lang: Lang }) => {
   );
 };
 
-export const VolumeVideo = ({ event, variant, lang }: VolumeVideoProps) => {
+export const VolumeVideo = ({ event, variant, lang, sfx }: VolumeVideoProps) => {
   const text = TEXT[lang].volume;
+  const cues = [...cuts(Object.values(VOLUME)), { at: VOLUME.hook + 84, kind: 'hit' as const }, { at: VOLUME.hook + 130, kind: 'click' as const }];
   return (
     <AbsoluteFill style={{ background: INK_BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={VOLUME.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

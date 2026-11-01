@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { BG, Brand, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type EventVideoProps = { event: MarketEvent; variant: number; lang: Lang };
+export type EventVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /** Scene lengths in frames at 30 fps: short and hard-cut, the way the feed is watched. */
 export const SCENES = { hook: 42, calm: 24, replay: 96, punch: 48, outro: 45 };
@@ -112,12 +113,14 @@ const Punch = ({ event, text, further }: { event: MarketEvent; text: string; fur
   );
 };
 
-export const EventVideo = ({ event, variant, lang }: EventVideoProps) => {
+export const EventVideo = ({ event, variant, lang, sfx }: EventVideoProps) => {
   const s = story(event, variant, lang);
   const size = Math.abs(event.move);
   const line = TEXT[lang].notice(event.type === 'PUMP', `${size.toFixed(size >= 10 ? 0 : 1)}%`);
+  const cues = [...cuts(Object.values(SCENES)), { at: SCENES.hook + SCENES.calm + 52, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={SCENES.hook}>
           <Hook text={s.hook} id={event.id} />

@@ -10,6 +10,7 @@
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 //   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
+//   node scripts/render.mjs --sfx                with Pulse's own sound effects, to pulse-NNN-sfx.mp4
 //   node scripts/render.mjs --lang en             the English set, to out/en/ (the same numbers and events)
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -34,6 +35,7 @@ const { values } = parseArgs({
     stills: { type: 'boolean', default: false },
     lang: { type: 'string', default: 'ru' },
     'per-template': { type: 'string' },
+    sfx: { type: 'boolean', default: false },
   },
 });
 const lang = values.lang;
@@ -123,19 +125,21 @@ const pulses = events
   .map((event, i) => ({ template: 'pulse', id: 'Pulse', props: { event, hour: pulse[event.id], variant: (i + 2) % 5, lang }, caption: text.pulse.captions[i % 5] }));
 const jobs = turns([memes, guesses, counters, tops, timelapses, splits, volumes, trapJobs, pulses]);
 /** What a file holds: the template, its events, the telling and the language. */
-const key = (job) => [job.template, ...(job.props.events ?? [job.props.event]).map((e) => e.id), job.props.variant, lang].join(':');
+const key = (job) => [job.template, ...(job.props.events ?? [job.props.event]).map((e) => e.id), job.props.variant, lang, values.sfx ? 'sfx' : ''].join(':');
 
 // Russian in out/ as before, other languages each in their own folder
 const out = values.out ? `${values.out.replace(/\/$/, '')}/` : new URL(lang === 'ru' ? '../out/' : `../out/${lang}/`, import.meta.url).pathname;
 mkdirSync(out, { recursive: true });
-const name = (i) => `pulse-${String(i + 1).padStart(3, '0')}`;
+// with sound effects the files get their own names, next to the silent ones
+const suffix = values.sfx ? '-sfx' : '';
+const name = (i) => `pulse-${String(i + 1).padStart(3, '0')}${suffix}`;
 const manifestFile = `${out}manifest.json`;
 const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile)) : {};
-writeFileSync(`${out}captions.txt`, jobs.map((job, i) => `${name(i)}.mp4\n${job.caption}. ${text.note}\n${text.tags}\n`).join('\n'));
+writeFileSync(`${out}captions${suffix}.txt`, jobs.map((job, i) => `${name(i)}.mp4\n${job.caption}. ${text.note}\n${text.tags}\n`).join('\n'));
 
 const wanted = new Set(values.template.split(','));
 const todo = jobs
-  .map((job, i) => ({ ...job, file: name(i), number: i + 1 }))
+  .map((job, i) => ({ ...job, props: { ...job.props, sfx: values.sfx }, file: name(i), number: i + 1 }))
   .filter((job) => wanted.has(job.template) && job.number <= Number(values.max))
   .filter((job) => !values.only || values.only.split(',').map(Number).includes(job.number))
   .filter((job, _, all) => !values['per-template'] || all.filter((j) => j.template === job.template).indexOf(job) < Number(values['per-template']))

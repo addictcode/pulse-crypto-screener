@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { BG, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
 import { halves } from './split.ts';
 import { type Candle, type Lang, type MarketEvent, pct } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type SplitVideoProps = { event: MarketEvent; variant: number; lang: Lang };
+export type SplitVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "Before / after": the screen split down the middle, the quiet minutes before the move on the
@@ -87,11 +88,13 @@ const Show = ({ event, lang }: { event: MarketEvent; lang: Lang }) => {
   );
 };
 
-export const SplitVideo = ({ event, variant, lang }: SplitVideoProps) => {
+export const SplitVideo = ({ event, variant, lang, sfx }: SplitVideoProps) => {
   const text = TEXT[lang].split;
   const { calm, change } = halves(event);
+  const cues = [...cuts(Object.values(SPLIT)), { at: SPLIT.hook + 112, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={SPLIT.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
