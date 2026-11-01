@@ -87,6 +87,7 @@ jobs:
           name: video-check
           path: |
             video/out/**/*.mp4
+            video/out/**/*.jpg
           retention-days: 7
           compression-level: 0
 

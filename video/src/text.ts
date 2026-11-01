@@ -47,7 +47,12 @@ type Text = {
   timelapse: { hooks: string[]; label: string; speed: string; hours: (h: number) => string; end: (day: number, move: number) => string; captions: string[] };
   /** at the end of every post description */
   note: string;
+  /** TikTok */
   tags: string;
+  /** Instagram Reels: a few broad tags work better there than a long list */
+  reelsTags: string;
+  /** YouTube Shorts: YouTube shows the first three over the title, #shorts files it as a Short */
+  shortsTags: string;
 };
 
 const ruFlat: Pair[] = [
@@ -169,6 +174,8 @@ export const TEXT: Record<Lang, Text> = {
     },
     note: 'Реальный график, реальные цифры. Не финансовый совет.',
     tags: '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины',
+    reelsTags: '#крипта #трейдинг #биткоин #криптовалюта #reels',
+    shortsTags: '#shorts #крипта #трейдинг #биткоин #фьючерсы',
   },
   en: {
     pairs: {
@@ -272,8 +279,26 @@ export const TEXT: Record<Lang, Text> = {
     },
     note: 'Real chart, real numbers. Not financial advice.',
     tags: '#crypto #trading #bitcoin #altcoins #futures #binance',
+    reelsTags: '#crypto #cryptotrading #bitcoin #trading #reels',
+    shortsTags: '#shorts #crypto #trading #bitcoin #futures',
   },
 };
 
 /** A post description: the caption, the honesty note and the hashtags, without a doubled stop. */
 export const post = (lang: Lang, caption: string) => `${caption}${/[.!?…]$/.test(caption) ? '' : '.'} ${TEXT[lang].note}\n${TEXT[lang].tags}`;
+
+/** YouTube cuts a Shorts title at 100 characters. */
+export const SHORTS_TITLE_MAX = 100;
+
+/** An Instagram Reels description: the same words as on TikTok, Reels' own hashtags. */
+export const postReels = (lang: Lang, caption: string) => `${caption}${/[.!?…]$/.test(caption) ? '' : '.'} ${TEXT[lang].note}\n${TEXT[lang].reelsTags}`;
+
+/**
+ * A YouTube Shorts post: a title of at most 100 characters (the caption, then #shorts if it
+ * fits) and a description with the honesty note and the tags.
+ */
+export const shorts = (lang: Lang, caption: string) => {
+  const tagged = `${caption} #shorts`;
+  const title = tagged.length <= SHORTS_TITLE_MAX ? tagged : caption.length <= SHORTS_TITLE_MAX ? caption : `${caption.slice(0, SHORTS_TITLE_MAX - 1).replace(/\s+\S*$/, '')}…`;
+  return { title, description: `${TEXT[lang].note}\n${TEXT[lang].shortsTags}` };
+};
