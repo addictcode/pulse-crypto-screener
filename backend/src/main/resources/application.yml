@@ -116,3 +116,6 @@ pulse:
     channel-strength: 2
     # for the Telegram buttons on the site; empty means the name Telegram reports for the token
     bot-username: ${PULSE_TELEGRAM_BOT_USERNAME:}
+    # the daily digest in the channel at this hour, UTC (0-23); empty: no digest. /digest works anyway
+    digest-hour: ${PULSE_TELEGRAM_DIGEST_HOUR:}
+    digest-lang: ${PULSE_TELEGRAM_DIGEST_LANG:en}

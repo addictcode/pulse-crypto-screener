@@ -36,6 +36,7 @@ final class BotCommands {
             new TelegramApi.Command("last", "Latest signals"),
             new TelegramApi.Command("stats", "What the price did after each kind of signal"),
             new TelegramApi.Command("status", "What the screener sees right now"),
+            new TelegramApi.Command("digest", "The last 24 hours: sharpest moves, liquidations, walls"),
             new TelegramApi.Command("alerts", "Your price alerts; set one with /alert BTC 85000"),
             new TelegramApi.Command("mute", "Pause signals: /mute 1h, /mute off"),
             new TelegramApi.Command("watchlist", "Your watchlist"),
@@ -180,6 +181,7 @@ final class BotCommands {
                 /last <i>[n]</i> - latest signals
                 /stats <i>[days]</i> - what the price did after each kind of signal
                 /status - what the screener sees right now
+                /digest <i>[ru]</i> - the last 24 hours: sharpest moves, liquidations, largest walls
                 /stop, /start - pause and resume signals
 
                 <i>Market data, not a forecast and not financial advice.</i>""";
