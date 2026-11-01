@@ -108,7 +108,13 @@ python3 scripts/check.py out/pulse-*.mp4
   grey on the left, the five minutes of the move in colour on the right, on one price scale. Only
   events whose minutes before moved less than a third of the move get one (`src/split.ts`).
 
-The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, ...),
+- **Volume** ("Объём взорвался"): violet volume bars at a scale made for ordinary minutes, the
+  burst growing through the top with its multiple counting up (the biggest minute of the five
+  against the average minute before, from the candles' USDT turnover), the scale stepping back to
+  fit it, then the price underneath. Only bursts of five times the average or more
+  (`src/volume.ts`).
+
+The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, volume, ...),
 so neighbouring videos never share a format and any first few show all of them.
 
 ## Languages

@@ -40,6 +40,7 @@ type Text = {
   guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
   top3: { hooks: string[]; captions: string[] };
   counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  volume: { hooks: string[]; label: string; average: string; end: (n: number, move: number) => string; captions: string[] };
   split: { hooks: string[]; before: (m: number) => string; after: string; end: (m: number, calm: number, move: number) => string; captions: string[] };
   timelapse: { hooks: string[]; label: string; speed: string; hours: (h: number) => string; end: (day: number, move: number) => string; captions: string[] };
   /** at the end of every post description */
@@ -127,6 +128,13 @@ export const TEXT: Record<Lang, Text> = {
       after: (h) => `А за следующий час:\n${pct(h)}`,
       captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
     },
+    volume: {
+      hooks: ['Смотри на объём,\nне на цену', 'Объём\nвзорвался 💥', 'Сначала объём.\nПотом цена.', 'Это не цена.\nЭто объём.', 'Обычные минуты?\nСмотри внимательно'],
+      label: 'объём · 1 мин',
+      average: 'среднее',
+      end: (n, move) => `Объём: ×${n}\nк среднему\nЦена: ${pct(move)}\nза 5 минут`,
+      captions: ['Вот что значит «объём взорвался»', 'Смотри на столбики', 'Объём и цена в одни и те же минуты', 'Такое видно по объёму', 'Обычный объём — и вдруг это'],
+    },
     split: {
       hooks: ['Одна и та же монета.\nРазница — 5 минут', 'Было / стало', 'До и после.\n5 минут между ними', 'Слева — тишина.\nСправа — 5 минут', 'Найди\nотличия 👇'],
       before: (m) => `${m} минут до`,
@@ -207,6 +215,13 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
       after: (h) => `And the next hour:\n${pct(h)}`,
       captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    volume: {
+      hooks: ['Watch the volume,\nnot the price', 'Volume\nexploded 💥', 'Volume first.\nThen price.', "This isn't price.\nThis is volume.", 'Just normal minutes?\nLook closer'],
+      label: 'volume · 1m',
+      average: 'average',
+      end: (n, move) => `Volume: ×${n}\nthe average\nPrice: ${pct(move)}\nin 5 minutes`,
+      captions: ['This is what a volume explosion looks like', 'Watch the bars', 'Volume and price, same minutes', 'You can see it in the volume', 'Normal volume, then this'],
     },
     split: {
       hooks: ['Same coin.\nThe difference:\n5 minutes', 'Before / after', 'Before and after.\n5 minutes apart', 'Left: silence.\nRight: 5 minutes', 'Spot the\ndifference 👇'],
