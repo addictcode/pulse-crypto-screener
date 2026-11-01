@@ -1,0 +1,48 @@
+name: audit
+
+# Advisories appear without any commit: once a week the dependencies are checked again, so a new
+# hole in what the site ships turns this red even when nobody touched the code.
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm audit --omit=dev --audit-level=high
+
+  # The video tools never reach visitors: they render files on the author's machine or in Actions.
+  # A known zod advisory sits in Remotion's own tooling (it pins zod exactly), so this only reports,
+  # and says when the newest Remotion has moved past the vulnerable zod and can be updated.
+  video:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: video
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Report
+        run: |
+          {
+            echo '### video: npm audit (dev tools only)'
+            echo '```'
+            npm audit --audit-level=high || true
+            echo '```'
+            used=$(node -p "require('./package.json').dependencies.remotion ?? require('./package.json').devDependencies.remotion")
+            latest=$(npm view remotion version)
+            zod=$(npm view "@remotion/studio-protocol@$latest" dependencies.zod)
+            echo "Remotion in use: $used, newest: $latest, its zod: $zod (GHSA-mrhx-c7xc-m3w5 is fixed in zod 4.6.6)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$GITHUB_STEP_SUMMARY"
