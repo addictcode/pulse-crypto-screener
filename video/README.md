@@ -66,6 +66,15 @@ the batch comes out as the artifact `pulse-videos-<run>`: the videos, `captions.
 `events.json` they were made from. Artifacts are kept 14 days. A pull request that changes the
 workflow renders six videos to prove it still works.
 
+## Checks
+
+`npm test` (also in CI, job `video`): how `src/story.ts` picks the plot and signs the numbers,
+that no text in either language has a ticker, a date or a time of day and the English one no
+Cyrillic, the archive search on a small synthetic archive, and the candle check of every event in
+`public/events.json`. CI then renders the first video of every template in both languages
+(`npm run render -- --per-template 1`) and runs `check.py` on them: a broken template fails the
+job. The videos are kept as the `video-check` artifact for a week.
+
 ## Broken frames
 
 With two or more render tabs at once, Chrome now and then handed over a frame of the wrong size

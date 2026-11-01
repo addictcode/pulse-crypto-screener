@@ -9,6 +9,7 @@
 //   node scripts/render.mjs --template guess,top3 only these templates (event, guess, top3, counter)
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
+//   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
 //   node scripts/render.mjs --lang en             the English set, to out/en/ (the same numbers and events)
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -29,6 +30,7 @@ const { values } = parseArgs({
     force: { type: 'boolean', default: false },
     stills: { type: 'boolean', default: false },
     lang: { type: 'string', default: 'ru' },
+    'per-template': { type: 'string' },
   },
 });
 const lang = values.lang;
@@ -106,6 +108,7 @@ const todo = jobs
   .map((job, i) => ({ ...job, file: name(i), number: i + 1 }))
   .filter((job) => wanted.has(job.template) && job.number <= Number(values.max))
   .filter((job) => !values.only || values.only.split(',').map(Number).includes(job.number))
+  .filter((job, _, all) => !values['per-template'] || all.filter((j) => j.template === job.template).indexOf(job) < Number(values['per-template']))
   .filter((job) => values.stills || values.force || !existsSync(`${out}${job.file}.mp4`) || manifest[job.file] !== key(job));
 console.log(`${jobs.length} videos in the plan, ${todo.length} to render now`);
 
@@ -138,6 +141,7 @@ for (const [k, job] of todo.entries()) {
     if (check.status === 0) break;
     if (attempt === 3) {
       console.error(`${job.file}.mp4 still has broken frames after ${attempt} tries: ${check.stdout.trim()}`);
+      process.exitCode = 1;
       break;
     }
     console.warn(`${job.file}.mp4 had broken frames, rendering it again`);
