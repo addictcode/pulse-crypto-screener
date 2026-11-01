@@ -64,7 +64,8 @@ final class TelegramApi {
                     u.path("update_id").asLong(),
                     message.path("chat").path("id").asLong(),
                     message.path("text").isString() ? message.path("text").asString() : null,
-                    message.path("from").path("username").asString(null)));
+                    message.path("from").path("username").asString(null),
+                    message.path("from").path("language_code").asString(null)));
         }
         return updates;
     }

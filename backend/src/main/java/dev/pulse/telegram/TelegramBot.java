@@ -212,13 +212,15 @@ class TelegramBot {
                     // t.me/<bot>?start=site arrives as "/start site": the last step of the funnel
                     visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.BOT_START, VisitSource.of(words.length > 1 ? words[1] : null));
                 }
-                reply(chat, (fresh ? "" : "Welcome back.\n\n") + BotCommands.welcome());
+                boolean ru = update.russian();
+                reply(chat, (fresh ? "" : ru ? "С возвращением.\n\n" : "Welcome back.\n\n") + BotCommands.welcome(ru));
             }
             case "/stop" -> {
                 accounts.unsubscribe(chat);
-                reply(chat, "Stopped. Your settings are kept; /start turns signals back on.");
+                reply(chat, update.russian() ? "Остановлено. Настройки сохранены, /start включит сигналы снова."
+                        : "Stopped. Your settings are kept; /start turns signals back on.");
             }
-            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text()));
+            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text(), update.russian()));
         }
     }
 
