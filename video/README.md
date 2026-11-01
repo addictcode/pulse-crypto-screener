@@ -52,6 +52,7 @@ a day late. Zips are cached in `.cache/`, so a second run downloads only what is
    npm run render -- --max 10        # only numbers up to 10
    npm run render -- --stills --max 4  # three PNG frames per video, to check the look quickly
    npm run render -- --lang en       # the English set, to out/en/
+   npm run render -- --shard 0/4     # every 4th video from the first: parallel jobs
    npm run studio                    # Remotion Studio, to work on the design
    ```
 
@@ -63,34 +64,19 @@ a day late. Zips are cached in `.cache/`, so a second run downloads only what is
 
 ### In GitHub Actions (no Mac)
 
-The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub's runner: Actions
-→ video → Run workflow. Inputs: `templates`, `max` (numbers up to), `refresh_events` (search the
-archive for new events first, `days` of it). Every video is checked by `scripts/check.py`, and
-the batch comes out as the artifact `pulse-videos-<run>`: the videos, `captions.txt` and the
-`events.json` they were made from. Artifacts are kept 14 days. A pull request that changes the
-workflow renders six videos to prove it still works.
+The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub's runners:
 
-## Posting schedule
+- Actions → video → Run workflow. Inputs: `templates`, `max` (numbers up to, 400 by default),
+  `lang` (both, ru, en), `sfx`, `refresh_events` (search the archive for new events first, `days`
+  of it), `shards` (parallel jobs per language, 8 by default);
+- or push a branch `video-batch/<anything>` (e.g. `git push origin HEAD:video-batch/1`): the
+  full batch on that commit's events, both languages, up to number 400;
+- a pull request that changes the workflow renders six videos to prove it still works.
 
-```bash
-node scripts/schedule.mjs --days 60 --start 2026-11-02
-```
-
-writes `out/schedule.csv`: date, slot, video number, template and, side by side, the Russian
-file and post (`pulse-NNN.mp4`) and the English one (`en/pulse-NNN.mp4`, the same video in
-English). Two posts a day (`--per-day`), the template never the same as the post before, an
-event at most once in five days; the script refuses to write a schedule that breaks a rule, and
-`npm test` checks 60 days of it. The plan of videos itself is `scripts/plan.mjs`, shared with the
-render script, so the numbers match. The video workflow puts the schedule into its artifact.
-
-## Checks
-
-`npm test` (also in CI, job `video`): how `src/story.ts` picks the plot and signs the numbers,
-that no text in either language has a ticker, a date or a time of day and the English one no
-Cyrillic, the archive search on a small synthetic archive, and the candle check of every event in
-`public/events.json`. CI then renders the first video of every template in both languages
-(`npm run render -- --per-template 1`) and runs `check.py` on them: a broken template fails the
-job. The videos are kept as the `video-check` artifact for a week.
+The videos are split over parallel jobs, one render tab each, and every one is checked by
+`scripts/check.py`. The result is three artifacts, kept 14 days: `pulse-videos-<run>-ru` and
+`-en` (the videos), and `pulse-videos-<run>-plan` (`captions.txt` for both languages, the
+60-day `schedule.csv` and the `events.json` the batch was made from).
 
 ## Broken frames
 
