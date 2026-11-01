@@ -17,6 +17,10 @@ on:
         type: choice
         options: [both, ru, en]
         default: both
+      sfx:
+        description: Also render each video with Pulse's own sound effects (pulse-NNN-sfx.mp4)
+        type: boolean
+        default: false
       refresh_events:
         description: Look for new events in Binance's archive first (scripts/archive-events.mjs)
         type: boolean
@@ -64,6 +68,9 @@ jobs:
         run: |
           for lang in $LANGS; do
             npm run render -- --template "$TEMPLATES" --max "$MAX" --lang "$lang"
+            if [ "${{ inputs.sfx }}" = "true" ]; then
+              npm run render -- --template "$TEMPLATES" --max "$MAX" --lang "$lang" --sfx
+            fi
           done
         env:
           CHROME: /usr/bin/google-chrome
@@ -75,7 +82,7 @@ jobs:
           name: pulse-videos-${{ github.run_number }}
           path: |
             video/out/**/*.mp4
-            video/out/**/captions.txt
+            video/out/**/captions*.txt
             video/public/events.json
           retention-days: 14
           # mp4 is compressed already

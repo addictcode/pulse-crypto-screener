@@ -8,7 +8,11 @@ They are meant to be posted later and in any order, so none of them names the co
 date or a clock: the chart and every number are real, the coin stays anonymous.
 
 Sound is left to TikTok: a trending sound picked there is licensed for the platform and helps the
-video spread; a sound baked into the file is neither.
+video spread; a sound baked into the file is neither. What can be baked in are Pulse's own
+effects: `npm run render -- --sfx` adds a quiet whoosh on every cut, a hit on every impact and a
+click on countdowns, to `pulse-NNN-sfx.mp4` next to the silent files (with `captions-sfx.txt`).
+The sounds are synthesised by ffmpeg (`node scripts/sfx.mjs` writes `public/sfx/*.wav`), so no
+one else's rights are involved, and kept low so the trending sound goes on top.
 
 ## Making a batch
 

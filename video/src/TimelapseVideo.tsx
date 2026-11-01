@@ -2,11 +2,12 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 
 import { DISPLAY, DOWN, Flash, INK, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
 /** 24 hours of five minute bars around an event, [o, h, l, c, v] rows (scripts/days.mjs). */
 export type Day = { start: number; at: number; bars: number[][] };
-export type TimelapseVideoProps = { event: MarketEvent; day: Day; variant: number; lang: Lang };
+export type TimelapseVideoProps = { event: MarketEvent; day: Day; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "24 hours in 6 seconds": the whole day races by as a glowing line, the clock counts the hours
@@ -128,10 +129,12 @@ const End = ({ event, day, lang }: { event: MarketEvent; day: Day; lang: Lang })
   );
 };
 
-export const TimelapseVideo = ({ event, day, variant, lang }: TimelapseVideoProps) => {
+export const TimelapseVideo = ({ event, day, variant, lang, sfx }: TimelapseVideoProps) => {
   const text = TEXT[lang].timelapse;
+  const cues = [...cuts(Object.values(TIMELAPSE)), { at: TIMELAPSE.hook + Math.round(((day.at + 1) / day.bars.length) * DRAW), kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: NIGHT }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={TIMELAPSE.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

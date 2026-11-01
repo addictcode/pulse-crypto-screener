@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { DISPLAY, DOWN, Flash, INK, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type TrapsVideoProps = { events: MarketEvent[]; variant: number; lang: Lang };
+export type TrapsVideoProps = { events: MarketEvent[]; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "A series of traps": three moves in a row that broke out and came back within the hour, each in
@@ -73,10 +74,18 @@ const Trap = ({ event, n, lang }: { event: MarketEvent; n: number; lang: Lang })
   );
 };
 
-export const TrapsVideo = ({ events, variant, lang }: TrapsVideoProps) => {
+export const TrapsVideo = ({ events, variant, lang, sfx }: TrapsVideoProps) => {
   const text = TEXT[lang].traps;
+  const cues = [
+    ...cuts([TRAPS.hook, TRAPS.trap, TRAPS.trap, TRAPS.trap, TRAPS.end, TRAPS.outro]),
+    ...[0, 1, 2].flatMap((k) => [
+      { at: TRAPS.hook + k * TRAPS.trap + HIT, kind: 'click' as const },
+      { at: TRAPS.hook + k * TRAPS.trap + BACK + 14, kind: 'hit' as const },
+    ]),
+  ];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={TRAPS.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

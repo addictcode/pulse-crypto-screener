@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { BG, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, fmtPrice, shake } from './parts';
 import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type GuessVideoProps = { event: MarketEvent; variant: number; lang: Lang };
+export type GuessVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "Guess what happens next": the chart runs to the signal candle and stops, the viewer gets three
@@ -102,12 +103,15 @@ const Reveal = ({ event, lang, answer }: { event: MarketEvent; lang: Lang; answe
   );
 };
 
-export const GuessVideo = ({ event, variant, lang }: GuessVideoProps) => {
+export const GuessVideo = ({ event, variant, lang, sfx }: GuessVideoProps) => {
   const s = story(event, 0, lang);
   const text = TEXT[lang];
   const answer = text.guess.answer(s.hour);
+  const freeze = GUESS.hook + GUESS.replay;
+  const cues = [...cuts(Object.values(GUESS)), { at: GUESS.hook + 50, kind: 'hit' as const }, ...[24, 48].map((d) => ({ at: freeze + d, kind: 'click' as const }))];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={GUESS.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

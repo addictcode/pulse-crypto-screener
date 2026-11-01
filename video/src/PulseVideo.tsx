@@ -3,11 +3,12 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 import { Chart } from './Chart';
 import { BG, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
 /** 30 anonymous coins' five minute changes for each minute of the hour (scripts/pulse.mjs). */
 export type Hour = { focus: number; tiles: number[][] };
-export type PulseVideoProps = { event: MarketEvent; hour: Hour; variant: number; lang: Lang };
+export type PulseVideoProps = { event: MarketEvent; hour: Hour; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * "The pulse of the market": a dark grid of 30 tiles, one per coin and none named, lighting up
@@ -143,10 +144,12 @@ const ChartScene = ({ event, change, lang }: { event: MarketEvent; change: numbe
   );
 };
 
-export const PulseVideo = ({ event, hour, variant, lang }: PulseVideoProps) => {
+export const PulseVideo = ({ event, hour, variant, lang, sfx }: PulseVideoProps) => {
   const text = TEXT[lang].pulse;
+  const cues = [...cuts(Object.values(PULSE)), { at: PULSE.hook + AT * PER_MINUTE, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={PULSE.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>

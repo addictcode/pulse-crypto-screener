@@ -3,9 +3,10 @@ import { AbsoluteFill, Easing, Series, interpolate, useCurrentFrame } from 'remo
 import { Chart } from './Chart';
 import { BG, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
 import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
 import { TEXT } from './text.ts';
 
-export type CounterVideoProps = { event: MarketEvent; variant: number; lang: Lang };
+export type CounterVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * A stopwatch over the five minutes: a huge running percent, the clock from 00:00 to 05:00 and the
@@ -73,11 +74,13 @@ const After = ({ event, text }: { event: MarketEvent; text: string }) => {
   );
 };
 
-export const CounterVideo = ({ event, variant, lang }: CounterVideoProps) => {
+export const CounterVideo = ({ event, variant, lang, sfx }: CounterVideoProps) => {
   const s = story(event, 0, lang);
   const text = TEXT[lang].counter;
+  const cues = [...cuts(Object.values(COUNTER)), { at: COUNTER.hook + END, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={COUNTER.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
