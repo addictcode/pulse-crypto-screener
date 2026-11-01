@@ -1,0 +1,72 @@
+name: video
+
+# Renders a batch of the vertical videos (video/) and hands them over as an artifact, so a batch
+# needs no Mac. Run it by hand from the Actions tab; a change to this file in a pull request runs
+# a short batch of six to show the workflow still works.
+on:
+  workflow_dispatch:
+    inputs:
+      templates:
+        description: Templates, comma separated (event, guess, top3, counter)
+        default: event,guess,top3,counter
+      max:
+        description: Render only video numbers up to this
+        default: "1000"
+      refresh_events:
+        description: Look for new events in Binance's archive first (scripts/archive-events.mjs)
+        type: boolean
+        default: false
+      days:
+        description: Days of archive to look through when refreshing
+        default: "30"
+  pull_request:
+    paths:
+      - .github/workflows/video.yml
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    # about 30 s a video on the runner; a full batch is a few hours
+    timeout-minutes: 350
+    defaults:
+      run:
+        working-directory: video
+    env:
+      TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter' }}
+      MAX: ${{ inputs.max || '6' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # ffmpeg for check.py, emoji for the captions in the frames; Chrome is on the runner already
+      - run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg fonts-noto-color-emoji
+          pip install numpy
+      - run: npm ci
+      - name: New events from the archive
+        if: inputs.refresh_events
+        run: npm run archive -- --days "${{ inputs.days }}" --max 60
+      - name: Render
+        run: npm run render -- --template "$TEMPLATES" --max "$MAX"
+        env:
+          CHROME: /usr/bin/google-chrome
+          LOG: warn
+      - name: Check every video for broken frames
+        run: python3 scripts/check.py out/*.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pulse-videos-${{ github.run_number }}
+          path: |
+            video/out/*.mp4
+            video/out/captions.txt
+            video/public/events.json
+          retention-days: 14
+          # mp4 is compressed already
+          compression-level: 0
