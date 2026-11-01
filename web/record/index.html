@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta name="description" data-i18n-attrs="content" content="Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. The full record, including the ones that went the wrong way.">
+<meta name="description" data-i18n-attrs="content" content="Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. The full record, including the times the price turned the other way.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pulse">
 <meta property="og:title" content="Pulse signal record">
@@ -31,7 +31,7 @@
 
 <main class="rec">
   <h1 class="rec-title" data-i18n>The record</h1>
-  <p class="lede" data-i18n>Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. This is what followed, all of it, including the signals that went the wrong way.</p>
+  <p class="lede" data-i18n>Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. This is what followed, all of it, including the times the price turned the other way.</p>
 
   <div class="rec-bar">
     <div class="rec-seg" role="group" data-i18n-attrs="aria-label" aria-label="Period" id="rec-period"></div>
@@ -53,18 +53,29 @@
     </table>
   </div>
 
+  <section class="rec-how rec-shows" id="rec-shows">
+    <h2 data-i18n>What the record shows</h2>
+    <p class="rec-shows-lede" data-i18n>A signal tells you what is happening right now, not what comes next.</p>
+    <ul>
+      <li data-i18n>On 91 days of Binance's own archive and 150 pairs, an hour after a pump, dump or volume signal the price had kept going the signal's way in 44 to 48% of cases.</li>
+      <li data-i18n>The average move an hour later was smaller than the fees of a round trip.</li>
+      <li data-i18n>Four ways to tell the good signals from the rest (heavy volume, US hours, the 4 hour trend, liquidity) made no difference on the half of the data kept aside for checking.</li>
+      <li data-i18n>So Pulse is for seeing a move as it happens and understanding the market, not for guessing the next candle.</li>
+    </ul>
+    <p><a class="rec-study" href="https://github.com/addictcode/pulse-crypto-screener/blob/main/research/signals-2026-10.md" target="_blank" rel="noopener" data-i18n>Read the study and how it was done</a></p>
+  </section>
   <section class="rec-how">
     <h2 data-i18n>How it is counted</h2>
     <ul>
       <li data-i18n>The price at the moment a signal fires is compared with the price 5 minutes, 15 minutes and an hour later. Nothing is removed afterwards.</li>
-      <li data-i18n>Each cell shows the average move in the direction the signal pointed and how often the price went that way. A dump followed by a fall counts as right.</li>
+      <li data-i18n>Each cell shows the average move in the direction the signal pointed and how often the price went that way. A dump followed by a further fall counts as going its way.</li>
       <li data-i18n>Signals without a direction, like a volume spike on a flat price, are left out of the totals. Kinds with fewer than ten signals are dimmed: that is too few to call a pattern.</li>
       <li data-i18n>Fees, slippage and the time it takes to react are not included. A signal that was right on average can still lose money in practice.</li>
     </ul>
   </section>
 
   <section class="rec-tg" id="rec-tg" hidden>
-    <h2 data-i18n>Get the signals as they fire</h2>
+    <h2 data-i18n>See the market in Telegram as it moves</h2>
     <div class="actions"><span class="tg-slot" id="rec-tg-links" hidden></span></div>
   </section>
 </main>

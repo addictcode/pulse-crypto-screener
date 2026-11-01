@@ -106,11 +106,11 @@ export const TEXT: Record<Lang, Text> = {
     notice: (up, size) => `${up ? 'Резкий рост' : 'Резкое падение'}: ${size} за пять минут`,
     now: 'сейчас',
     outro: {
-      tagline: 'радар всего рынка фьючерсов',
+      tagline: 'видит рынок раньше тебя',
       link: 'ссылка в профиле',
       note: 'Реальные данные Binance. Не финансовый совет.',
       guess: 'подпишись, чтобы угадать следующую',
-      top3: 'такие свечи Pulse ловит каждый день',
+      top3: 'Pulse видит такие свечи сразу',
     },
     guess: {
       hooks: ['Угадай,\nчто дальше 👇', 'Лонг или шорт?', 'Куда пойдёт\nцена?', 'Ты бы зашёл?', 'Проверим\nтвою интуицию'],
@@ -167,7 +167,7 @@ export const TEXT: Record<Lang, Text> = {
       end: (day, move) => `За сутки: ${pct(day)}\nИз них 5 минут:\n${pct(move)}`,
       captions: ['Сутки за 6 секунд', 'Успел заметить до паузы?', 'Весь день и пять минут из него', 'Вот так выглядит день на фьючерсах', 'Ускорено в 14 400 раз'],
     },
-    note: 'Реальный график, реальные цифры. Не финансовый совет.',
+    note: 'Реальный график, реальные цифры. Pulse показывает рынок, а не предсказывает его. Не финансовый совет.',
     tags: '#крипта #трейдинг #фьючерсы #биткоин #криптовалюта #binance #альткоины',
   },
   en: {
@@ -209,11 +209,11 @@ export const TEXT: Record<Lang, Text> = {
     notice: (up, size) => `${up ? 'Sharp pump' : 'Sharp dump'}: ${size} in five minutes`,
     now: 'now',
     outro: {
-      tagline: 'a radar for the whole futures market',
+      tagline: 'sees the market before you do',
       link: 'link in bio',
       note: 'Real Binance data. Not financial advice.',
       guess: 'follow to guess the next one',
-      top3: 'Pulse catches candles like these every day',
+      top3: 'Pulse sees candles like these live',
     },
     guess: {
       hooks: ['Guess what\nhappens next 👇', 'Long or short?', 'Where does\nit go next?', 'Would you\nenter here?', "Let's test\nyour instinct"],
@@ -270,7 +270,7 @@ export const TEXT: Record<Lang, Text> = {
       end: (day, move) => `The whole day: ${pct(day)}\n5 of those minutes:\n${pct(move)}`,
       captions: ['A day in 6 seconds', 'Did you spot it before the pause?', 'A whole day and five minutes of it', 'This is a day on futures', 'Sped up 14,400 times'],
     },
-    note: 'Real chart, real numbers. Not financial advice.',
+    note: 'Real chart, real numbers. Pulse shows the market, it does not predict it. Not financial advice.',
     tags: '#crypto #trading #bitcoin #altcoins #futures #binance',
   },
 };
