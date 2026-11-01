@@ -70,6 +70,19 @@ the batch comes out as the artifact `pulse-videos-<run>`: the videos, `captions.
 `events.json` they were made from. Artifacts are kept 14 days. A pull request that changes the
 workflow renders six videos to prove it still works.
 
+## Posting schedule
+
+```bash
+node scripts/schedule.mjs --days 60 --start 2026-11-02
+```
+
+writes `out/schedule.csv`: date, slot, video number, template and, side by side, the Russian
+file and post (`pulse-NNN.mp4`) and the English one (`en/pulse-NNN.mp4`, the same video in
+English). Two posts a day (`--per-day`), the template never the same as the post before, an
+event at most once in five days; the script refuses to write a schedule that breaks a rule, and
+`npm test` checks 60 days of it. The plan of videos itself is `scripts/plan.mjs`, shared with the
+render script, so the numbers match. The video workflow puts the schedule into its artifact.
+
 ## Checks
 
 `npm test` (also in CI, job `video`): how `src/story.ts` picks the plot and signs the numbers,

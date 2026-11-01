@@ -274,3 +274,6 @@ export const TEXT: Record<Lang, Text> = {
     tags: '#crypto #trading #bitcoin #altcoins #futures #binance',
   },
 };
+
+/** A post description: the caption, the honesty note and the hashtags, without a doubled stop. */
+export const post = (lang: Lang, caption: string) => `${caption}${/[.!?…]$/.test(caption) ? '' : '.'} ${TEXT[lang].note}\n${TEXT[lang].tags}`;
