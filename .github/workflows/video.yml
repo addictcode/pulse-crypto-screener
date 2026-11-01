@@ -12,6 +12,11 @@ on:
       max:
         description: Render only video numbers up to this
         default: "1000"
+      lang:
+        description: Language of the set
+        type: choice
+        options: [both, ru, en]
+        default: both
       refresh_events:
         description: Look for new events in Binance's archive first (scripts/archive-events.mjs)
         type: boolean
@@ -34,6 +39,7 @@ jobs:
     env:
       TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter' }}
       MAX: ${{ inputs.max || '6' }}
+      LANGS: ${{ inputs.lang == 'ru' && 'ru' || inputs.lang == 'en' && 'en' || 'ru en' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -54,18 +60,22 @@ jobs:
         if: inputs.refresh_events
         run: npm run archive -- --days "${{ inputs.days }}" --max 60
       - name: Render
-        run: npm run render -- --template "$TEMPLATES" --max "$MAX"
+        # Russian lands in out/, English in out/en/, with the same numbers
+        run: |
+          for lang in $LANGS; do
+            npm run render -- --template "$TEMPLATES" --max "$MAX" --lang "$lang"
+          done
         env:
           CHROME: /usr/bin/google-chrome
           LOG: warn
       - name: Check every video for broken frames
-        run: python3 scripts/check.py out/*.mp4
+        run: python3 scripts/check.py $(find out -name '*.mp4' | sort)
       - uses: actions/upload-artifact@v4
         with:
           name: pulse-videos-${{ github.run_number }}
           path: |
-            video/out/*.mp4
-            video/out/captions.txt
+            video/out/**/*.mp4
+            video/out/**/captions.txt
             video/public/events.json
           retention-days: 14
           # mp4 is compressed already
