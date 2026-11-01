@@ -44,6 +44,7 @@ services:
       PULSE_TELEGRAM_BOT_USERNAME: ${PULSE_TELEGRAM_BOT_USERNAME:-}
       PULSE_TELEGRAM_DIGEST_HOUR: ${PULSE_TELEGRAM_DIGEST_HOUR:-}
       PULSE_TELEGRAM_DIGEST_LANG: ${PULSE_TELEGRAM_DIGEST_LANG:-en}
+      PULSE_PREMIUM_ENABLED: ${PULSE_PREMIUM_ENABLED:-false}
     mem_limit: 1536m
     # the image has neither curl nor wget, so bash speaks HTTP itself. "Healthy" means the market
     # feed is alive, not merely that the JVM runs (see MarketHealthIndicator).

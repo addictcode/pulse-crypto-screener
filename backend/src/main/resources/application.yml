@@ -124,3 +124,15 @@ pulse:
     # the daily digest in the channel at this hour, UTC (0-23); empty: no digest. /digest works anyway
     digest-hour: ${PULSE_TELEGRAM_DIGEST_HOUR:}
     digest-lang: ${PULSE_TELEGRAM_DIGEST_LANG:en}
+  # Paid premium through Telegram Stars. Prepared, switched off: /premium only says it is not on
+  # sale, no invoice goes out, and nothing free users get changes either way.
+  premium:
+    enabled: ${PULSE_PREMIUM_ENABLED:false}
+    # price of one period in Telegram Stars (XTR)
+    price-stars: 250
+    days: 30
+    title: Pulse Premium
+    description: Support Pulse and get the extras below for 30 days. Market data, not financial advice.
+    # what premium gives, as shown in /premium; describing it does not switch anything on
+    perks:
+      - Supports the development of Pulse

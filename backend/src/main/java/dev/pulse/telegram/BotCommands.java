@@ -43,6 +43,16 @@ final class BotCommands {
             new TelegramApi.Command("help", "All commands"),
             new TelegramApi.Command("stop", "Stop signals; /start brings them back"));
 
+    /** The menu, with /premium only while premium is on sale. */
+    static List<TelegramApi.Command> menu(boolean premium) {
+        if (!premium) {
+            return MENU;
+        }
+        List<TelegramApi.Command> withPremium = new java.util.ArrayList<>(MENU);
+        withPremium.add(withPremium.size() - 2, new TelegramApi.Command("premium", "Premium in Telegram Stars"));
+        return List.copyOf(withPremium);
+    }
+
     private static final Pattern DURATION = Pattern.compile("(\\d{1,3})\\s*([mhd])");
     private static final int LAST_DEFAULT = 5;
     private static final int LAST_MAX = 15;

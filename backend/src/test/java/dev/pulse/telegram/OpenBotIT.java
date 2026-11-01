@@ -172,6 +172,14 @@ class OpenBotIT {
     }
 
     @Test
+    void premiumIsOffByDefaultAndSellsNothing() {
+        message(VISITOR, "/premium");
+
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":77") && body.contains("Premium is not on sale"))).isTrue();
+        assertThat(sent.stream().filter(body -> body.contains("XTR"))).as("no invoice").isEmpty();
+    }
+
+    @Test
     void whoeverBlocksTheBotIsUnsubscribed() {
         accounts.subscribe(BLOCKED);
 
