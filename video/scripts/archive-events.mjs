@@ -11,7 +11,7 @@ import { parseArgs } from 'node:util';
 
 import { addDays } from './days.mjs';
 import { addPulse } from './pulse.mjs';
-import { DAY, confirm, dayVolume, findMoves, lastDay, listSymbols, merge, minuteCandles, pool, toEvent } from './archive.mjs';
+import { DAY, MINUTE, confirm, dayVolume, findMoves, lastDay, listSymbols, merge, minuteCandles, pool, toEvent } from './archive.mjs';
 
 const { values } = parseArgs({
   options: {
@@ -71,10 +71,15 @@ for (let k = 0; k < Math.max(pumps.length, dumps.length); k++) {
   if (pumps[k]) queue.push(pumps[k]);
   if (dumps[k]) queue.push(dumps[k]);
 }
+// events already in the file are skipped before counting towards --max, and count towards the
+// per-coin limit, so a second run over a longer period adds new moves, not the same ones again
+const known = new Set(existing.map((e) => `${e.symbol}@${Math.floor(e.time / MINUTE)}`));
 const perCoin = new Map();
+for (const e of existing) perCoin.set(e.symbol, (perCoin.get(e.symbol) ?? 0) + 1);
 const picked = [];
 for (const e of queue) {
   if (picked.length >= MAX) break;
+  if (known.has(`${e.symbol}@${Math.floor(e.time / MINUTE)}`)) continue;
   const n = perCoin.get(e.symbol) ?? 0;
   if (n >= PER_COIN) continue;
   // the same check scripts/events.mjs makes of database signals

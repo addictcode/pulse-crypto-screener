@@ -10,6 +10,7 @@
 //   node scripts/render.mjs --max 120             only numbers up to 120
 //   node scripts/render.mjs --stills              three PNG frames per video instead, to check the look
 //   node scripts/render.mjs --per-template 1      only the first video of each template (CI)
+//   node scripts/render.mjs --shard 2/8          every 8th video from the third on (parallel jobs in CI)
 //   node scripts/render.mjs --sfx                with Pulse's own sound effects, to pulse-NNN-sfx.mp4
 //   node scripts/render.mjs --lang en             the English set, to out/en/ (the same numbers and events)
 import { spawnSync } from 'node:child_process';
@@ -33,6 +34,7 @@ const { values } = parseArgs({
     lang: { type: 'string', default: 'ru' },
     'per-template': { type: 'string' },
     sfx: { type: 'boolean', default: false },
+    shard: { type: 'string' },
   },
 });
 const lang = values.lang;
@@ -65,9 +67,11 @@ const todo = jobs
   .map((job, i) => ({ ...job, props: { ...job.props, sfx: values.sfx }, file: name(i), number: i + 1 }))
   .filter((job) => wanted.has(job.template) && job.number <= Number(values.max))
   .filter((job) => !values.only || values.only.split(',').map(Number).includes(job.number))
+  .filter((job) => !values.shard || (job.number - 1) % Number(values.shard.split('/')[1]) === Number(values.shard.split('/')[0]))
   .filter((job, _, all) => !values['per-template'] || all.filter((j) => j.template === job.template).indexOf(job) < Number(values['per-template']))
   .filter((job) => values.stills || values.force || !existsSync(`${out}${job.file}.mp4`) || manifest[job.file] !== key(job));
 console.log(`${jobs.length} videos in the plan, ${todo.length} to render now`);
+if (!todo.length) process.exit(0);
 
 const serveUrl = await bundle({ entryPoint: new URL('../src/index.ts', import.meta.url).pathname });
 

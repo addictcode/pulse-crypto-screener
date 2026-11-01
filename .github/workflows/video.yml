@@ -1,8 +1,13 @@
 name: video
 
-# Renders a batch of the vertical videos (video/) and hands them over as an artifact, so a batch
-# needs no Mac. Run it by hand from the Actions tab; a change to this file in a pull request runs
-# a short batch of six to show the workflow still works.
+# Renders a batch of the vertical videos (video/) and hands them over as artifacts, so a batch
+# needs no Mac. Ways to start it:
+#   - Actions → video → Run workflow, with the inputs below;
+#   - pushing a tag video-batch-<anything>: the full batch, both languages, up to number 400;
+#   - a pull request that changes this file: a short batch of six, to show it still works.
+# The videos are split over parallel jobs (shards), one tab each, and every video is checked by
+# scripts/check.py. Result: pulse-videos-<run>-ru and -en (videos and captions) and
+# pulse-videos-<run>-plan (events.json and the posting schedule), kept 14 days.
 on:
   workflow_dispatch:
     inputs:
@@ -11,7 +16,7 @@ on:
         default: event,guess,top3,counter,timelapse,split,volume,traps,pulse
       max:
         description: Render only video numbers up to this
-        default: "1000"
+        default: "400"
       lang:
         description: Language of the set
         type: choice
@@ -28,24 +33,85 @@ on:
       days:
         description: Days of archive to look through when refreshing
         default: "30"
+      shards:
+        description: Parallel jobs per language
+        default: "8"
+  push:
+    tags: ["video-batch-*"]
   pull_request:
     paths:
       - .github/workflows/video.yml
 
+env:
+  TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter,timelapse,split,volume,traps,pulse' }}
+  # a pull request renders six to prove the workflow; a tag or a manual run the batch
+  MAX: ${{ inputs.max || (github.event_name == 'pull_request' && '6' || '400') }}
+
 jobs:
-  render:
+  plan:
     runs-on: ubuntu-24.04
-    # about 30 s a video on the runner; a full batch is a few hours
-    timeout-minutes: 350
     defaults:
       run:
         working-directory: video
-    env:
-      TEMPLATES: ${{ inputs.templates || 'event,guess,top3,counter,timelapse,split,volume,traps,pulse' }}
-      MAX: ${{ inputs.max || '6' }}
-      LANGS: ${{ inputs.lang == 'ru' && 'ru' || inputs.lang == 'en' && 'en' || 'ru en' }}
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+      - run: npm ci
+      - name: New events from the archive
+        if: inputs.refresh_events
+        run: npm run archive -- --days "${{ inputs.days }}" --max 60
+      - id: matrix
+        env:
+          LANG_INPUT: ${{ inputs.lang || 'both' }}
+          SHARDS: ${{ inputs.shards || (github.event_name == 'pull_request' && '2' || '8') }}
+        run: |
+          langs='["ru","en"]'
+          [ "$LANG_INPUT" = ru ] && langs='["ru"]'
+          [ "$LANG_INPUT" = en ] && langs='["en"]'
+          shards=$(node -e "console.log(JSON.stringify([...Array(Number(process.env.SHARDS)).keys()]))")
+          echo "matrix={\"lang\":$langs,\"shard\":$shards,\"of\":[${SHARDS}]}" >> "$GITHUB_OUTPUT"
+      # captions for every number (nothing rendered: --only 0) and the posting schedule
+      - run: |
+          node scripts/render.mjs --only 0 --out out
+          node scripts/render.mjs --only 0 --out out/en --lang en
+          node scripts/schedule.mjs --days 60
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pulse-videos-${{ github.run_number }}-plan
+          path: |
+            video/out/**/captions.txt
+            video/out/schedule.csv
+            video/public/events.json
+          retention-days: 14
+      # the shards render the same events, refreshed or not
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-${{ github.run_number }}
+          path: video/public/*.json
+          retention-days: 1
+
+  render:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: video
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-${{ github.run_number }}
+          path: video/public
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -60,33 +126,36 @@ jobs:
           sudo apt-get install -y -q ffmpeg fonts-noto-color-emoji
           pip install numpy
       - run: npm ci
-      - name: New events from the archive
-        if: inputs.refresh_events
-        run: npm run archive -- --days "${{ inputs.days }}" --max 60
-      - name: Render
-        # Russian lands in out/, English in out/en/, with the same numbers
-        run: |
-          for lang in $LANGS; do
-            npm run render -- --template "$TEMPLATES" --max "$MAX" --lang "$lang"
-            if [ "${{ inputs.sfx }}" = "true" ]; then
-              npm run render -- --template "$TEMPLATES" --max "$MAX" --lang "$lang" --sfx
-            fi
-          done
+      - name: Render shard ${{ matrix.shard }} of ${{ matrix.of }}, ${{ matrix.lang }}
         env:
           CHROME: /usr/bin/google-chrome
           LOG: warn
-      - name: Posting schedule for the next 60 days
-        run: node scripts/schedule.mjs --days 60
+        run: |
+          npm run render -- --template "$TEMPLATES" --max "$MAX" --lang ${{ matrix.lang }} --shard ${{ matrix.shard }}/${{ matrix.of }} --out out
+          if [ "${{ inputs.sfx }}" = "true" ]; then
+            npm run render -- --template "$TEMPLATES" --max "$MAX" --lang ${{ matrix.lang }} --shard ${{ matrix.shard }}/${{ matrix.of }} --out out --sfx
+          fi
       - name: Check every video for broken frames
-        run: python3 scripts/check.py $(find out -name '*.mp4' | sort)
+        run: python3 scripts/check.py out/*.mp4
       - uses: actions/upload-artifact@v4
         with:
-          name: pulse-videos-${{ github.run_number }}
-          path: |
-            video/out/**/*.mp4
-            video/out/**/captions*.txt
-            video/out/schedule.csv
-            video/public/events.json
-          retention-days: 14
-          # mp4 is compressed already
+          name: shard-${{ github.run_number }}-${{ matrix.lang }}-${{ matrix.shard }}
+          path: video/out/*.mp4
+          retention-days: 1
           compression-level: 0
+
+  collect:
+    needs: [plan, render]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        lang: ${{ fromJSON(needs.plan.outputs.matrix).lang }}
+    steps:
+      # one artifact per language out of the shards' pieces
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: pulse-videos-${{ github.run_number }}-${{ matrix.lang }}
+          pattern: shard-${{ github.run_number }}-${{ matrix.lang }}-*
+          retention-days: 14
+          compression-level: 0
+          delete-merged: true
