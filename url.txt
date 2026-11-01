@@ -1,1 +1,1 @@
-https://mayor-emperor-bare-live.trycloudflare.com
+https://api.trycloudflare.com
