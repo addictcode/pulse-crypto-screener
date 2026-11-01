@@ -2,13 +2,12 @@
 // against Binance's own minute candles, so no video is built on a bad price.
 //   node scripts/events.mjs [how many]      reads scripts/candidates.json, writes public/events.json
 // candidates.json is a query result from the signal table (see README.md).
+// scripts/archive-events.mjs finds events in Binance's archive instead, without the database.
 import { readFileSync, writeFileSync } from 'node:fs';
 
+import { AFTER, BEFORE, confirm } from './archive.mjs';
+
 const WANT = Number(process.argv[2] ?? 40);
-const BEFORE = 45; // minutes of chart before the signal
-const AFTER = 75; // and after it
-/** The candles must show at least this much of the move the signal reported. */
-const CONFIRM = 0.6;
 
 const candidates = JSON.parse(readFileSync(new URL('./candidates.json', import.meta.url)));
 // strongest first, alternating pumps and dumps so a batch is not all one story
@@ -42,19 +41,16 @@ for (const c of queue) {
   }
   await sleep(150);
   const at = bars.findIndex((b) => b.t === minute);
-  if (at < 10 || bars.length < BEFORE + AFTER - 5) {
-    console.warn(`skip ${c.symbol}: not enough history around the signal (a fresh listing?)`);
+  const up = c.type === 'PUMP';
+  // the check every event passes, whichever source it came from (scripts/archive.mjs)
+  const problem = confirm({ type: c.type, time: minute, at, candles: bars }, c.value);
+  if (problem) {
+    console.warn(`skip ${c.symbol}: ${problem}`);
     continue;
   }
-  const up = c.type === 'PUMP';
   // the strongest five minute stretch ending at the signal, as the candles tell it
   const base = up ? Math.min(...bars.slice(at - 5, at + 1).map((b) => b.l)) : Math.max(...bars.slice(at - 5, at + 1).map((b) => b.h));
-  const peak = up ? bars[at].h : bars[at].l;
-  const move = (peak / base - 1) * 100;
-  if (Math.abs(move) < c.value * CONFIRM || Math.sign(move) !== (up ? 1 : -1)) {
-    console.warn(`skip ${c.symbol}: candles show ${move.toFixed(1)}%, the signal said ${up ? '+' : '-'}${c.value.toFixed(1)}%`);
-    continue;
-  }
+  const move = ((up ? bars[at].h : bars[at].l) / base - 1) * 100;
   const after = bars.slice(at);
   const extreme = up ? Math.max(...after.map((b) => b.h)) : Math.min(...after.map((b) => b.l));
   events.push({
