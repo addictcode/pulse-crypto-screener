@@ -75,6 +75,8 @@ jobs:
         env:
           CHROME: /usr/bin/google-chrome
           LOG: warn
+      - name: Posting schedule for the next 60 days
+        run: node scripts/schedule.mjs --days 60
       - name: Check every video for broken frames
         run: python3 scripts/check.py $(find out -name '*.mp4' | sort)
       - uses: actions/upload-artifact@v4
@@ -83,6 +85,7 @@ jobs:
           path: |
             video/out/**/*.mp4
             video/out/**/captions*.txt
+            video/out/schedule.csv
             video/public/events.json
           retention-days: 14
           # mp4 is compressed already
