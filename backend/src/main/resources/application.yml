@@ -95,6 +95,11 @@ pulse:
     min-volume24h: 5000000
     # a repeat inside the cooldown still fires if it is this much stronger
     escalation: 1.5
+  # a made-up market instead of the exchanges, for load tests (loadtest/); never on a public site
+  fake-market:
+    enabled: ${PULSE_FAKE_MARKET_ENABLED:false}
+    symbols: 530
+    books: 60
   limits:
     # the terminal makes a dozen calls on load and a few every ten seconds after
     requests-per-minute: 120

@@ -320,6 +320,9 @@ cloud-init сам ставит всё и запускает Pulse при пер�
 если заданы секреты `VPS_HOST`, `VPS_SSH_KEY` (приватный ключ для пользователя `pulse`) и
 `VPS_KNOWN_HOSTS` (вывод `ssh-keyscan HOST`).
 
+Сколько зрителей выдерживает стек и что упирается первым — `loadtest/REPORT.md`; повторить
+замер — `loadtest/run.sh visitors` (см. `loadtest/README.md`).
+
 Проверить прод-сборку локально, по HTTP на :8088:
 
 ```bash
