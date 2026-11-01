@@ -7,6 +7,7 @@ import { STANDALONE, startFeed, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
 import { ClipFrame } from './clip';
 import { Densities } from './densities';
+import { LiveFeed, isPhone, nothingStored, phoneMode, type PhoneMode } from './feed';
 import { ChartGrid } from './grid';
 import { Heatmap } from './heatmap';
 import { lang, localize, mountLangSwitch, setLang, t } from './i18n';
@@ -32,6 +33,10 @@ mountLangSwitch(document.getElementById('lang')!);
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 document.getElementById('cmd-kbd')!.textContent = isMac ? '⌘K' : 'Ctrl K';
+
+// asked before anything below saves a setting: a first visit on a phone opens the live feed
+const firstVisit = nothingStored();
+document.body.dataset.phone = phoneMode(isPhone(), firstVisit, location.hash);
 
 // a shared link names its pair; it wins over the one remembered in this browser
 const linked = parseHash(location.hash).symbol;
@@ -102,6 +107,25 @@ initViews(
 );
 
 const layout = new Layout();
+
+/** The feed or the full terminal; a choice made with the switch is remembered. */
+const setPhoneMode = (mode: PhoneMode) => {
+  document.body.dataset.phone = mode;
+  save('phoneMode', mode);
+  if (mode === 'feed') history.replaceState(null, '', location.pathname);
+  window.scrollTo({ top: 0 });
+};
+new LiveFeed(
+  market,
+  // a card's chart opens in the terminal for now; the feed stays the place this phone starts in
+  (symbol) => {
+    document.body.dataset.phone = 'terminal';
+    location.hash = `#screener:${symbol}`;
+    selectSymbol(symbol);
+    window.scrollTo({ top: 0 });
+  },
+  setPhoneMode,
+);
 
 // chart only: the list and the dock step aside
 const focusButton = document.getElementById('focus-btn')!;

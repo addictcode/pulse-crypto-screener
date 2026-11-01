@@ -896,3 +896,34 @@ body[data-recording] .clip-esc { visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) { .clip-rec i { animation: clip-pulse 1s ease-in-out infinite; } }
 .clip-bar { white-space: nowrap; }
 @container (width < 420px) { .clip-live span { display: none; } }
+
+/* ---------- live feed: a phone's first visit (src/feed.ts) ---------- */
+.live-feed, .feed-back { display: none; }
+@media (max-width: 700px) {
+  body[data-phone="terminal"] .feed-back { display: inline-flex; }
+  body[data-phone="feed"] { padding-bottom: 0; }
+  /* the terminal steps aside whole: nothing of it is laid out under the feed */
+  body[data-phone="feed"] > :not(.live-feed):not(dialog):not(.toasts) { display: none; }
+  body[data-phone="feed"] .live-feed { display: block; }
+}
+.live-feed { min-height: 100dvh; padding: 0 12px calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--bg-0); }
+.feed-head { display: flex; align-items: center; gap: 10px; height: 52px; }
+.feed-head .brand { height: 52px; }
+.feed-title { font: 700 15px/1 var(--f-display); text-transform: uppercase; letter-spacing: .02em; }
+.feed-head #feed-terminal { margin-left: auto; }
+.feed-lede { color: var(--ink-3); font-size: 13px; line-height: 1.45; margin: 0 0 12px; min-height: 38px; }
+.feed-list { list-style: none; display: grid; gap: 10px; }
+.feed-wait { color: var(--ink-3); padding: 40px 4px; text-align: center; }
+.feed-card { background: var(--bg-1); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+.fc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 22px; }
+.fc-top time { color: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.fc-text { font: 600 18px/1.3 var(--f-ui); margin: 8px 0 10px; overflow-wrap: anywhere; }
+.fc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 44px; }
+.fc-spark { color: var(--ink-2); width: 132px; height: 40px; }
+.fc-open { height: 40px; padding: 0 14px; }
+/* floats over the cards: new events never push what is being read */
+.feed-more { position: fixed; z-index: 30; top: 60px; left: 50%; transform: translateX(-50%); height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: var(--ink); color: var(--bg-0); font: 600 13px/36px var(--f-ui); box-shadow: 0 4px 16px rgba(0, 0, 0, .5); }
+.feed-tg { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg-1); border-top: 1px solid var(--rule-strong); }
+.feed-tg[hidden] { display: none; }
+.feed-tg .tg-btn { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; height: 46px; text-decoration: none; }
+.feed-tg .tg-btn.primary { background: var(--ink); color: var(--bg-0); border-color: var(--ink); }

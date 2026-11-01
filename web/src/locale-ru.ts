@@ -616,4 +616,17 @@ export const RU: Record<string, string> = {
   Channel: 'Канал',
   'See the market in Telegram as it moves':
     'Рынок в Telegram в момент движения',
+
+  // ---------- live feed (a phone's first visit) ----------
+  'Live feed': 'Живая лента',
+  'Full terminal': 'Полный терминал',
+  'What is happening on Binance futures right now, as it happens. Market data, not a forecast and not financial advice.':
+    'Что происходит на фьючерсах Binance прямо сейчас, в момент события. Рыночные данные, не прогноз и не финансовый совет.',
+  'Waiting for the first events of the market.': 'Ждём первых событий рынка.',
+  'Open chart': 'Открыть график',
+  'New events: {n}': 'Новых событий: {n}',
+  '{n} s ago': '{n} с назад',
+  '{n} min ago': '{n} мин назад',
+  '{n} h ago': '{n} ч назад',
+  'Liquidation': 'Ликвидация',
 };
