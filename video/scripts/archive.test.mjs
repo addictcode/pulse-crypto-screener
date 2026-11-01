@@ -145,3 +145,14 @@ test('the day around an event: 288 five minute bars, the event two thirds in, no
   minutes.splice(1500, 30);
   assert.equal(dayAround(minutes, t), null);
 });
+
+test('the pulse hour: five minute changes per minute, null where the coin has no bars', async () => {
+  const { changes, MINUTES } = await import('./pulse.mjs');
+  const bars = parseKlines(csv(200, { 100: [100, 110, 100, 110] }));
+  const c = changes(bars, T0 + 60 * MINUTE);
+  assert.equal(c.length, MINUTES);
+  assert.equal(c[40], 10); // minute 100: 110 against 100 five minutes before
+  assert.equal(c[45], -9.1); // minute 105: back to 100 against 110
+  assert.equal(c[0], 0);
+  assert.equal(changes(bars, T0 + 180 * MINUTE)[30], null);
+});

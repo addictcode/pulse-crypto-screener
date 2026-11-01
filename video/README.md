@@ -118,8 +118,16 @@ python3 scripts/check.py out/pulse-*.mp4
   after another, between caution tape. The three are always within a week of each other, because
   one hook says "3 раза за неделю" (`src/traps.ts`); next threes share one event.
 
+- **Pulse** ("Пульс рынка"): a dark grid of 30 unnamed tiles, the event's coin and the 29 most
+  traded others, lighting up with each coin's real five minute change, minute by minute through
+  the hour up to the event; the event's tile flares, grows to fill the screen and becomes its
+  chart. The hour comes from `public/pulse.json` (`scripts/pulse.mjs`, run by the archive search
+  too; no coin names are stored). Only events whose tile is the biggest of the thirty at the
+  event and at least 4% get one. The tile, the zoom and the stamp show the same number: the
+  close-to-close change over five minutes.
+
 The templates take turns from number 1 on (event, guess, counter, top3, timelapse, split, volume,
-traps, ...),
+traps, pulse, ...),
 so neighbouring videos never share a format and any first few show all of them.
 
 ## Languages

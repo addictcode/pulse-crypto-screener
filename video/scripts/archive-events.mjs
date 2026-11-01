@@ -10,6 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { addDays } from './days.mjs';
+import { addPulse } from './pulse.mjs';
 import { DAY, confirm, dayVolume, findMoves, lastDay, listSymbols, merge, minuteCandles, pool, toEvent } from './archive.mjs';
 
 const { values } = parseArgs({
@@ -92,3 +93,5 @@ for (const e of added) console.log(`ok ${e.symbol} ${e.type} ${e.move}%`);
 console.log(`${added.length} new events, ${events.length} in public/events.json`);
 // the day around each new event, for the time-lapse template
 console.log(`${await addDays()} days added to public/days.json`);
+// the market around each new event, for the pulse template
+console.log(`${await addPulse()} hours added to public/pulse.json`);

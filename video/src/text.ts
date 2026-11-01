@@ -40,6 +40,7 @@ type Text = {
   guess: { hooks: string[]; question: string; up: string; down: string; comment: string; answer: (hour: number) => string; captions: string[] };
   top3: { hooks: string[]; captions: string[] };
   counter: { hooks: string[]; after: (hour: number) => string; captions: string[] };
+  pulse: { hooks: string[]; label: string; minute: (m: number) => string; oneOf: string; captions: string[] };
   traps: { hooks: string[]; label: (n: number) => string; breakout: (up: boolean) => string; back: (hour: number) => string; end: string; captions: string[] };
   volume: { hooks: string[]; label: string; average: string; end: (n: number, move: number) => string; captions: string[] };
   split: { hooks: string[]; before: (m: number) => string; after: string; end: (m: number, calm: number, move: number) => string; captions: string[] };
@@ -128,6 +129,13 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Засекай.\n5 минут.', 'Как выглядят\n5 минут на фьючерсах', 'Смотри\nна цифру 👇', 'Пять минут.\nНе моргай.', 'Что рынок\nделает за 5 минут'],
       after: (h) => `А за следующий час:\n${pct(h)}`,
       captions: ['Пять минут, и всё', 'Не моргай', 'Вот так выглядит волатильность', 'Это не ускоренная съёмка', 'Пять минут из жизни рынка'],
+    },
+    pulse: {
+      hooks: ['Так выглядит час\nна фьючерсах', '30 монет.\n1 час.', 'Следи\nза плитками 👇', 'Какая из них\nвзорвётся?', 'Пульс рынка'],
+      label: '30 монет · изменение за 5 мин',
+      minute: (m) => `${m} мин`,
+      oneOf: '1 из 30',
+      captions: ['Час рынка за 6 секунд', 'Одна из тридцати', 'Вот так выглядит рынок целиком', 'Заметил её раньше?', 'Тридцать монет, одна свеча'],
     },
     traps: {
       hooks: ['3 раза за неделю\nрынок сделал это', 'Пробой… и назад.\nТри раза', 'Ловушка.\nЛовушка.\nЛовушка.', 'Купил пробой?\nСмотри, что дальше', 'Любимый трюк\nрынка'],
@@ -224,6 +232,13 @@ export const TEXT: Record<Lang, Text> = {
       hooks: ['Start the clock.\n5 minutes.', 'What 5 minutes\nof futures\nlook like', 'Watch\nthe number 👇', "Five minutes.\nDon't blink.", 'What the market\ndoes in 5 minutes'],
       after: (h) => `And the next hour:\n${pct(h)}`,
       captions: ["Five minutes, that's it", "Don't blink", 'This is what volatility looks like', 'This is not sped up', 'Five minutes in the life of the market'],
+    },
+    pulse: {
+      hooks: ['This is one hour\non futures', '30 coins.\n1 hour.', 'Watch\nthe tiles 👇', 'Which one\nexplodes?', 'The pulse\nof the market'],
+      label: '30 coins · 5-min change',
+      minute: (m) => `${m} min`,
+      oneOf: '1 of 30',
+      captions: ['An hour of the market in 6 seconds', 'One out of thirty', 'This is the whole market at once', 'Did you spot it first?', 'Thirty coins, one candle'],
     },
     traps: {
       hooks: ['The market did this\n3 times in a week', 'Breakout… and back.\nThree times', 'Trap.\nTrap.\nTrap.', 'Bought the breakout?\nWatch this', "The market's\nfavourite trick"],
