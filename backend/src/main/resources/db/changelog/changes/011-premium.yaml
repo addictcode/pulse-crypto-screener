@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-premium
+      author: pulse
+      comment: >
+        Paid premium through Telegram Stars, prepared and switched off (pulse.premium.enabled).
+        One row per payment: Telegram's charge id makes a repeated delivery of the same payment
+        harmless, and the end date is kept so that a payment before the end extends the period.
+      changes:
+        - createTable:
+            tableName: premium_payment
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: telegram_chat_id, type: bigint, constraints: { nullable: false } }
+              - column: { name: charge_id, type: varchar(128), constraints: { nullable: false, unique: true, uniqueConstraintName: uq_premium_payment_charge } }
+              - column: { name: stars, type: int, constraints: { nullable: false } }
+              - column: { name: paid_at, type: timestamp with time zone, constraints: { nullable: false } }
+              - column: { name: active_until, type: timestamp with time zone, constraints: { nullable: false } }
+        - createIndex:
+            tableName: premium_payment
+            indexName: ix_premium_payment_chat
+            columns:
+              - column: { name: telegram_chat_id }
+              - column: { name: active_until }

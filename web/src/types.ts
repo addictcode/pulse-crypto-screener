@@ -172,3 +172,9 @@ export interface CandleDto {
   close: number;
   volume: number;
 }
+
+/** GET /api/links: usernames without "@", empty when that link is not set up. */
+export interface TelegramLinks {
+  bot: string;
+  channel: string;
+}

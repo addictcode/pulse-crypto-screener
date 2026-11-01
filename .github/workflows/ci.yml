@@ -34,6 +34,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      # what ships to visitors must have no known high or critical holes; dev tools are not shipped
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run build
       # end-to-end: the real frontend in a real browser against a fake backend (web/e2e)
@@ -45,6 +47,49 @@ jobs:
           name: playwright-report
           path: web/playwright-report
           retention-days: 7
+
+  video:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: video
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: video/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg fonts-noto-color-emoji
+          pip install numpy
+      - run: npm ci
+      - run: npx tsc --noEmit
+      # the story, the words (no ticker, date or clock), the archive search, every event's candles
+      - run: npm test
+      # one video of every template in both languages: a broken template fails here
+      - name: Render one video per template
+        env:
+          CHROME: /usr/bin/google-chrome
+          LOG: warn
+        run: |
+          npm run render -- --per-template 1
+          npm run render -- --per-template 1 --lang en
+      - run: python3 scripts/check.py $(find out -name '*.mp4' | sort)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: video-check
+          path: |
+            video/out/**/*.mp4
+            video/out/**/*.jpg
+          retention-days: 7
+          compression-level: 0
 
   deploy:
     needs: [backend, web]

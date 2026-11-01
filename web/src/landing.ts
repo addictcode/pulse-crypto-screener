@@ -10,8 +10,11 @@ import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
 import type { SetupBoard } from './types';
+import { loadTelegramTargets, mountTelegram, telegramAnchor } from './telegram';
+import { hit } from './visit';
 
 localize();
+hit('landing');
 mountLangSwitch(document.getElementById('lang')!);
 // sections wait out of sight only when there is a script to bring them in (see .reveal)
 document.documentElement.classList.add('js');
@@ -339,5 +342,22 @@ if (STANDALONE) {
   setInterval(loadSetups, 30_000);
   setInterval(renderSetups, 3_000);
 }
+
+/**
+ * Telegram on the first screen takes the place of "See it live" at exactly its width, with a
+ * short label, so nothing on the screen moves or wraps when it arrives (on a phone a longer button
+ * would push the row onto two lines; the layout-shift budget in e2e watches this). The bot comes
+ * first; the channel shows there only when there is no bot. The ending has room for both.
+ */
+// measured once the web font is in, or the width would be that of the fallback font
+void Promise.all([loadTelegramTargets(), document.fonts.ready]).then(([[first]]) => {
+  if (!first) return;
+  const live = $('hero-live');
+  const button = telegramAnchor(first, 'ghost tg-fit', 'Telegram');
+  button.setAttribute('aria-label', first.label);
+  button.style.width = `${live.getBoundingClientRect().width}px`;
+  live.replaceWith(button);
+});
+void mountTelegram($('final-tg'), 'ghost');
 
 void startFeed(market).catch(() => undefined);

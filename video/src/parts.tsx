@@ -1,5 +1,7 @@
 import { AbsoluteFill, Easing, interpolate, random, useCurrentFrame } from 'remotion';
 
+import { type Lang, TEXT } from './text.ts';
+
 /** The pieces every template is cut from: Pulse's colours and type, the slam, the flash, the end card. */
 
 export const BG = '#070708';
@@ -67,7 +69,8 @@ export const Brand = ({ size = 40, color = INK }: { size?: number; color?: strin
 );
 
 /** The end card. The disclaimer sits above TikTok's caption, which covers the bottom of the screen. */
-export const Outro = ({ light = false, line = 'ссылка в профиле' }: { light?: boolean; line?: string }) => {
+export const Outro = ({ lang, light = false, line }: { lang: Lang; light?: boolean; line?: string }) => {
+  const text = TEXT[lang].outro;
   const frame = useCurrentFrame();
   const o = interpolate(frame, [0, 6], [0, 1], { extrapolateRight: 'clamp' });
   const ink = light ? PAPER_INK : INK;
@@ -76,12 +79,12 @@ export const Outro = ({ light = false, line = 'ссылка в профиле' }
     <AbsoluteFill style={{ background: light ? PAPER : BG, justifyContent: 'center', alignItems: 'center', gap: 34, opacity: o }}>
       <Brand size={96} color={ink} />
       <div style={{ fontFamily: UI, fontSize: 50, color: ink, textAlign: 'center', lineHeight: 1.3 }}>
-        радар всего рынка фьючерсов
+        {text.tagline}
         <br />
-        <span style={{ color: mute }}>{line}</span>
+        <span style={{ color: mute }}>{line ?? text.link}</span>
       </div>
       <div style={{ position: 'absolute', bottom: 380, fontFamily: UI, fontSize: 30, color: mute }}>
-        Реальные данные Binance. Не финансовый совет.
+        {text.note}
       </div>
     </AbsoluteFill>
   );

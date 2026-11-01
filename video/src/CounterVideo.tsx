@@ -2,9 +2,11 @@ import { AbsoluteFill, Easing, Series, interpolate, useCurrentFrame } from 'remo
 
 import { Chart } from './Chart';
 import { BG, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
-import { type MarketEvent, pct, story } from './story';
+import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
+import { TEXT } from './text.ts';
 
-export type CounterVideoProps = { event: MarketEvent; variant: number };
+export type CounterVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /**
  * A stopwatch over the five minutes: a huge running percent, the clock from 00:00 to 05:00 and the
@@ -13,8 +15,7 @@ export type CounterVideoProps = { event: MarketEvent; variant: number };
 export const COUNTER = { hook: 36, run: 126, after: 54, outro: 40 };
 export const COUNTER_DURATION = Object.values(COUNTER).reduce((a, b) => a + b, 0);
 
-const HOOKS = ['Засекай.\n5 минут.', 'Как выглядят\n5 минут на фьючерсах', 'Смотри\nна цифру 👇', 'Пять минут.\nНе моргай.', 'Что рынок\nделает за 5 минут'];
-export const COUNTER_TELLINGS = HOOKS.length;
+export const COUNTER_TELLINGS = 5;
 
 /** From the calm before to the signal candle, frame by frame. */
 const START = 18;
@@ -73,15 +74,18 @@ const After = ({ event, text }: { event: MarketEvent; text: string }) => {
   );
 };
 
-export const CounterVideo = ({ event, variant }: CounterVideoProps) => {
-  const s = story(event, 0);
+export const CounterVideo = ({ event, variant, lang, sfx }: CounterVideoProps) => {
+  const s = story(event, 0, lang);
+  const text = TEXT[lang].counter;
+  const cues = [...cuts(Object.values(COUNTER)), { at: COUNTER.hook + END, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={COUNTER.hook}>
           <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
             <Slam size={92} seed={`${event.id}ch${variant}`}>
-              {HOOKS[variant % HOOKS.length]}
+              {text.hooks[variant % text.hooks.length]}
             </Slam>
           </AbsoluteFill>
         </Series.Sequence>
@@ -89,10 +93,10 @@ export const CounterVideo = ({ event, variant }: CounterVideoProps) => {
           <Run event={event} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={COUNTER.after}>
-          <After event={event} text={`А за следующий час:\n${pct(s.hour)}`} />
+          <After event={event} text={text.after(s.hour)} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={COUNTER.outro}>
-          <Outro />
+          <Outro lang={lang} />
         </Series.Sequence>
       </Series>
     </AbsoluteFill>

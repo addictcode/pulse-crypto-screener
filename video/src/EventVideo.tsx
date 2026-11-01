@@ -2,9 +2,11 @@ import { AbsoluteFill, Easing, Series, interpolate, spring, useCurrentFrame, use
 
 import { Chart } from './Chart';
 import { BG, Brand, DISPLAY, DOWN, Flash, INK, MUTE, Outro, Slam, UI, UP, shake } from './parts';
-import { type MarketEvent, pct, story } from './story';
+import { type Lang, type MarketEvent, pct, story } from './story';
+import { Cues, cuts } from './sfx';
+import { TEXT } from './text.ts';
 
-export type EventVideoProps = { event: MarketEvent; variant: number };
+export type EventVideoProps = { event: MarketEvent; variant: number; lang: Lang; sfx?: boolean };
 
 /** Scene lengths in frames at 30 fps: short and hard-cut, the way the feed is watched. */
 export const SCENES = { hook: 42, calm: 24, replay: 96, punch: 48, outro: 45 };
@@ -31,7 +33,8 @@ const Calm = ({ text, id }: { text: string; id: string }) => {
   );
 };
 
-const Replay = ({ event, line }: { event: MarketEvent; line: string }) => {
+const Replay = ({ event, line, lang }: { event: MarketEvent; line: string; lang: Lang }) => {
+  const text = TEXT[lang];
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const up = event.type === 'PUMP';
@@ -51,7 +54,7 @@ const Replay = ({ event, line }: { event: MarketEvent; line: string }) => {
   return (
     <AbsoluteFill style={{ background: BG }}>
       <div style={{ position: 'absolute', top: 120, left: 70, right: 70, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontFamily: UI, fontWeight: 600, fontSize: 44, color: MUTE }}>фьючерсы · 1 мин</span>
+        <span style={{ fontFamily: UI, fontWeight: 600, fontSize: 44, color: MUTE }}>{text.chartLabel}</span>
         <span style={{ fontFamily: UI, fontWeight: 600, fontSize: 64, color: INK, fontVariantNumeric: 'tabular-nums' }}>{price}</span>
       </div>
       <div style={{ position: 'absolute', top: 330, left: 20, transform: `translate(${x}px, ${y}px) scale(${punch})`, transformOrigin: '70% 50%' }}>
@@ -60,7 +63,7 @@ const Replay = ({ event, line }: { event: MarketEvent; line: string }) => {
       {after >= 0 ? (
         <div style={{ position: 'absolute', top: 470, left: 0, right: 0, textAlign: 'center', transform: `scale(${stamp}) rotate(${-4 * stamp}deg)` }}>
           <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 170, color, textShadow: '0 10px 60px rgba(0,0,0,.9)' }}>{pct(event.move)}</span>
-          <div style={{ fontFamily: UI, fontWeight: 600, fontSize: 52, color: INK, textShadow: '0 4px 30px rgba(0,0,0,.9)' }}>за 5 минут</div>
+          <div style={{ fontFamily: UI, fontWeight: 600, fontSize: 52, color: INK, textShadow: '0 4px 30px rgba(0,0,0,.9)' }}>{text.in5}</div>
         </div>
       ) : null}
       <div
@@ -80,7 +83,7 @@ const Replay = ({ event, line }: { event: MarketEvent; line: string }) => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
           <Brand size={34} />
-          <span style={{ fontFamily: UI, fontSize: 32, color: MUTE }}>сейчас</span>
+          <span style={{ fontFamily: UI, fontSize: 32, color: MUTE }}>{text.now}</span>
         </div>
         <div style={{ fontFamily: UI, fontWeight: 600, fontSize: 42, color: INK, lineHeight: 1.25 }}>{line}</div>
       </div>
@@ -110,12 +113,14 @@ const Punch = ({ event, text, further }: { event: MarketEvent; text: string; fur
   );
 };
 
-export const EventVideo = ({ event, variant }: EventVideoProps) => {
-  const s = story(event, variant);
+export const EventVideo = ({ event, variant, lang, sfx }: EventVideoProps) => {
+  const s = story(event, variant, lang);
   const size = Math.abs(event.move);
-  const line = `${event.type === 'PUMP' ? 'Резкий рост' : 'Резкое падение'}: ${size.toFixed(size >= 10 ? 0 : 1)}% за пять минут`;
+  const line = TEXT[lang].notice(event.type === 'PUMP', `${size.toFixed(size >= 10 ? 0 : 1)}%`);
+  const cues = [...cuts(Object.values(SCENES)), { at: SCENES.hook + SCENES.calm + 52, kind: 'hit' as const }];
   return (
     <AbsoluteFill style={{ background: BG }}>
+      <Cues on={sfx} list={cues} />
       <Series>
         <Series.Sequence durationInFrames={SCENES.hook}>
           <Hook text={s.hook} id={event.id} />
@@ -124,13 +129,13 @@ export const EventVideo = ({ event, variant }: EventVideoProps) => {
           <Calm text={s.calm} id={event.id} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={SCENES.replay}>
-          <Replay event={event} line={line} />
+          <Replay event={event} line={line} lang={lang} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={SCENES.punch}>
           <Punch event={event} text={s.punch} further={s.further} />
         </Series.Sequence>
         <Series.Sequence durationInFrames={SCENES.outro}>
-          <Outro />
+          <Outro lang={lang} />
         </Series.Sequence>
       </Series>
     </AbsoluteFill>

@@ -1,0 +1,10 @@
+# Used by run.sh --local-build: the backend jar and the web build come from loadtest/.build/.
+services:
+  backend:
+    build:
+      context: loadtest/.build/backend
+      dockerfile: ../../backend.Dockerfile
+  web:
+    build:
+      context: loadtest/.build/web
+      dockerfile: ../../web.Dockerfile

@@ -96,9 +96,18 @@ public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Densi
      * @param channelDelay  how long after the bot the channel gets a signal
      * @param channelPerHour at most this many channel posts an hour; a backlog goes out as one
      * @param channelStrength the channel takes only signals this many times past the system floor
+     * @param botUsername   the bot's @username for links on the site; empty to take it from Telegram
+     *                      once the bot has started
+     * @param digestHour    the hour (UTC, 0-23) of the daily digest in the channel; null for none
+     * @param digestLang    the channel digest's language, "en" or "ru"
      */
     public record Telegram(boolean enabled, String token, Long ownerChatId, String apiUrl, boolean open, String channel,
-                           Duration channelDelay, int channelPerHour, double channelStrength) {
+                           Duration channelDelay, int channelPerHour, double channelStrength, String botUsername,
+                           Integer digestHour, String digestLang) {
+
+        public boolean digestInRussian() {
+            return "ru".equalsIgnoreCase(digestLang);
+        }
 
         public boolean hasChannel() {
             return channel != null && !channel.isBlank();

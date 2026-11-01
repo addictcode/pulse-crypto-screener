@@ -39,10 +39,17 @@ public class AccountService {
         return users.findByTelegramChatIdIsNotNullAndSubscribedTrue().stream().map(this::settings).toList();
     }
 
-    /** @return false if the chat was subscribed already */
+    /**
+     * @return true for a new chat or one coming back after /stop, false if it was subscribed already.
+     *         A new account is created subscribed, so it has to be told apart before it exists.
+     */
     @Transactional
     public boolean subscribe(long chatId) {
-        UserAccount user = telegramUser(chatId);
+        UserAccount user = users.findByTelegramChatId(chatId).orElse(null);
+        if (user == null) {
+            users.save(UserAccount.forTelegram(chatId));
+            return true;
+        }
         boolean was = user.isSubscribed();
         user.setSubscribed(true);
         return !was;

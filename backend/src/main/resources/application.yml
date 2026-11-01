@@ -95,6 +95,11 @@ pulse:
     min-volume24h: 5000000
     # a repeat inside the cooldown still fires if it is this much stronger
     escalation: 1.5
+  # a made-up market instead of the exchanges, for load tests (loadtest/); never on a public site
+  fake-market:
+    enabled: ${PULSE_FAKE_MARKET_ENABLED:false}
+    symbols: 530
+    books: 60
   limits:
     # the terminal makes a dozen calls on load and a few every ten seconds after
     requests-per-minute: 120
@@ -114,3 +119,20 @@ pulse:
     channel-delay: 5m
     channel-per-hour: 6
     channel-strength: 2
+    # for the Telegram buttons on the site; empty means the name Telegram reports for the token
+    bot-username: ${PULSE_TELEGRAM_BOT_USERNAME:}
+    # the daily digest in the channel at this hour, UTC (0-23); empty: no digest. /digest works anyway
+    digest-hour: ${PULSE_TELEGRAM_DIGEST_HOUR:}
+    digest-lang: ${PULSE_TELEGRAM_DIGEST_LANG:en}
+  # Paid premium through Telegram Stars. Prepared, switched off: /premium only says it is not on
+  # sale, no invoice goes out, and nothing free users get changes either way.
+  premium:
+    enabled: ${PULSE_PREMIUM_ENABLED:false}
+    # price of one period in Telegram Stars (XTR)
+    price-stars: 250
+    days: 30
+    title: Pulse Premium
+    description: Support Pulse and get the extras below for 30 days. Market data, not financial advice.
+    # what premium gives, as shown in /premium; describing it does not switch anything on
+    perks:
+      - Supports the development of Pulse

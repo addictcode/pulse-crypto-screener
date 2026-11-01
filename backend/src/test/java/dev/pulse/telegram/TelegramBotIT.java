@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -34,6 +36,9 @@ import dev.pulse.market.MarketStore;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalType;
+import dev.pulse.visit.FunnelStep;
+import dev.pulse.visit.VisitLog;
+import dev.pulse.visit.VisitSource;
 
 /**
  * The bot against a fake Telegram Bot API: long polling, owner-only replies and signal delivery,
@@ -60,6 +65,8 @@ class TelegramBotIT {
     private MarketStore market;
     @Autowired
     private ApplicationEventPublisher events;
+    @Autowired
+    private VisitLog visits;
 
     @BeforeAll
     static void startFakeTelegram() throws IOException {
@@ -99,6 +106,16 @@ class TelegramBotIT {
         message(OWNER, "/watch wif");
 
         assertThat(awaitSent(body -> body.contains("\"chat_id\":42") && body.contains("WIF added to your watchlist."))).isTrue();
+    }
+
+    @Test
+    void theOwnerSeesTheSiteFunnel() {
+        visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.LANDING, VisitSource.TIKTOK);
+
+        message(OWNER, "/visits 3");
+
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":42") && body.contains("Visits</b>, last 3 d")
+                && body.contains("tiktok"))).isTrue();
     }
 
     @Test

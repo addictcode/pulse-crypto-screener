@@ -10,8 +10,11 @@ import { localize, mountLangSwitch, t } from './i18n';
 import { followed, overall, type Followed } from './record-math';
 import { load, save } from './storage';
 import type { OutcomeStats } from './types';
+import { mountTelegram } from './telegram';
+import { hit } from './visit';
 
 localize();
+hit('record');
 mountLangSwitch(document.getElementById('lang')!);
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -79,3 +82,5 @@ async function show() {
 }
 
 void show();
+// at the end of the page, so arriving after a request moves nothing on screen
+void mountTelegram($('rec-tg-links'), 'ghost').then(() => ($('rec-tg').hidden = $('rec-tg-links').hidden));

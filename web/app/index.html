@@ -19,6 +19,19 @@
 </head>
 <body>
 
+<!-- a phone's first visit: the simple live feed instead of the full terminal (src/feed.ts) -->
+<section class="live-feed" id="live-feed" data-i18n-attrs="aria-label" aria-label="Live feed">
+  <header class="feed-head">
+    <a class="brand" href="../" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/></svg><b>Pulse</b></a>
+    <h1 class="feed-title" data-i18n>Live feed</h1>
+    <button type="button" class="btn ghost" id="feed-terminal" data-i18n>Full terminal</button>
+  </header>
+  <p class="feed-lede" data-i18n>What is happening on Binance futures right now, as it happens. Market data, not a forecast and not financial advice.</p>
+  <button type="button" class="feed-more" id="feed-more" hidden></button>
+  <ol class="feed-list" id="feed-list"><li class="feed-wait" data-i18n>Waiting for the first events of the market.</li></ol>
+  <div class="feed-tg" id="feed-tg" hidden></div>
+</section>
+
 <header class="top">
   <a class="brand" href="../" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5"/></svg><b>Pulse</b></a>
   <nav class="views" data-i18n-attrs="aria-label" aria-label="Views">
@@ -38,6 +51,7 @@
   <div class="top-actions">
     <button type="button" class="cmd-btn" id="cmd-btn" data-i18n-attrs="aria-label" aria-label="Search pairs and commands"><span class="i" data-icon="search"></span><span class="cmd-text" data-i18n>Search</span><kbd id="cmd-kbd">Ctrl K</kbd></button>
     <div class="seg lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button></div>
+    <button type="button" class="btn ghost feed-back" id="feed-back" data-i18n>Live feed</button>
     <button type="button" class="btn icon-only ghost" id="settings-btn" data-i18n-attrs="aria-label,title" aria-label="Settings" title="Settings (,)"><span class="i" data-icon="gear"></span></button>
   </div>
 </header>
@@ -111,7 +125,7 @@
 
   <section class="panel clipfeed" data-i18n-attrs="aria-label" aria-label="What happened on this pair">
     <ol class="clip-events" id="clip-events"></ol>
-    <p class="clip-foot"><span data-i18n>Market data, not financial advice.</span><span class="clip-esc" data-i18n>R records a video, Esc leaves</span></p>
+    <p class="clip-foot"><span data-i18n>Market data, not financial advice.</span><span class="tg-slot" id="clip-tg" hidden></span><span class="clip-esc" data-i18n>R records a video, Esc leaves</span></p>
   </section>
 
   <section class="panel tape" data-i18n-attrs="aria-label" aria-label="Signal tape">
