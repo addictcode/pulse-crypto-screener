@@ -62,9 +62,9 @@ final class TelegramFormat {
         }
         text.append("\n\n");
         if (!bot.isEmpty()) {
-            text.append("The bot sent this ").append(delayMinutes).append(" min earlier: @").append(bot).append('\n');
+            text.append("The bot had this ").append(delayMinutes).append(" min earlier, as it happened: @").append(bot).append('\n');
         }
-        return text.append("<i>Market data, not financial advice.</i>").toString();
+        return text.append("<i>What the market did, not a forecast. Not financial advice.</i>").toString();
     }
 
     private static Optional<String> since(Signal s, Double now) {

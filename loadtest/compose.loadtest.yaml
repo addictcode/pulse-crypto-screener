@@ -1,0 +1,11 @@
+# The production stack with a made-up market instead of Binance and Bybit, for load tests where
+# the exchange cannot be reached (a cloud runner, a train). Use with loadtest.env:
+#   docker compose -p pulse-load -f compose.prod.yaml -f loadtest/compose.loadtest.yaml --env-file loadtest/loadtest.env up -d --build
+services:
+  backend:
+    environment:
+      PULSE_BINANCE_ENABLED: "false"
+      PULSE_BYBIT_ENABLED: "false"
+      PULSE_FAKE_MARKET_ENABLED: "true"
+      # the setup scanner asks the exchange for history of 40 pairs; nothing to learn from fake candles
+      PULSE_SETUPS_ENABLED: "false"

@@ -12,7 +12,7 @@ class TelegramLinksTest {
 
     private static TelegramLinks links(boolean enabled, String channel, String botUsername) {
         return new TelegramLinks(new PulseProperties(null, null, null, null, null, null,
-                new PulseProperties.Telegram(enabled, "T", 1L, "", true, channel, Duration.ZERO, 1, 2, botUsername), null));
+                new PulseProperties.Telegram(enabled, "T", 1L, "", true, channel, Duration.ZERO, 1, 2, botUsername, null, "en"), null));
     }
 
     @Test

@@ -6,8 +6,9 @@ name: video
 #   - pushing a branch video-batch/<anything>: the full batch, both languages, up to number 400;
 #   - a pull request that changes this file: a short batch of six, to show it still works.
 # The videos are split over parallel jobs (shards), one tab each, and every video is checked by
-# scripts/check.py. Result: pulse-videos-<run>-ru and -en (videos and captions) and
-# pulse-videos-<run>-plan (events.json and the posting schedule), kept 14 days.
+# scripts/check.py. Result: pulse-videos-<run>-ru and -en (videos with their covers pulse-NNN.jpg)
+# and pulse-videos-<run>-plan (captions for TikTok, Reels and Shorts, events.json and the posting
+# schedule), kept 14 days.
 on:
   workflow_dispatch:
     inputs:
@@ -76,7 +77,7 @@ jobs:
           [ "$LANG_INPUT" = en ] && langs='["en"]'
           shards=$(node -e "console.log(JSON.stringify([...Array(Number(process.env.SHARDS)).keys()]))")
           echo "matrix={\"lang\":$langs,\"shard\":$shards,\"of\":[${SHARDS}]}" >> "$GITHUB_OUTPUT"
-      # captions for every number (nothing rendered: --only 0) and the posting schedule
+      # captions for every number and platform (nothing rendered: --only 0) and the posting schedule
       - run: |
           node scripts/render.mjs --only 0 --out out
           node scripts/render.mjs --only 0 --out out/en --lang en
@@ -85,7 +86,7 @@ jobs:
         with:
           name: pulse-videos-${{ github.run_number }}-plan
           path: |
-            video/out/**/captions.txt
+            video/out/**/captions*.txt
             video/out/schedule.csv
             video/public/events.json
           retention-days: 14
@@ -135,12 +136,16 @@ jobs:
           if [ "${{ inputs.sfx }}" = "true" ]; then
             npm run render -- --template "$TEMPLATES" --max "$MAX" --lang ${{ matrix.lang }} --shard ${{ matrix.shard }}/${{ matrix.of }} --out out --sfx
           fi
-      - name: Check every video for broken frames
-        run: python3 scripts/check.py out/*.mp4
+      - name: Check every video for broken frames, and that each has its cover
+        run: |
+          python3 scripts/check.py out/*.mp4
+          for v in out/*.mp4; do c="${v%.mp4}"; c="${c%-sfx}.jpg"; [ -s "$c" ] || { echo "no cover $c"; exit 1; }; done
       - uses: actions/upload-artifact@v4
         with:
           name: shard-${{ github.run_number }}-${{ matrix.lang }}-${{ matrix.shard }}
-          path: video/out/*.mp4
+          path: |
+            video/out/*.mp4
+            video/out/*.jpg
           retention-days: 1
           compression-level: 0
 

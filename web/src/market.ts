@@ -154,14 +154,22 @@ export function connect(market: Market, url: string) {
 
   const open = () => {
     const ws = new WebSocket(url);
-    ws.onopen = () => {
-      attempt = 0;
-      market.setConnection('live');
+    let served = false;
+    ws.onopen = () => market.setConnection('live');
+    ws.onmessage = (event) => {
+      // a full server accepts the socket and closes it before the snapshot: only data counts as a
+      // working connection, or every refused visitor would knock again twice a second
+      if (!served) {
+        served = true;
+        attempt = 0;
+      }
+      market.apply(JSON.parse(event.data) as StreamMessage);
     };
-    ws.onmessage = (event) => market.apply(JSON.parse(event.data) as StreamMessage);
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       market.setConnection('reconnecting');
-      const delay = Math.min(15_000, 500 * 2 ** attempt++);
+      // 1013, try again later: the server is at its client limit; spread the retries out
+      const floor = event.code === 1013 ? 5_000 + Math.random() * 5_000 : 0;
+      const delay = Math.max(floor, Math.min(15_000, 500 * 2 ** attempt++));
       setTimeout(open, delay);
     };
   };

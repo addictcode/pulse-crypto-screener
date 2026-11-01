@@ -62,6 +62,13 @@ a day late. Zips are cached in `.cache/`, so a second run downloads only what is
    shift the plan, a number that now means another video is rendered again, not skipped. Rendering uses the Chrome installed on the Mac; `caffeinate` keeps the Mac
    from sleeping meanwhile.
 
+   **Covers and other platforms.** Next to every video goes its cover `pulse-NNN.jpg`
+   (1080×1920, frame 20: the hook is on screen in every template), for the cover picker of Reels
+   and Shorts; a video already rendered gets a missing cover without rendering again, and
+   `--no-covers` skips them. Next to `captions.txt` (TikTok) go `captions-reels.txt` (the same
+   words with Reels' hashtags) and `captions-shorts.txt` (a title of at most 100 characters,
+   with `#shorts` when it fits, and a description with the note and Shorts' hashtags).
+
 ### In GitHub Actions (no Mac)
 
 The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub's runners:
@@ -75,7 +82,8 @@ The **video** workflow (`.github/workflows/video.yml`) renders a batch on GitHub
 
 The videos are split over parallel jobs, one render tab each, and every one is checked by
 `scripts/check.py`. The result is three artifacts, kept 14 days: `pulse-videos-<run>-ru` and
-`-en` (the videos), and `pulse-videos-<run>-plan` (`captions.txt` for both languages, the
+`-en` (the videos and their covers), and `pulse-videos-<run>-plan` (`captions.txt`,
+`captions-reels.txt` and `captions-shorts.txt` for both languages, the
 60-day `schedule.csv` and the `events.json` the batch was made from).
 
 ## Broken frames
@@ -140,6 +148,24 @@ Every word in the frames and the post descriptions lives in `src/text.ts`, by la
 for English-speaking crypto TikTok (POV, "Nobody: / The market:", "Expectation / Reality"), not
 translated line by line; its hashtags are #crypto #trading #bitcoin #altcoins #futures #binance.
 A new line of text goes into both languages.
+
+## The series "I tested 60,329 crypto signals"
+
+Six parts of 25-35 s, told from `research/signals-2026-10.md`: signals against a coin toss, buying
+the pump, shorting the dump, the overfitting trap (a pattern on the first half of the data that is
+gone on the second), three popular filters, and what signals are for. Each part stands on its own
+and carries "Part N/6". Unlike the other templates it is a narrated piece: every scene in
+`src/series.ts` holds what is on screen and the line the voice reads over it, so the video and the
+narration cannot drift apart. The numbers are copied from the report; `scripts/series.test.mjs`
+checks the headline ones against it and that both languages show the same.
+
+```bash
+node scripts/series.mjs              # both languages to out/series/<lang>/signals-1..6.mp4
+node scripts/series.mjs --stills     # three frames per part
+```
+
+Next to the videos: `voiceover.md` (the narration with the second each line starts, to record
+over the video) and `captions.txt`.
 
 ## How a video is told
 

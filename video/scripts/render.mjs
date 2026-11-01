@@ -13,6 +13,9 @@
 //   node scripts/render.mjs --shard 2/8          every 8th video from the third on (parallel jobs in CI)
 //   node scripts/render.mjs --sfx                with Pulse's own sound effects, to pulse-NNN-sfx.mp4
 //   node scripts/render.mjs --lang en             the English set, to out/en/ (the same numbers and events)
+//   node scripts/render.mjs --no-covers           without the cover pulse-NNN.jpg next to each video
+// Next to captions.txt (TikTok) go captions-reels.txt (Instagram Reels) and captions-shorts.txt
+// (YouTube Shorts: a title of at most 100 characters and a description).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -20,7 +23,7 @@ import { parseArgs } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 
-import { LANGS, post } from '../src/text.ts';
+import { LANGS, post, postReels, shorts } from '../src/text.ts';
 import { plan } from './plan.mjs';
 
 const { values } = parseArgs({
@@ -35,6 +38,7 @@ const { values } = parseArgs({
     'per-template': { type: 'string' },
     sfx: { type: 'boolean', default: false },
     shard: { type: 'string' },
+    'no-covers': { type: 'boolean', default: false },
   },
 });
 const lang = values.lang;
@@ -61,6 +65,19 @@ const name = (i) => `pulse-${String(i + 1).padStart(3, '0')}${suffix}`;
 const manifestFile = `${out}manifest.json`;
 const manifest = existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile)) : {};
 writeFileSync(`${out}captions${suffix}.txt`, jobs.map((job, i) => `${name(i)}.mp4\n${post(lang, job.caption)}\n`).join('\n'));
+writeFileSync(`${out}captions-reels${suffix}.txt`, jobs.map((job, i) => `${name(i)}.mp4\n${postReels(lang, job.caption)}\n`).join('\n'));
+writeFileSync(`${out}captions-shorts${suffix}.txt`, jobs.map((job, i) => {
+  const { title, description } = shorts(lang, job.caption);
+  return `${name(i)}.mp4\nTitle: ${title}\nDescription: ${description}\n`;
+}).join('\n'));
+
+// The cover is a frame where the hook is on screen: every template opens with it, and by frame 20
+// it has faded in and nothing else has started (checked on stills of all templates).
+const COVER_FRAME = 20;
+const covers = !values['no-covers'] && !values.stills;
+// a cover belongs to the video, sound or not: pulse-NNN.jpg serves pulse-NNN-sfx.mp4 too
+const coverFile = (job) => `${out}${job.file.replace(/-sfx$/, '')}.jpg`;
+const videoDone = (job) => !values.force && existsSync(`${out}${job.file}.mp4`) && manifest[job.file] === key(job);
 
 const wanted = new Set(values.template.split(','));
 const todo = jobs
@@ -69,7 +86,7 @@ const todo = jobs
   .filter((job) => !values.only || values.only.split(',').map(Number).includes(job.number))
   .filter((job) => !values.shard || (job.number - 1) % Number(values.shard.split('/')[1]) === Number(values.shard.split('/')[0]))
   .filter((job, _, all) => !values['per-template'] || all.filter((j) => j.template === job.template).indexOf(job) < Number(values['per-template']))
-  .filter((job) => values.stills || values.force || !existsSync(`${out}${job.file}.mp4`) || manifest[job.file] !== key(job));
+  .filter((job) => values.stills || !videoDone(job) || (covers && !existsSync(coverFile(job))));
 console.log(`${jobs.length} videos in the plan, ${todo.length} to render now`);
 if (!todo.length) process.exit(0);
 
@@ -84,30 +101,37 @@ for (const [k, job] of todo.entries()) {
     console.log(`stills ${job.file} (${job.template})`);
     continue;
   }
-  // Chrome now and then hands over a frame of the wrong size, which shows as the screen tiled for
-  // one frame. One tab at a time stopped it in every test; each video is still checked, and
-  // rendered again if a broken frame got through.
-  for (let attempt = 1; ; attempt++) {
-    await renderMedia({
-      serveUrl,
-      composition,
-      inputProps: job.props,
-      codec: 'h264',
-      crf: 18,
-      outputLocation: `${out}${job.file}.mp4`,
-      concurrency: Number(process.env.CONCURRENCY ?? 1),
-      ...browser,
-    });
-    const check = spawnSync('python3', [new URL('./check.py', import.meta.url).pathname, `${out}${job.file}.mp4`], { encoding: 'utf8' });
-    if (check.status === 0) break;
-    if (attempt === 3) {
-      console.error(`${job.file}.mp4 still has broken frames after ${attempt} tries: ${check.stdout.trim()}`);
-      process.exitCode = 1;
-      break;
+  const fresh = !videoDone(job);
+  if (fresh) {
+    // Chrome now and then hands over a frame of the wrong size, which shows as the screen tiled for
+    // one frame. One tab at a time stopped it in every test; each video is still checked, and
+    // rendered again if a broken frame got through.
+    for (let attempt = 1; ; attempt++) {
+      await renderMedia({
+        serveUrl,
+        composition,
+        inputProps: job.props,
+        codec: 'h264',
+        crf: 18,
+        outputLocation: `${out}${job.file}.mp4`,
+        concurrency: Number(process.env.CONCURRENCY ?? 1),
+        ...browser,
+      });
+      const check = spawnSync('python3', [new URL('./check.py', import.meta.url).pathname, `${out}${job.file}.mp4`], { encoding: 'utf8' });
+      if (check.status === 0) break;
+      if (attempt === 3) {
+        console.error(`${job.file}.mp4 still has broken frames after ${attempt} tries: ${check.stdout.trim()}`);
+        process.exitCode = 1;
+        break;
+      }
+      console.warn(`${job.file}.mp4 had broken frames, rendering it again`);
     }
-    console.warn(`${job.file}.mp4 had broken frames, rendering it again`);
+    manifest[job.file] = key(job);
+    writeFileSync(manifestFile, JSON.stringify(manifest, null, 1));
+    console.log(`video ${job.file}.mp4, ${job.template} (${k + 1}/${todo.length})`);
   }
-  manifest[job.file] = key(job);
-  writeFileSync(manifestFile, JSON.stringify(manifest, null, 1));
-  console.log(`video ${job.file}.mp4, ${job.template} (${k + 1}/${todo.length})`);
+  if (covers && (!existsSync(coverFile(job)) || (fresh && !values.sfx))) {
+    await renderStill({ serveUrl, composition, inputProps: job.props, frame: COVER_FRAME, imageFormat: 'jpeg', jpegQuality: 90, output: coverFile(job), ...browser });
+    console.log(`cover ${coverFile(job).split('/').pop()}`);
+  }
 }

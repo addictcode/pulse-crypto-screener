@@ -54,19 +54,57 @@ final class TelegramApi {
 
     List<TelegramUpdate> getUpdates(long offset) {
         JsonNode body = http.get()
-                .uri("/getUpdates?offset={offset}&timeout={timeout}&allowed_updates={types}", offset, POLL_SECONDS, "[\"message\"]")
+                .uri("/getUpdates?offset={offset}&timeout={timeout}&allowed_updates={types}", offset, POLL_SECONDS,
+                        "[\"message\",\"pre_checkout_query\"]")
                 .retrieve()
                 .body(JsonNode.class);
         List<TelegramUpdate> updates = new ArrayList<>();
         for (JsonNode u : body.path("result")) {
+            long id = u.path("update_id").asLong();
+            JsonNode query = u.path("pre_checkout_query");
+            if (query.isObject()) {
+                updates.add(new TelegramUpdate(id, query.path("from").path("id").asLong(), null,
+                        query.path("from").path("username").asString(null),
+                        query.path("from").path("language_code").asString(null),
+                        new TelegramUpdate.PreCheckout(query.path("id").asString(""), query.path("currency").asString(""),
+                                query.path("total_amount").asInt(), query.path("invoice_payload").asString("")),
+                        null));
+                continue;
+            }
             JsonNode message = u.path("message");
+            JsonNode paid = message.path("successful_payment");
+            TelegramUpdate.Payment payment = paid.isObject()
+                    ? new TelegramUpdate.Payment(paid.path("currency").asString(""), paid.path("total_amount").asInt(),
+                            paid.path("invoice_payload").asString(""), paid.path("telegram_payment_charge_id").asString(""))
+                    : null;
             updates.add(new TelegramUpdate(
-                    u.path("update_id").asLong(),
+                    id,
                     message.path("chat").path("id").asLong(),
                     message.path("text").isString() ? message.path("text").asString() : null,
-                    message.path("from").path("username").asString(null)));
+                    message.path("from").path("username").asString(null),
+                    message.path("from").path("language_code").asString(null),
+                    null,
+                    payment));
         }
         return updates;
+    }
+
+    /** An invoice in Telegram Stars: no payment provider, one price line. */
+    void sendInvoice(long chatId, String title, String description, String payload, String label, int stars) {
+        post("/sendInvoice", Map.of(
+                "chat_id", chatId,
+                "title", title,
+                "description", description,
+                "payload", payload,
+                "currency", "XTR",
+                "prices", List.of(Map.of("label", label, "amount", stars))));
+    }
+
+    /** Yes or no to a pre-checkout query; a no shows the buyer {@code error}. */
+    void answerPreCheckoutQuery(String queryId, boolean ok, String error) {
+        post("/answerPreCheckoutQuery", ok
+                ? Map.of("pre_checkout_query_id", queryId, "ok", true)
+                : Map.of("pre_checkout_query_id", queryId, "ok", false, "error_message", error));
     }
 
     void sendMessage(long chatId, String html) {

@@ -428,10 +428,10 @@ export const RU: Record<string, string> = {
 
   // ---------- landing ----------
   'Pulse, a radar for crypto futures': 'Pulse: радар крипто-фьючерсов',
-  'Pulse scans every Binance USDT perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.':
-    'Pulse дважды в секунду просматривает все USDT-фьючерсы Binance: пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену.',
-  'Pulse scans every Binance perpetual twice a second for pumps, volume surges, liquidations and the order book walls that hold price.':
-    'Pulse дважды в секунду просматривает все бессрочные контракты Binance: пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену.',
+  'Pulse watches every Binance USDT perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
+    'Pulse дважды в секунду смотрит на все USDT-фьючерсы Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
+  'Pulse watches every Binance perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
+    'Pulse дважды в секунду смотрит на все бессрочные контракты Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
   'Sections': 'Разделы страницы',
   'Live': 'Вживую',
   'Features': 'Возможности',
@@ -452,8 +452,8 @@ export const RU: Record<string, string> = {
   'drag to spin, click a column to open the pair': 'тяни, чтобы вращать; клик по столбику откроет пару',
   'The most traded pairs right now': 'Самые торгуемые пары сейчас',
   'Everything that moves, as it moves.': 'Всё, что движется, в момент движения.',
-  'The tape lists every pump, dump, volume burst and liquidation wave the moment it happens. Stronger events are promoted to alerts, which also go to Telegram.':
-    'В ленту попадает каждый памп, дамп, всплеск объёма и волна ликвидаций в тот момент, когда они случаются. Сильные события становятся алертами и уходят ещё и в Telegram.',
+  'The tape lists every pump, dump, volume burst and liquidation wave the moment it happens, not once it is on everyone\'s chart. The biggest ones also go to Telegram.':
+    'В ленту попадает каждый памп, дамп, всплеск объёма и волна ликвидаций в тот момент, когда они случаются, а не когда их уже видно на всех графиках. Самые сильные уходят ещё и в Telegram.',
   'Connecting to the market.': 'Подключаемся к рынку.',
   'See where the size is waiting.': 'Видно, где стоит крупный объём.',
   'Live order books for the 60 most traded pairs. Pulse finds resting orders many times larger than the book around them, tracks how long they stand and how fast the market would eat through them.':
@@ -472,8 +472,8 @@ export const RU: Record<string, string> = {
     'Цена 0.8421, +9,6% за день. Объём в 4,1× выше часового темпа, открытый интерес +3,2% за 15 минут.',
   'Pump, 14:32 UTC': 'Памп, 14:32 UTC',
   'Signal record': 'Статистика сигналов',
-  'Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what usually follows each kind, so you learn which ones deserve a reaction.':
-    'Каждый сигнал проверяется через 5 минут, 15 минут и час. Статистика показывает, что обычно бывает после каждого вида, и видно, на какие стоит реагировать.',
+  'Every signal is checked 5 minutes, 15 minutes and an hour later. The record shows what followed each kind, and so far the honest answer is that none of them tells which way the price goes next.':
+    'Каждый сигнал проверяется через 5 минут, 15 минут и час. Статистика показывает, что было после каждого вида, и честный ответ пока такой: ни один из них не говорит, куда цена пойдёт дальше.',
   'Price alerts': 'Ценовые алерты',
   'Set a level from the chart with Alt and a click, or from the bot. It fires once: a sound and a note on screen, a message on your phone.':
     'Уровень ставится с графика через Alt и клик или через бота. Срабатывает один раз: звук и плашка на экране, сообщение на телефоне.',
@@ -521,7 +521,7 @@ export const RU: Record<string, string> = {
   'The rest of the desk.': 'Остальные инструменты.',
   'Alerts reach your phone with context in one message. Thresholds, mute and watchlist are set by chatting to the bot.':
     'Алерт приходит на телефон одним сообщением вместе с контекстом. Пороги, паузу и избранное задаёшь командами боту.',
-  'Watch the market, not tabs.': 'Смотри на рынок, а не на вкладки.',
+  'The market moves. You see it as it does.': 'Рынок двинулся — ты видишь это сразу.',
   'Pulse is a personal research tool. Nothing here is investment advice.': 'Pulse — личный исследовательский инструмент. Ничто здесь не является инвестиционной рекомендацией.',
 
   // ---------- command palette ----------
@@ -580,10 +580,10 @@ export const RU: Record<string, string> = {
   'Home': 'Главная',
   'Pulse signal record': 'Pulse: статистика сигналов',
   'The record': 'Статистика',
-  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. This is what followed, all of it, including the signals that went the wrong way.':
-    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Здесь всё, что было после, целиком, включая сигналы, которые не сработали.',
-  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. The full record, including the ones that went the wrong way.':
-    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Полная статистика, включая сигналы, которые не сработали.',
+  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. This is what followed, all of it, including the times the price turned the other way.':
+    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Здесь всё, что было после, целиком, включая случаи, когда цена пошла в другую сторону.',
+  'Every signal Pulse fires is checked 5 minutes, 15 minutes and an hour later. The full record, including the times the price turned the other way.':
+    'Каждый сигнал Pulse проверяется через 5 минут, 15 минут и час. Полная статистика, включая случаи, когда цена пошла в другую сторону.',
   'Signals measured': 'Измерено сигналов',
   'Went their way within an hour': 'Пошли в сторону сигнала за час',
   'Average move their way, 1 hour': 'Средний ход в сторону сигнала за час',
@@ -593,18 +593,29 @@ export const RU: Record<string, string> = {
   'No measured signals in this period yet.': 'За этот период измеренных сигналов пока нет.',
   'The record is kept by the Pulse server; this demo runs without one.': 'Статистику ведёт сервер Pulse, а это демо работает без него.',
   'The record is not available right now.': 'Статистика сейчас недоступна.',
+  'What the record shows': 'Что показывает статистика',
+  'A signal tells you what is happening right now, not what comes next.': 'Сигнал говорит, что происходит прямо сейчас, а не что будет дальше.',
+  "On 91 days of Binance's own archive and 150 pairs, an hour after a pump, dump or volume signal the price had kept going the signal's way in 44 to 48% of cases.":
+    'На 91 дне архива самой Binance по 150 парам через час после сигнала пампа, дампа или объёма цена продолжала идти в сторону сигнала в 44–48% случаев.',
+  'The average move an hour later was smaller than the fees of a round trip.': 'Средний ход через час оказался меньше комиссий за вход и выход.',
+  'Four ways to tell the good signals from the rest (heavy volume, US hours, the 4 hour trend, liquidity) made no difference on the half of the data kept aside for checking.':
+    'Четыре способа отделить хорошие сигналы от остальных (большой объём, часы торгов в США, тренд на 4 часах, ликвидность) не дали разницы на половине данных, отложенной для проверки.',
+  'So Pulse is for seeing a move as it happens and understanding the market, not for guessing the next candle.':
+    'Поэтому Pulse нужен, чтобы видеть движение в момент, когда оно происходит, и понимать рынок, а не угадывать следующую свечу.',
+  'Read the study and how it was done': 'Исследование целиком и как оно сделано',
   'How it is counted': 'Как считается',
   'The price at the moment a signal fires is compared with the price 5 minutes, 15 minutes and an hour later. Nothing is removed afterwards.':
     'Цена в момент сигнала сравнивается с ценой через 5 минут, 15 минут и час. Задним числом ничего не удаляется.',
-  'Each cell shows the average move in the direction the signal pointed and how often the price went that way. A dump followed by a fall counts as right.':
-    'В каждой ячейке средний ход цены в сторону сигнала и как часто цена туда пошла. Дамп, после которого цена упала дальше, считается верным.',
+  'Each cell shows the average move in the direction the signal pointed and how often the price went that way. A dump followed by a further fall counts as going its way.':
+    'В каждой ячейке средний ход цены в сторону сигнала и как часто цена туда пошла. Дамп, после которого цена упала дальше, считается ходом в его сторону.',
   'Signals without a direction, like a volume spike on a flat price, are left out of the totals. Kinds with fewer than ten signals are dimmed: that is too few to call a pattern.':
     'Сигналы без направления, например всплеск объёма при стоящей цене, в итог не входят. Виды, где сигналов меньше десяти, приглушены: это слишком мало, чтобы говорить о закономерности.',
   'Fees, slippage and the time it takes to react are not included. A signal that was right on average can still lose money in practice.':
     'Комиссии, проскальзывание и время на реакцию не учтены. Сигнал, верный в среднем, на практике всё равно может приносить убыток.',
   'Signals in Telegram': 'Сигналы в Telegram',
   Channel: 'Канал',
-  'Get the signals as they fire': 'Сигналы в момент срабатывания',
+  'See the market in Telegram as it moves':
+    'Рынок в Telegram в момент движения',
 
   // ---------- live feed (a phone's first visit) ----------
   'Live feed': 'Живая лента',
