@@ -55,12 +55,16 @@
 
 ### 5. Переезд на сервер
 
-- [ ] `deploy/oracle/`: cloud-init для Oracle Cloud Always Free (Ubuntu ARM,
+- [x] `deploy/oracle/`: cloud-init для Oracle Cloud Always Free (Ubuntu ARM,
   VM.Standard.A1.Flex): Docker, пользователь `pulse`, firewall 22/80/443, клон репо, `.env` из
   шаблона, запуск `compose.prod.yaml`, автообновления безопасности.
-- [ ] `deploy/oracle/README.md` по шагам для новичка: аккаунт (регион не США — Binance отвечает
+- [x] `deploy/oracle/README.md` по шагам для новичка: аккаунт (регион не США — Binance отвечает
   451), инстанс, ключи, DNS (DuckDNS или свой домен), секреты GitHub для деплоя из CI.
-- [ ] Скрипт проверен `shellcheck` и запуском в контейнере Ubuntu.
+- [x] Скрипт проверен `shellcheck` и запуском в контейнере Ubuntu.
+
+Сделано: ветка `claude/oracle-deploy`. Проверка в контейнере (`test-in-docker.sh`, workflow
+`server.yml`) не запускает сам стек: Docker, своп и systemd там недоступны. Настоящая машина
+Oracle и аккаунт — за владельцем.
 
 ### 6. Нагрузочный тест
 

@@ -1,0 +1,27 @@
+#cloud-config
+# Pulse on Oracle Cloud Always Free. Paste this whole file into Create instance → Show advanced
+# options → Management → Initialization script (cloud-init), after filling in the three values
+# below. On the first boot the server installs everything and starts Pulse by itself; it takes
+# 10-15 minutes. Progress: sudo tail -f /var/log/cloud-init-output.log
+#
+#   PULSE_DOMAIN   your domain, e.g. mypulse.duckdns.org (empty: set up, start later by hand)
+#   DUCKDNS_TOKEN  the token from duckdns.org, if the domain is a DuckDNS one (else leave empty)
+#   BRANCH         which branch of Pulse to run
+write_files:
+  - path: /etc/pulse/install.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      PULSE_DOMAIN=
+      DUCKDNS_TOKEN=
+      REPO=https://github.com/addictcode/pulse-crypto-screener.git
+      BRANCH=main
+
+# setup.sh does the updates itself, once
+package_update: false
+package_upgrade: false
+
+runcmd:
+  - [bash, -c, "set -e; . /etc/pulse/install.env; apt-get update -q; apt-get install -y -q git; [ -d /opt/pulse/.git ] || git clone --branch \"$BRANCH\" \"$REPO\" /opt/pulse; bash /opt/pulse/deploy/oracle/setup.sh"]
+
+final_message: "Pulse setup finished after $UPTIME seconds; see /var/log/cloud-init-output.log"
