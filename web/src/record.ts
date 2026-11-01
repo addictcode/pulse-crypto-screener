@@ -10,8 +10,10 @@ import { localize, mountLangSwitch, t } from './i18n';
 import { followed, overall, type Followed } from './record-math';
 import { load, save } from './storage';
 import type { OutcomeStats } from './types';
+import { hit } from './visit';
 
 localize();
+hit('record');
 mountLangSwitch(document.getElementById('lang')!);
 
 const $ = (id: string) => document.getElementById(id)!;

@@ -10,8 +10,10 @@ import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
 import type { SetupBoard } from './types';
+import { hit } from './visit';
 
 localize();
+hit('landing');
 mountLangSwitch(document.getElementById('lang')!);
 // sections wait out of sight only when there is a script to bring them in (see .reveal)
 document.documentElement.classList.add('js');

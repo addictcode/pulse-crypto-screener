@@ -1,6 +1,8 @@
 package dev.pulse.telegram;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +28,7 @@ import dev.pulse.setup.SetupOpened;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalHistory;
+import dev.pulse.visit.VisitLog;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,6 +58,7 @@ class TelegramBot {
     private final Set<Long> toldPrivate = ConcurrentHashMap.newKeySet();
     private final Map<Long, long[]> commandCounts = new HashMap<>();
     private final ChannelFeed channel;
+    private final VisitLog visits;
 
     private TelegramApi api;
     private TelegramSender sender;
@@ -62,8 +66,9 @@ class TelegramBot {
     private volatile boolean running;
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
-                OrderBookStore books, DensityScanner density, AlertService alerts) {
+                OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits) {
         this.config = properties.telegram();
+        this.visits = visits;
         this.accounts = accounts;
         this.market = market;
         this.commands = new BotCommands(accounts, history, market, books, density, alerts);
@@ -189,7 +194,12 @@ class TelegramBot {
         if (chat < 0 || !owner && !allowCommand(chat, now)) {
             return;
         }
-        String command = update.text().trim().split("\\s+")[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
+        String[] words = update.text().trim().split("\\s+");
+        String command = words[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
+        if (owner && command.equals("/visits")) {
+            reply(chat, visitReport(words.length > 1 ? words[1] : null));
+            return;
+        }
         switch (command) {
             case "/start" -> {
                 boolean fresh = accounts.subscribe(chat);
@@ -201,6 +211,12 @@ class TelegramBot {
             }
             default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text()));
         }
+    }
+
+    /** The site funnel, for the owner only: everyone else gets "unknown command" like for any typo. */
+    private String visitReport(String arg) {
+        int days = VisitReport.days(arg);
+        return VisitReport.format(visits.since(VisitReport.from(LocalDate.now(ZoneOffset.UTC), days)), days);
     }
 
     /** Keeps one chat from hogging the bot: a script sending commands nonstop gets ignored. */

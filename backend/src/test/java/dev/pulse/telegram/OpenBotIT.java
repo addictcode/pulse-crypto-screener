@@ -125,6 +125,14 @@ class OpenBotIT {
     }
 
     @Test
+    void onlyTheOwnerSeesTheSiteFunnel() {
+        message(VISITOR, "/visits");
+
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":77") && body.contains("Unknown command"))).isTrue();
+        assertThat(sent.stream().filter(body -> body.contains("\"chat_id\":77") && body.contains("Visits"))).isEmpty();
+    }
+
+    @Test
     void whoeverBlocksTheBotIsUnsubscribed() {
         accounts.subscribe(BLOCKED);
 

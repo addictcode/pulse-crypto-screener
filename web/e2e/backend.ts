@@ -36,6 +36,8 @@ const STEP: Record<string, number> = { '1m': 60, '5m': 300, '15m': 900, '1h': 36
 export interface FakeBackend {
   /** Sends a stream message to every open page, as the server would on its next tick. */
   push(message: StreamMessage): void;
+  /** What the pages counted with POST /api/hit, in order. */
+  hits: Array<{ page: string; source: string }>;
 }
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
@@ -60,6 +62,11 @@ export async function fakeBackend(page: Page): Promise<FakeBackend> {
     const price = ROWS.find((r) => r.symbol === symbol)?.price ?? 1;
     return route.fulfill({ json: candles(price, STEP[url.searchParams.get('interval') ?? '5m'] ?? 300) });
   });
+  const hits: FakeBackend['hits'] = [];
+  await page.route('**/api/hit', (route) => {
+    hits.push(route.request().postDataJSON() as FakeBackend['hits'][number]);
+    return route.fulfill({ status: 204 });
+  });
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/signals**', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/setups**', (route) =>
@@ -75,5 +82,5 @@ export async function fakeBackend(page: Page): Promise<FakeBackend> {
   await page.route('**/api/positioning**', (route) =>
     route.fulfill({ json: { openInterest: [], longShortAccounts: [], longShortTop: [], takerBuySell: [], funding: [] } }),
   );
-  return { push: (message) => sockets.forEach((ws) => ws.send(JSON.stringify(message))) };
+  return { push: (message) => sockets.forEach((ws) => ws.send(JSON.stringify(message))), hits };
 }

@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-visit-day
+      author: pulse
+      comment: >
+        The funnel from a video to the site, the terminal and the bot, counted per day, page and
+        where the visitor came from. Only counters: no address, no user agent, nothing that
+        tells one visitor from another.
+      changes:
+        - createTable:
+            tableName: visit_day
+            columns:
+              - column: { name: day, type: date, constraints: { nullable: false } }
+              - column: { name: page, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: source, type: varchar(16), constraints: { nullable: false } }
+              - column: { name: count, type: bigint, defaultValueNumeric: 0, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: visit_day
+            columnNames: day, page, source
+            constraintName: pk_visit_day
