@@ -4,6 +4,7 @@ import { t } from './i18n';
 import type { Market } from './market';
 import { signalTitle } from './signal-text';
 import { tapeLabel } from './tape';
+import { loadTelegramTargets, telegramAnchor } from './telegram';
 
 const $ = (id: string) => document.getElementById(id)!;
 /** How many events the frame shows: enough to tell a story, few enough to read in a video. */
@@ -53,6 +54,13 @@ export class ClipFrame {
     market.newTape.on(() => this.schedule());
     market.newLiquidations.on(() => this.schedule());
     document.addEventListener('mousemove', () => this.wake());
+    // the handle is what a viewer of the video can look up; a link inside a video does nothing
+    void loadTelegramTargets().then(([first]) => {
+      if (!first) return;
+      const slot = $('clip-tg');
+      slot.replaceChildren(telegramAnchor(first, 'clip-tg', `Telegram @${first.name}`));
+      slot.hidden = false;
+    });
   }
 
   setSymbol(symbol: string) {

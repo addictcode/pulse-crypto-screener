@@ -35,7 +35,7 @@
 .nav, .foot { position: relative; z-index: 3; }
 .landing main { position: static; }
 .mega { position: relative; z-index: 0; }
-.hero-foot, .ticker, .band-body, .unroll-pin, .features, .how, .final .cta { position: relative; z-index: 2; }
+.hero-foot, .ticker, .band-body, .unroll-pin, .features, .how, .final .actions { position: relative; z-index: 2; }
 .static .scene { display: none; }
 
 .nav { height: 76px; padding: 0 var(--gutter); display: flex; align-items: center; gap: 20px; }
@@ -323,7 +323,10 @@ rect.sk-break { fill: var(--up); }
 .final { position: relative; min-height: 100svh; padding: 12svh var(--gutter) 0; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
 .final .mega { --mega: min(6.6vw, 15svh); max-width: 16ch; text-wrap: balance; }
 html[lang="ru"] .final .mega { --mega: min(5.6vw, 14svh); max-width: 18ch; }
-.final .cta { margin-top: 40px; pointer-events: auto; }
+.final .actions { margin-top: 40px; pointer-events: auto; }
+/* the Telegram buttons join the row they are put in once the server says where they lead */
+.tg-slot:not([hidden]) { display: contents; }
+.ghost.tg-fit { justify-content: center; padding: 0; }
 
 .foot {
   /* laid over the bottom of the ending; a fixed height keeps the page from ending below it */

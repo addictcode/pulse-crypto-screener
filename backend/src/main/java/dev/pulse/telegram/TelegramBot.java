@@ -28,7 +28,9 @@ import dev.pulse.setup.SetupOpened;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalHistory;
+import dev.pulse.visit.FunnelStep;
 import dev.pulse.visit.VisitLog;
+import dev.pulse.visit.VisitSource;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,6 +61,7 @@ class TelegramBot {
     private final Map<Long, long[]> commandCounts = new HashMap<>();
     private final ChannelFeed channel;
     private final VisitLog visits;
+    private final TelegramLinks links;
 
     private TelegramApi api;
     private TelegramSender sender;
@@ -66,9 +69,10 @@ class TelegramBot {
     private volatile boolean running;
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
-                OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits) {
+                OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits, TelegramLinks links) {
         this.config = properties.telegram();
         this.visits = visits;
+        this.links = links;
         this.accounts = accounts;
         this.market = market;
         this.commands = new BotCommands(accounts, history, market, books, density, alerts);
@@ -94,6 +98,7 @@ class TelegramBot {
         try {
             api.setMyCommands(BotCommands.MENU);
             username = api.username();
+            links.reported(username);
         } catch (RuntimeException e) {
             log.warn("Telegram: could not set up the bot profile: {}", api.redact(e.getMessage()));
         }
@@ -203,6 +208,10 @@ class TelegramBot {
         switch (command) {
             case "/start" -> {
                 boolean fresh = accounts.subscribe(chat);
+                if (fresh) {
+                    // t.me/<bot>?start=site arrives as "/start site": the last step of the funnel
+                    visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.BOT_START, VisitSource.of(words.length > 1 ? words[1] : null));
+                }
                 reply(chat, (fresh ? "" : "Welcome back.\n\n") + BotCommands.welcome());
             }
             case "/stop" -> {

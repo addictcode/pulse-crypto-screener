@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,6 +38,9 @@ import dev.pulse.market.MarketStore;
 import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalFired;
 import dev.pulse.signal.SignalType;
+import dev.pulse.visit.FunnelStep;
+import dev.pulse.visit.VisitLog;
+import dev.pulse.visit.VisitSource;
 
 /**
  * The bot open to everyone, with a channel, against a fake Telegram Bot API.
@@ -54,6 +59,7 @@ class OpenBotIT {
 
     private static final long VISITOR = 77;
     private static final long BLOCKED = 66;
+    private static final long STARTER = 55;
 
     private static HttpServer telegram;
     private static final Queue<String> pendingUpdates = new ConcurrentLinkedQueue<>();
@@ -67,6 +73,10 @@ class OpenBotIT {
     private AccountService accounts;
     @Autowired
     private ApplicationEventPublisher events;
+    @Autowired
+    private VisitLog visits;
+    @Autowired
+    private TelegramLinks links;
 
     @BeforeAll
     static void startFakeTelegram() throws IOException {
@@ -122,6 +132,24 @@ class OpenBotIT {
         fire("WIF jumps after the stop", 2.8);
         assertThat(awaitSent(body -> body.contains("\"chat_id\":42") && body.contains("after the stop"))).as("the owner still gets it").isTrue();
         assertThat(sent.stream().filter(body -> body.contains("\"chat_id\":77") && body.contains("after the stop"))).isEmpty();
+    }
+
+    @Test
+    void aStartFromTheSiteButtonIsTheLastStepOfTheFunnel() {
+        message(STARTER, "/start site");
+        // a new chat is greeted, not welcomed back
+        assertThat(awaitSent(body -> body.contains("\"chat_id\":55") && body.contains("Signals start now"))).isTrue();
+        assertThat(sent.stream().filter(body -> body.contains("\"chat_id\":55") && body.contains("Welcome back"))).isEmpty();
+
+        assertThat(visits.since(LocalDate.now(ZoneOffset.UTC)))
+                .anyMatch(r -> r.step() == FunnelStep.BOT_START && r.source() == VisitSource.SITE && r.count() >= 1);
+    }
+
+    @Test
+    void theSiteLinksToTheBotByTheNameTelegramReportsAndToTheChannel() {
+        assertThat(await(() -> !links.links().bot().isEmpty())).isTrue();
+
+        assertThat(links.links()).isEqualTo(new TelegramLinks.Links("PulseTestBot", "pulse_test"));
     }
 
     @Test

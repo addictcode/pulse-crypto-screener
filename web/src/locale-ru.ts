@@ -602,4 +602,7 @@ export const RU: Record<string, string> = {
     'Сигналы без направления, например всплеск объёма при стоящей цене, в итог не входят. Виды, где сигналов меньше десяти, приглушены: это слишком мало, чтобы говорить о закономерности.',
   'Fees, slippage and the time it takes to react are not included. A signal that was right on average can still lose money in practice.':
     'Комиссии, проскальзывание и время на реакцию не учтены. Сигнал, верный в среднем, на практике всё равно может приносить убыток.',
+  'Signals in Telegram': 'Сигналы в Telegram',
+  Channel: 'Канал',
+  'Get the signals as they fire': 'Сигналы в момент срабатывания',
 };
