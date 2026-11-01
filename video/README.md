@@ -141,6 +141,24 @@ for English-speaking crypto TikTok (POV, "Nobody: / The market:", "Expectation /
 translated line by line; its hashtags are #crypto #trading #bitcoin #altcoins #futures #binance.
 A new line of text goes into both languages.
 
+## The series "I tested 60,329 crypto signals"
+
+Six parts of 25-35 s, told from `research/signals-2026-10.md`: signals against a coin toss, buying
+the pump, shorting the dump, the overfitting trap (a pattern on the first half of the data that is
+gone on the second), three popular filters, and what signals are for. Each part stands on its own
+and carries "Part N/6". Unlike the other templates it is a narrated piece: every scene in
+`src/series.ts` holds what is on screen and the line the voice reads over it, so the video and the
+narration cannot drift apart. The numbers are copied from the report; `scripts/series.test.mjs`
+checks the headline ones against it and that both languages show the same.
+
+```bash
+node scripts/series.mjs              # both languages to out/series/<lang>/signals-1..6.mp4
+node scripts/series.mjs --stills     # three frames per part
+```
+
+Next to the videos: `voiceover.md` (the narration with the second each line starts, to record
+over the video) and `captions.txt`.
+
 ## How a video is told
 
 `src/story.ts` reads the hour after the signal from the candles and picks the plot: a rocket (it
