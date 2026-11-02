@@ -55,8 +55,26 @@
   $('state-text').textContent = say('Opening Pulse', 'Открываем Pulse');
   $('more').innerHTML = say('Source code: ', 'Исходный код: ') + `<a href="https://github.com/${REPO}">github.com/${REPO}</a>`;
 
+  // The visit counter on the full version tells TikTok from Telegram by utm_source or ref in the
+  // address, else by the referrer. This hop would cost both: the tag stays here unless carried
+  // over, and the referrer becomes this page. So the tag goes along, and an untagged visit names
+  // where it really came from, or "direct".
+  function carried() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has('utm_source') && !params.has('ref')) {
+      let from = '';
+      try {
+        from = document.referrer ? new URL(document.referrer).hostname : '';
+      } catch {
+        from = '';
+      }
+      params.set('ref', from && from !== location.hostname ? from : 'direct');
+    }
+    return '?' + params.toString() + location.hash;
+  }
+
   function openDemo() {
-    location.replace('demo/' + location.hash);
+    location.replace('demo/' + carried());
   }
 
   async function currentAddress() {
@@ -77,7 +95,7 @@
       // nothing: only Pulse's API, readable from here thanks to its CORS header, counts as alive.
       const status = await fetch(`${address}/api/status`, { signal: AbortSignal.timeout(6000) });
       if (!status.ok) throw new Error(String(status.status));
-      location.replace(address + '/' + location.hash);
+      location.replace(address + '/' + carried());
     })
     .catch(openDemo);
 </script>

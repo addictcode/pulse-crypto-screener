@@ -99,6 +99,9 @@ export class Palette {
       el.setAttribute('aria-selected', String(on));
       if (on) el.scrollIntoView({ block: 'nearest' });
     });
+    // the focus stays in the box; a screen reader follows the highlighted row through this
+    if (this.items[index]) this.input.setAttribute('aria-activedescendant', `pal-opt-${index}`);
+    else this.input.removeAttribute('aria-activedescendant');
   }
 
   private render() {
@@ -122,7 +125,7 @@ export class Palette {
       if (!items.length) return '';
       const html = items.map((item) => {
         const i = this.items.push(item) - 1;
-        return `<li class="pal-item" role="option" data-i="${i}" aria-selected="false">${item.html}</li>`;
+        return `<li class="pal-item" role="option" id="pal-opt-${i}" data-i="${i}" aria-selected="false">${item.html}</li>`;
       });
       return `<li class="pal-group" role="presentation">${title}</li>${html.join('')}`;
     };
@@ -138,7 +141,7 @@ export class Palette {
     const html = upper
       ? section(t('Pairs'), pairItems) + section(t('Commands'), commandItems)
       : section(t('Commands'), commandItems) + section(t('Most traded'), pairItems);
-    this.list.innerHTML = html || `<li class="pal-empty">${t('Nothing found. Try a ticker like SOL, or a command like "heatmap".')}</li>`;
+    this.list.innerHTML = html || `<li class="pal-empty" role="option" aria-disabled="true">${t('Nothing found. Try a ticker like SOL, or a command like "heatmap".')}</li>`;
     this.highlight(0);
   }
 }

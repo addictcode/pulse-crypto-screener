@@ -32,7 +32,9 @@ mountIcons();
 mountLangSwitch(document.getElementById('lang')!);
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-document.getElementById('cmd-kbd')!.textContent = isMac ? '⌘K' : 'Ctrl K';
+// drawn by CSS: the shortcut is shown, but stays out of the button's spoken name
+document.getElementById('cmd-kbd')!.dataset.key = isMac ? '⌘K' : 'Ctrl K';
+document.getElementById('cmd-btn')!.setAttribute('aria-keyshortcuts', isMac ? 'Meta+K' : 'Control+K');
 
 // asked before anything below saves a setting: a first visit on a phone opens the live feed
 const firstVisit = nothingStored();
@@ -115,7 +117,7 @@ const setPhoneMode = (mode: PhoneMode) => {
   if (mode === 'feed') history.replaceState(null, '', location.pathname);
   window.scrollTo({ top: 0 });
 };
-new LiveFeed(
+const feed = new LiveFeed(
   market,
   // a card's chart opens in the terminal for now; the feed stays the place this phone starts in
   (symbol) => {
@@ -267,6 +269,9 @@ startFeed(market).catch(() => {
   const status = document.getElementById('st-conn')!;
   status.dataset.state = 'reconnecting';
   status.textContent = t('Binance cannot be reached from this network');
+  // only the demo can fail here: it asks Binance from the visitor's browser, and Binance does not
+  // serve every country and network (the United States gets 451)
+  feed.unreachable(t('This demo reads Binance straight from your browser, and Binance cannot be reached from this network or country. The full version gets the data on its server and works from anywhere.'));
 });
 watchVenues(market);
 hit('app');

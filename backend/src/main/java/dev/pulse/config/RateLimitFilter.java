@@ -26,10 +26,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** Buckets idle this long are full again anyway, so they can be forgotten. */
     static final long IDLE_MS = 10 * 60_000;
     static final int MAX_CLIENTS = 50_000;
+    /** Where new clients go while the map is full of active ones: they share one bucket. */
+    static final String OVERFLOW = "overflow";
+    /** A full sweep of the map is O(clients): at most this often, not on every request. */
+    static final long SWEEP_MS = 1_000;
 
     private final double perMs;
     private final int burst;
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private volatile long sweptAt = -SWEEP_MS;
 
     public RateLimitFilter(PulseProperties properties) {
         this.perMs = properties.limits().requestsPerMinute() / 60_000.0;
@@ -58,10 +63,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     /** @return 0 if the call may go ahead, otherwise how long until it could */
     long take(String client, long now) {
-        if (buckets.size() >= MAX_CLIENTS) {
-            buckets.values().removeIf(b -> now - b.updatedAt >= IDLE_MS);
+        String key = client;
+        if (buckets.size() >= MAX_CLIENTS && !buckets.containsKey(client)) {
+            if (now - sweptAt >= SWEEP_MS) {
+                sweptAt = now;
+                buckets.values().removeIf(b -> now - b.updatedAt >= IDLE_MS);
+            }
+            // still full of clients active within ten minutes: that is a flood, not visitors, and
+            // the newcomers are limited together instead of growing the map without end
+            if (buckets.size() >= MAX_CLIENTS) {
+                key = OVERFLOW;
+            }
         }
-        Bucket bucket = buckets.computeIfAbsent(client, k -> new Bucket(burst, now));
+        Bucket bucket = buckets.computeIfAbsent(key, k -> new Bucket(burst, now));
         synchronized (bucket) {
             bucket.tokens = Math.min(burst, bucket.tokens + (now - bucket.updatedAt) * perMs);
             bucket.updatedAt = now;
@@ -71,6 +85,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
             return (long) Math.ceil((1 - bucket.tokens) / perMs);
         }
+    }
+
+    int clients() {
+        return buckets.size();
     }
 
     private static final class Bucket {

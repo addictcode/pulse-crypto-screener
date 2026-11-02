@@ -154,6 +154,12 @@ export class LiveFeed {
       .join('');
   }
 
+  /** The market never arrived: say so instead of waiting for it forever. */
+  unreachable(reason: string) {
+    if (this.filled) return;
+    this.list.innerHTML = `<li class="feed-wait" role="status">${escape(reason)}</li>`;
+  }
+
   /** New events are counted on a floating button; the cards on screen stay where they are. */
   private notice() {
     const fresh = feedCards(this.market).filter((c) => !this.shown.has(c.key)).length;
