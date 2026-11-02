@@ -214,6 +214,39 @@ Playwright поднимает её сам): dev-сервер подключае�
 3. Запусти бэкенд и напиши боту что угодно: он ответит твоим chat id.
 4. Впиши chat id в `owner-chat-id`, перезапусти. Теперь бот отвечает только тебе.
 
+### Запуск на живом стеке (Docker, `.env`)
+
+Стек в Docker берёт настройки не из `local.yml`, а из `.env` в корне репозитория (его создаёт
+`deploy/home.sh`). По шагам:
+
+1. **Бот.** [@BotFather](https://t.me/BotFather) → `/newbot`, имя `Pulse`, username — любой
+   свободный, оканчивающийся на `bot`. Там же:
+   - `/setuserpic` — `web/public/icon-512.png` (тот же куб, что на сайте);
+   - `/setdescription` (видно до первого /start): «Pulse видит рынок фьючерсов Binance: пампы,
+     дампы, всплески объёма, ликвидации и стены в стакане — в момент события. Рыночные данные,
+     не прогноз и не финансовый совет.»;
+   - `/setabouttext` (в профиле, до 120 символов): «Сигналы рынка фьючерсов Binance в момент
+     события. Не финансовый совет.»;
+   - `/setjoingroups` → Disable: бот личный, в группах ему делать нечего.
+   Меню команд бот выставляет сам при старте.
+2. **Канал.** Новый публичный канал, ссылка вида `t.me/<имя>`. В настройках канала —
+   Administrators → добавить бота, право только «Post messages».
+3. **`.env`** (токен — секрет: не коммитить и не вставлять в чаты):
+   ```
+   PULSE_TELEGRAM_ENABLED=true
+   PULSE_TELEGRAM_TOKEN=<токен от BotFather>
+   PULSE_TELEGRAM_CHANNEL=@<имя канала>
+   PULSE_TELEGRAM_OPEN=false
+   ```
+   `docker compose -p pulse -f compose.prod.yaml -f compose.tunnel.yaml up -d backend`, написать
+   боту — он ответит chat id; вписать его в `PULSE_TELEGRAM_OWNER_CHAT_ID=` и перезапустить так же.
+4. **Проверить самому:** `/status`, `/digest ru`, `/visits`. Через несколько минут после сильного
+   сигнала в канале должен появиться пост.
+5. **Открыть для всех** — только когда всё работает: `PULSE_TELEGRAM_OPEN=true` и перезапуск.
+   Пока там `false`, бот отвечает только владельцу: зритель из TikTok нажмёт /start и не получит
+   ответа. По желанию — `PULSE_TELEGRAM_DIGEST_HOUR=17` (сводка в канал в 17:00 UTC, 20:00 по
+   Минску) и `PULSE_TELEGRAM_DIGEST_LANG=ru`.
+
 Команды: `/signals`, `/on` / `/off <тип|all>`, `/threshold <тип> <значение|default>`,
 `/mute 30m|2h|1d|off`, `/watch` / `/unwatch <пара>`, `/watchlist`, `/scope all|watchlist`,
 `/last [n]`, `/stats [дней]`, `/alert <пара> <цена>`, `/alerts`, `/unalert <номер|пара>`, `/status`.
