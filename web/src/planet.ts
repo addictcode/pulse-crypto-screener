@@ -760,7 +760,8 @@ export class VoxelPlanet {
     this.rim.uniforms.uGain.value = Math.max(0.35, gain) * (1 + dawn * 2.2) * round;
     this.core.scale.setScalar(Math.max(0.001, 1 - smooth(Math.min(1, flat * 1.6))));
     for (const line of this.orbitLines) line.material.opacity = line.opacity * round;
-    this.satellite.visible = flat < 0.5;
+    // seen from close by the satellite passes right in front of the camera as a large white block
+    this.satellite.visible = flat < 0.5 && this.disc.r < h * 0.45;
     this.camera.aspect = w / h;
     this.camera.setViewOffset(w, h, w / 2 - this.disc.x, h / 2 - this.disc.y, w, h);
     this.camera.updateProjectionMatrix();

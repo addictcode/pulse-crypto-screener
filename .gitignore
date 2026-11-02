@@ -1,3 +1,6 @@
 .DS_Store
 .claude/
 .env
+
+### Local tool state (Claude Code design plugin) ###
+.impeccable/
