@@ -16,6 +16,14 @@ const PHONE = { width: 390, height: 844 };
 test.describe.configure({ timeout: 90_000 });
 
 async function violations(page: Page): Promise<string[]> {
+  // text fading in is measured at its final colour, not halfway through (the endless pulses are left alone)
+  await page.evaluate(() =>
+    Promise.all(
+      document.getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   await page.addScriptTag({ content: AXE });
   const result = await page.evaluate(() =>
     (window as unknown as { axe: { run(context: Document, options: object): Promise<{ violations: Array<{ id: string; help: string; nodes: Array<{ target: string[] }> }> }> } })
