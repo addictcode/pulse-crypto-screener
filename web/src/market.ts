@@ -54,6 +54,10 @@ export class Market {
   readonly connectionChanged = new Emitter<ConnectionState>();
   readonly gapsUpdated = new Emitter<void>();
 
+  // the first signals and tape a page receives are history, not news (see apply)
+  private signalsLoaded = false;
+  private tapeLoaded = false;
+
   apply(message: StreamMessage) {
     switch (message.type) {
       case 'snapshot':
@@ -94,11 +98,14 @@ export class Market {
         this.wallsUpdated.emit();
         break;
       case 'signals': {
-        // on connect the server sends recent history; afterwards one signal at a time
+        // the first list is history (on connect, or the landing's first poll); after that, what
+        // was not known yet is news, whether it came alone or with the next poll
+        const first = !this.signalsLoaded;
+        this.signalsLoaded = true;
         const known = new Set(this.signals.map((s) => s.id));
         const fresh = message.items.filter((s) => !known.has(s.id));
         this.signals = [...fresh, ...this.signals].sort((a, b) => b.time - a.time).slice(0, RECENT_SIGNALS);
-        this.newSignals.emit(message.items.length === 1 ? fresh : []);
+        this.newSignals.emit(first ? [] : fresh);
         break;
       }
       case 'outcomes': {
@@ -108,12 +115,14 @@ export class Market {
         break;
       }
       case 'tape': {
-        // a reconnect sends recent history; afterwards each scan's new items
+        // the first list is history; afterwards each scan's (or each poll's) new items
+        const first = !this.tapeLoaded;
+        this.tapeLoaded = true;
         const key = (t: TapeItem) => `${t.time}:${t.symbol}:${t.kind}`;
         const known = new Set(this.tape.map(key));
         const fresh = message.items.filter((t) => !known.has(key(t)));
         this.tape = [...fresh, ...this.tape].sort((a, b) => b.time - a.time).slice(0, RECENT_TAPE);
-        this.newTape.emit(this.tape.length === fresh.length ? [] : fresh);
+        this.newTape.emit(first ? [] : fresh);
         break;
       }
       case 'sparklines':

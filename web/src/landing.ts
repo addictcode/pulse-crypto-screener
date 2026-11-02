@@ -5,7 +5,7 @@ import './landing.css';
 
 import { age, base, pct, px, tone, usd } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
-import { STANDALONE, setupBoard, startFeed } from './api';
+import { STANDALONE, setupBoard, startSummary } from './api';
 import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
@@ -360,4 +360,5 @@ void Promise.all([loadTelegramTargets(), document.fonts.ready]).then(([[first]])
 });
 void mountTelegram($('final-tg'), 'ghost');
 
-void startFeed(market).catch(() => undefined);
+// a poll of the summary, not the stream: the landing needs a fraction of it (see startSummary)
+void startSummary(market).catch(() => undefined);

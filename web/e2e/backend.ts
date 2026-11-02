@@ -1,5 +1,6 @@
 import type { Page, WebSocketRoute } from '@playwright/test';
 
+import type { Summary } from '../src/api';
 import type { CandleDto, StreamMessage, SymbolMetrics, TelegramLinks } from '../src/types';
 
 const row = (symbol: string, price: number, ch24h: number, vol24h: number, over: Partial<SymbolMetrics> = {}): SymbolMetrics => ({
@@ -38,6 +39,8 @@ export interface FakeBackend {
   push(message: StreamMessage): void;
   /** What the pages counted with POST /api/hit, in order. */
   hits: Array<{ page: string; source: string }>;
+  /** How many times a page opened /ws/market. */
+  streams(): number;
 }
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
@@ -47,6 +50,23 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     if (!localStorage.getItem('pulse.welcomed')) localStorage.setItem('pulse.welcomed', 'true');
   });
   const sockets: WebSocketRoute[] = [];
+  // what /api/summary answers (the landing polls it): the same market, kept up to date by push()
+  const state: Summary = {
+    ts: Date.now(),
+    rows: ROWS.map(({ symbol, price, ch5m, ch24h, vol24h }) => ({ symbol, price, ch5m, ch24h, vol24h })),
+    liquidations: [],
+    walls: { ts: Date.now(), walls: [], coverage: { BTCUSDT: 0.1 } },
+    signals: [],
+    tape: [],
+  };
+  const remember = (message: StreamMessage) => {
+    state.ts = Date.now();
+    if (message.type === 'tape') state.tape = [...message.items, ...state.tape];
+    if (message.type === 'signals') state.signals = [...message.items, ...state.signals];
+    if (message.type === 'liquidations') state.liquidations = [...message.items, ...state.liquidations];
+    if (message.type === 'walls') state.walls = { ts: message.ts, walls: message.walls, coverage: message.coverage };
+  };
+  await page.route('**/api/summary', (route) => route.fulfill({ json: state }));
   await page.routeWebSocket(/\/ws\/market$/, (ws) => {
     sockets.push(ws);
     const send = (message: StreamMessage) => ws.send(JSON.stringify(message));
@@ -83,5 +103,12 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
   await page.route('**/api/positioning**', (route) =>
     route.fulfill({ json: { openInterest: [], longShortAccounts: [], longShortTop: [], takerBuySell: [], funding: [] } }),
   );
-  return { push: (message) => sockets.forEach((ws) => ws.send(JSON.stringify(message))), hits };
+  return {
+    push: (message) => {
+      remember(message);
+      sockets.forEach((ws) => ws.send(JSON.stringify(message)));
+    },
+    hits,
+    streams: () => sockets.length,
+  };
 }

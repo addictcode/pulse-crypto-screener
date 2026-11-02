@@ -1,5 +1,5 @@
 import { connect, type Market } from './market';
-import type { CandleDto, OutcomeStats, Positioning, SetupBoard, Signal, TelegramLinks, VenueGap } from './types';
+import type { CandleDto, Liquidation, OutcomeStats, Positioning, SetupBoard, Signal, SymbolMetrics, TapeItem, TelegramLinks, VenueGap, Wall } from './types';
 
 /**
  * Built as the standalone demo: no Pulse server, the page talks to the exchanges itself. Set at
@@ -72,6 +72,58 @@ export async function startFeed(market: Market): Promise<void> {
   }
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
   connect(market, `${scheme}://${location.host}/ws/market`);
+}
+
+/** What GET /api/summary answers: the landing's share of the stream (dev.pulse.api.SummaryController). */
+export interface Summary {
+  ts: number;
+  rows: Array<Pick<SymbolMetrics, 'symbol' | 'price' | 'ch5m' | 'ch24h' | 'vol24h'>>;
+  liquidations: Liquidation[];
+  walls: { ts: number; walls: Wall[]; coverage: Record<string, number> };
+  signals: Signal[];
+  tape: TapeItem[];
+}
+
+/** How often the landing asks; the server rebuilds the answer at most every 2 seconds. */
+export const SUMMARY_MS = 5_000;
+
+/** A summary fed to the market as the stream messages it stands for. */
+export function applySummary(market: Market, summary: Summary) {
+  const rows = summary.rows.map((row): SymbolMetrics => ({
+    ch1m: null, ch15m: null, ch1h: null, high24h: null, low24h: null, surge: null, natr: null,
+    funding: null, nextFunding: null, oi: null, oiCh15m: null, liq5m: 0, ...row,
+  }));
+  market.apply({ type: 'snapshot', ts: summary.ts, rows, liquidations: summary.liquidations });
+  market.apply({ type: 'walls', ...summary.walls });
+  market.apply({ type: 'signals', items: summary.signals });
+  // a signal already shown gets its outcome once the hour has passed
+  market.apply({ type: 'outcomes', items: summary.signals });
+  market.apply({ type: 'tape', items: summary.tape });
+}
+
+/**
+ * The landing's feed: a poll of /api/summary while the tab is visible, not the full stream. Most
+ * visitors only see the landing; this keeps them off the stream's client limit and its ~40 KB/s
+ * (loadtest/REPORT.md). The demo has no server and keeps its own feed.
+ */
+export async function startSummary(market: Market): Promise<void> {
+  if (STANDALONE) return startFeed(market);
+  const poll = async () => {
+    try {
+      applySummary(market, await getJson<Summary>('/api/summary'));
+      market.setConnection('live');
+    } catch {
+      market.setConnection('reconnecting');
+    }
+  };
+  setInterval(() => {
+    if (!document.hidden) void poll();
+  }, SUMMARY_MS);
+  // back from another tab: catch up now instead of at the next tick
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void poll();
+  });
+  await poll();
 }
 
 /**
