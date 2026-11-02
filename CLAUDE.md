@@ -85,11 +85,15 @@ TikTok. Личный проект студента БГУИР (владелец 
 
 ## Что дальше
 
-1. **Владелец:** создать бота (@BotFather) и канал, заполнить `PULSE_TELEGRAM_*` в `.env`;
+1. **Владелец:** создать бота (@BotFather) и канал, заполнить `PULSE_TELEGRAM_*` в `.env` (по шагам —
+   README, «Запуск на живом стеке»; для всех бот открывается только `PULSE_TELEGRAM_OPEN=true`);
    проверка на healthchecks.io → `PULSE_HEARTBEAT_URL`.
 2. **Переезд на сервер** до публикации роликов — `deploy/oracle/README.md`; затем секреты
    `VPS_HOST`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS` в GitHub, и CI деплоит сам. Перенос базы с мака
    и постоянной ссылки — шаг 9 там же; дампы и пинг healthchecks.io сервер делает сам (cron).
 3. **Контент:** серия про 60 тысяч сигналов с голосом владельца (`video/out/series/*/voiceover.md`
-   после рендера) + фоновые ролики по `schedule.csv`, 1–2 в день.
-4. Через 2–3 недели чистых данных — повторить исследование сигналов на живой статистике.
+   после рендера) + фоновые ролики по `schedule.csv`, 1–2 в день. Ссылка в профиле — с меткой:
+   `https://addictcode.github.io/pulse-crypto-screener/?utm_source=tiktok` (иначе `/visits` не
+   отличит TikTok от прочего).
+4. Через 2–3 недели чистых данных — повторить исследование сигналов на живой статистике:
+   `python3 research/live.py --docker pulse-postgres-1`.
