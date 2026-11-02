@@ -3,6 +3,7 @@
 #   deploy/home.sh           start or update, then show the address
 #   deploy/home.sh url       only show the current address
 #   deploy/home.sh publish   point the permanent link (GitHub Pages) at the current address
+#   deploy/home.sh publish https://NAME.duckdns.org   point it at the server after the move
 #   deploy/home.sh watch     keep it online: restart a dead tunnel and republish, until Ctrl+C
 #   deploy/home.sh autostart      run watch by itself whenever this user is logged in (macOS)
 #   deploy/home.sh autostart-off  undo that
@@ -49,6 +50,11 @@ heartbeat() {
 
 publish() {
   local address=$1 repo sha
+  # the page on GitHub Pages follows only these, so anything else would quietly send people to the demo
+  if ! [[ "$address" =~ ^https://[a-z0-9-]+\.(trycloudflare\.com|duckdns\.org)$ ]]; then
+    echo "not an address the permanent link follows: $address (https://NAME.trycloudflare.com or https://NAME.duckdns.org)" >&2
+    return 1
+  fi
   if ! command -v gh >/dev/null || ! repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null); then
     echo "publish needs the GitHub CLI, signed in, inside the repository (gh auth login)" >&2
     return 1
@@ -68,7 +74,7 @@ publish() {
 case "${1:-up}" in
   url) url ;;
   stop) compose down ;;
-  publish) publish "$(url)" ;;
+  publish) publish "${2:-$(url)}" ;;
   watch)
     current=$(url)
     failures=0
