@@ -76,3 +76,17 @@ test('a tape event is called out on the planet', async ({ page }) => {
   await expect.poll(seen, { timeout: 15_000 }).toHaveLength(3);
   expect((await seen())[0]).toContain(ROWS[0].symbol.replace('USDT', ''));
 });
+
+test('a phone can put Pulse on its home screen with a real icon', async ({ page, request }) => {
+  await fakeBackend(page);
+  for (const path of ['/', '/app/', '/record/']) {
+    await page.goto(path);
+    const manifest = await page.locator('link[rel="manifest"]').getAttribute('href');
+    const touch = await page.locator('link[rel="apple-touch-icon"]').getAttribute('href');
+    expect((await request.get(new URL(touch!, page.url()).href)).ok(), `${path} apple-touch-icon`).toBe(true);
+    const url = new URL(manifest!, page.url());
+    const body = await (await request.get(url.href)).json();
+    expect(new URL(body.start_url, url).pathname).toBe('/app/');
+    for (const icon of body.icons) expect((await request.get(new URL(icon.src, url).href)).ok(), icon.src).toBe(true);
+  }
+});
