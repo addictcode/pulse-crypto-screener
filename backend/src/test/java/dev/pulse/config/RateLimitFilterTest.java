@@ -41,6 +41,27 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void aFloodOfNewClientsSharesOneBucketInsteadOfFillingMemory() {
+        for (int i = 0; i < RateLimitFilter.MAX_CLIENTS; i++) {
+            filter.take("10.0." + (i >> 8) + "." + (i & 0xff), 0);
+        }
+        // the map is full of clients seen just now: newcomers are limited together
+        for (int i = 0; i < 3; i++) {
+            assertThat(filter.take("198.51.100." + i, 1)).isZero();
+        }
+        assertThat(filter.take("198.51.100.99", 1)).isPositive();
+        assertThat(filter.clients()).isEqualTo(RateLimitFilter.MAX_CLIENTS + 1);
+
+        // a client already known keeps its own bucket
+        assertThat(filter.take("10.0.0.1", 1)).isZero();
+
+        // once the old ones have been idle long enough, a newcomer gets its own bucket again
+        long later = RateLimitFilter.IDLE_MS + 10;
+        assertThat(filter.take("198.51.100.99", later)).isZero();
+        assertThat(filter.clients()).isLessThan(10);
+    }
+
+    @Test
     void anExhaustedClientGetsTooManyRequests() throws Exception {
         MockHttpServletResponse last = null;
         for (int i = 0; i < 4; i++) {
