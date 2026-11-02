@@ -404,7 +404,8 @@ export class Screener {
     const add = this.custom.length < MAX_PRESETS
       ? `<button type="button" class="preset tool" data-act="new" title="${t('New filter')}" aria-label="${t('New filter')}">${ICONS.plus}</button>`
       : '';
-    this.presetsEl.innerHTML = chips.join('') + edit + add;
+    // only the chips are tabs; the edit and add buttons sit beside them, outside the tablist
+    this.presetsEl.innerHTML = `<span class="preset-tabs" role="tablist">${chips.join('')}</span>${edit}${add}`;
   }
 
   private renderHead() {
@@ -412,7 +413,9 @@ export class Screener {
       const on = c.key === this.state.sortKey;
       const sorted = on ? ` sorted${this.state.ascending ? ' asc' : ''}` : '';
       const aria = on ? ` aria-sort="${this.state.ascending ? 'ascending' : 'descending'}"` : '';
-      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${c.label}</th>`;
+      // the star column has no visible title, but a screen reader still needs one
+      const label = c.key === 'star' ? `<span class="sr-only">${t('Watchlist')}</span>` : c.label;
+      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${label}</th>`;
     }).join('');
   }
 

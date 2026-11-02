@@ -32,7 +32,9 @@ mountIcons();
 mountLangSwitch(document.getElementById('lang')!);
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-document.getElementById('cmd-kbd')!.textContent = isMac ? '⌘K' : 'Ctrl K';
+// drawn by CSS: the shortcut is shown, but stays out of the button's spoken name
+document.getElementById('cmd-kbd')!.dataset.key = isMac ? '⌘K' : 'Ctrl K';
+document.getElementById('cmd-btn')!.setAttribute('aria-keyshortcuts', isMac ? 'Meta+K' : 'Control+K');
 
 // asked before anything below saves a setting: a first visit on a phone opens the live feed
 const firstVisit = nothingStored();

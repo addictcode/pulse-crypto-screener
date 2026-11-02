@@ -526,6 +526,7 @@ export const RU: Record<string, string> = {
 
   // ---------- command palette ----------
   'Pair, view or command': 'Пара, раздел или команда',
+  'Results': 'Результаты',
   'Pairs': 'Пары',
   'Commands': 'Команды',
   'Most traded': 'Самые торгуемые',
