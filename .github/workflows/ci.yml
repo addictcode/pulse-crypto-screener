@@ -112,4 +112,5 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          ssh pulse@"$VPS_HOST" 'cd /opt/pulse && git pull --ff-only && docker compose -f compose.prod.yaml up -d --build --remove-orphans && docker image prune -f'
+          # the dump comes before the new version starts: it may carry a migration
+          ssh pulse@"$VPS_HOST" 'cd /opt/pulse && git pull --ff-only && deploy/backup.sh pre-deploy && docker compose -f compose.prod.yaml up -d --build --remove-orphans && docker image prune -f'
