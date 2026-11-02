@@ -65,6 +65,7 @@ export const RU: Record<string, string> = {
   'Charts by TradingView': 'Графики: TradingView',
   'Binance USDT-M, demo running in your browser': 'Binance USDT-M, демо работает в твоём браузере',
   'Binance cannot be reached from this network': 'Binance недоступен из этой сети',
+  'This demo reads Binance straight from your browser, and Binance cannot be reached from this network or country. The full version gets the data on its server and works from anywhere.': 'Это демо берёт данные у Binance прямо из твоего браузера, а из этой сети или страны Binance недоступен. Полная версия получает данные на сервере и работает откуда угодно.',
 
   // ---------- units ----------
   '{n}s': '{n}с',
