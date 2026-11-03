@@ -64,14 +64,14 @@ export async function signalStats(days: number): Promise<OutcomeStats[]> {
  * Starts the market feed: the backend's stream, or in the demo the browser's own connection to
  * Binance. Resolves once the feed is running; rejects when the demo cannot reach the exchange.
  */
-export async function startFeed(market: Market): Promise<void> {
+export async function startFeed(market: Market, keepInBackground?: () => boolean): Promise<void> {
   if (STANDALONE) {
     const { BrowserFeed } = await import('./lite/feed');
     await new BrowserFeed(market).start();
     return;
   }
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-  connect(market, `${scheme}://${location.host}/ws/market`);
+  connect(market, `${scheme}://${location.host}/ws/market`, keepInBackground);
 }
 
 /** What GET /api/summary answers: the landing's share of the stream (dev.pulse.api.SummaryController). */

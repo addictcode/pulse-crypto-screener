@@ -265,7 +265,8 @@ if (STANDALONE) {
   document.body.dataset.mode = 'lite';
   document.getElementById('st-source')!.textContent = t('Binance USDT-M, demo running in your browser');
 }
-startFeed(market).catch(() => {
+// a hidden tab lets the stream go after a minute, unless an alert waits or a recording runs
+startFeed(market, () => alerts.armed > 0 || document.body.hasAttribute('data-recording')).catch(() => {
   const status = document.getElementById('st-conn')!;
   status.dataset.state = 'reconnecting';
   status.textContent = t('Binance cannot be reached from this network');

@@ -41,6 +41,8 @@ export interface FakeBackend {
   hits: Array<{ page: string; source: string }>;
   /** How many times a page opened /ws/market. */
   streams(): number;
+  /** How many of those are open now. */
+  openStreams(): number;
 }
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
@@ -67,8 +69,10 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     if (message.type === 'walls') state.walls = { ts: message.ts, walls: message.walls, coverage: message.coverage };
   };
   await page.route('**/api/summary', (route) => route.fulfill({ json: state }));
+  let closed = 0;
   await page.routeWebSocket(/\/ws\/market$/, (ws) => {
     sockets.push(ws);
+    ws.onClose(() => closed++);
     const send = (message: StreamMessage) => ws.send(JSON.stringify(message));
     send({ type: 'snapshot', ts: Date.now(), rows: ROWS, liquidations: [] });
     send({ type: 'sparklines', series: Object.fromEntries(ROWS.map((r) => [r.symbol, [1, 1.01, 0.99, 1.02, 1.03]])) });
@@ -110,5 +114,6 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     },
     hits,
     streams: () => sockets.length,
+    openStreams: () => sockets.length - closed,
   };
 }
