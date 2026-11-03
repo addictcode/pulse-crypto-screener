@@ -38,9 +38,11 @@ class ParityTest {
     @Test
     void theBrowserCopyHasTheServersAnswers() throws Exception {
         ObjectNode fixture = (ObjectNode) mapper.readTree(Files.readString(FIXTURE));
-        ObjectNode computed = mapper.createObjectNode();
-        computed.set("metrics", metrics(fixture.path("metrics")));
-        computed.set("walls", walls(fixture.path("walls")));
+        ObjectNode built = mapper.createObjectNode();
+        built.set("metrics", metrics(fixture.path("metrics")));
+        built.set("walls", walls(fixture.path("walls")));
+        // through text and back: values put as objects become the same nodes the file reads into
+        JsonNode computed = mapper.readTree(mapper.writeValueAsString(built));
 
         if ("1".equals(System.getenv("PULSE_PARITY_WRITE"))) {
             ((ObjectNode) fixture.get("metrics")).set("expected", computed.get("metrics"));

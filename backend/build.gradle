@@ -48,6 +48,9 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// ParityTest reads the demo's shared inputs: a change there must run the tests again
+	inputs.file('../web/src/lite/parity.json').withPathSensitivity(PathSensitivity.RELATIVE)
+	inputs.property('parityWrite', providers.environmentVariable('PULSE_PARITY_WRITE').orElse(''))
 }
 
 // one artifact with a stable name for the Docker build; the plain jar is not used
