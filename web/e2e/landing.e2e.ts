@@ -108,3 +108,16 @@ test('the landing polls the summary and leaves the stream to the terminal', asyn
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
   expect(backend.streams()).toBe(1);
 });
+
+test('a browser saving data gets the still disc instead of the planet', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+  const planets: string[] = [];
+  page.on('request', (request) => {
+    if (/planet/.test(request.url()) && request.resourceType() === 'script') planets.push(request.url());
+  });
+  await fakeBackend(page);
+  await page.goto('/');
+  await expect(page.locator('#s-pairs')).toHaveText(String(ROWS.length), { timeout: 20_000 });
+  await expect(page.locator('body')).toHaveClass(/\bstatic\b/);
+  expect(planets).toEqual([]);
+});

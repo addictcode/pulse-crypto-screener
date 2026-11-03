@@ -35,7 +35,10 @@ const hasWebgl = (() => {
   }
 })();
 const withoutPlanet = () => document.body.classList.add('static');
-if (hasWebgl) {
+// a visitor who asked the browser to save data (Data Saver, mostly phones on mobile data) is
+// spared the planet's 135 KB and gets the same still disc as a browser without WebGL
+const savesData = Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+if (hasWebgl && !savesData) {
   const tip = $('planet-tip');
   const layer = $('planet-layer');
   void import('./planet')
