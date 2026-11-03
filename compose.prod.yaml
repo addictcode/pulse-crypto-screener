@@ -27,6 +27,9 @@ services:
 
   backend:
     build: ./backend
+    # the default is the name Compose gives a local build; a server set up to pull ready images
+    # names them in .env (PULSE_BACKEND_IMAGE, see deploy/update.sh)
+    image: ${PULSE_BACKEND_IMAGE:-pulse-backend}:${PULSE_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -61,6 +64,7 @@ services:
 
   web:
     build: ./web
+    image: ${PULSE_WEB_IMAGE:-pulse-web}:${PULSE_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       - backend

@@ -91,9 +91,50 @@ jobs:
           retention-days: 7
           compression-level: 0
 
-  deploy:
+  # Ready images for the server, for ARM (Oracle A1) and x86, tagged with the commit: the server
+  # pulls them instead of building Java on its two cores (deploy/update.sh). The jar and the static
+  # files are built once natively; only the thin runtime layer is made per CPU.
+  images:
     needs: [backend, web]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/pulse-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/pulse-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+      - uses: docker/build-push-action@v6
+        with:
+          context: web
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/pulse-web:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/pulse-web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  deploy:
+    # after the images, so the server finds them; without them it builds by itself
+    needs: [backend, web, images]
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.backend.result == 'success' && needs.web.result == 'success' }}
     runs-on: ubuntu-24.04
     concurrency: production
     env:
@@ -112,5 +153,6 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          # the dump comes before the new version starts: it may carry a migration
-          ssh pulse@"$VPS_HOST" 'cd /opt/pulse && git pull --ff-only && deploy/backup.sh pre-deploy && docker compose -f compose.prod.yaml up -d --build --remove-orphans && docker image prune -f'
+          # update.sh dumps the database first (a new version may migrate it), then takes the
+          # images of this commit from ghcr.io or builds them on the server
+          ssh pulse@"$VPS_HOST" 'cd /opt/pulse && git pull --ff-only && deploy/update.sh'

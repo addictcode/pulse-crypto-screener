@@ -6,6 +6,9 @@ on:
     paths:
       - deploy/**
       - .env.example
+      - compose.*.yaml
+      - loadtest/compose.*.yaml
+      - loadtest/loadtest.env
       - .github/workflows/server.yml
   push:
     branches: [main]
@@ -20,4 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: shellcheck -S warning deploy/*.sh deploy/oracle/*.sh
+      # the compose files as the Mac, the server and the load test read them
+      - name: Compose files are valid
+        run: |
+          printf 'POSTGRES_PASSWORD=x\nPULSE_DOMAIN=example.duckdns.org\n' > /tmp/ci.env
+          docker compose --env-file /tmp/ci.env -p pulse -f compose.prod.yaml -f compose.tunnel.yaml config -q
+          docker compose --env-file /tmp/ci.env -p pulse -f compose.prod.yaml config | grep -q 'image: pulse-backend:latest'
+          printf 'PULSE_BACKEND_IMAGE=ghcr.io/o/pulse-backend\nPULSE_WEB_IMAGE=ghcr.io/o/pulse-web\n' >> /tmp/ci.env
+          PULSE_IMAGE_TAG=abc docker compose --env-file /tmp/ci.env -f compose.prod.yaml config | grep -q 'image: ghcr.io/o/pulse-backend:abc'
+          docker compose -p pulse-load -f compose.prod.yaml -f loadtest/compose.loadtest.yaml --env-file loadtest/loadtest.env config | grep -q 'image: pulse-load-backend:latest'
       - run: deploy/oracle/test-in-docker.sh
