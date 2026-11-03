@@ -124,6 +124,17 @@ nano /opt/pulse/.env          # вписать PULSE_TELEGRAM_*, сохрани�
 cd /opt/pulse && docker compose -f compose.prod.yaml up -d
 ```
 
+Запас по зрителям. По умолчанию стек рассчитан на мак: 1.5 ГБ бэкенду и 300 стримов терминала
+(лендинг стрим не держит). У A1 с 12 ГБ запас больше — впиши в `/opt/pulse/.env` и перезапусти:
+
+```
+PULSE_BACKEND_MEMORY=3g
+PULSE_STREAM_CLIENTS=800
+```
+
+Перед роликом проверь на самом сервере, что всплеск выдерживается: `loadtest/run.sh burst -e
+ARRIVALS=1000` (`loadtest/README.md`), отказов должно быть 0, память бэкенда — с запасом от лимита.
+
 ## 8. Деплой из GitHub на каждый мерж
 
 Workflow `ci.yml` после зелёных тестов на `main` заходит на сервер пользователем `pulse` и

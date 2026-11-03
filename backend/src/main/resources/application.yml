@@ -105,8 +105,9 @@ pulse:
     requests-per-minute: 120
     burst: 60
     # each stream client costs a ~450 KB snapshot and then ~40 KB/s before compression
-    stream-clients: 300
-    stream-clients-per-address: 8
+    stream-clients: ${PULSE_STREAM_CLIENTS:300}
+    # one mobile operator puts thousands of phones behind one IPv4 address (CGNAT); IPv6 counts by /64
+    stream-clients-per-address: ${PULSE_STREAM_CLIENTS_PER_ADDRESS:30}
   telegram:
     enabled: ${PULSE_TELEGRAM_ENABLED:false}
     token: ${PULSE_TELEGRAM_TOKEN:}
