@@ -35,7 +35,7 @@ TikTok. Личный проект студента БГУИР (владелец 
 |---|---|
 | `backend/` | Java 25, Spring Boot 4, Gradle (Groovy), PostgreSQL + Liquibase, Lombok, constructor injection |
 | `web/` | TypeScript + Vite без фреймворка: лендинг `/`, терминал `/app/`, статистика `/record/`; Lightweight Charts; EN/RU (`locale-ru.ts`, тест ловит непереведённое) |
-| `web/src/lite/` | сборка без сервера (`VITE_STANDALONE=1`, демо на GitHub Pages): копия серверных расчётов — меняешь их на Java, меняй и здесь |
+| `web/src/lite/` | сборка без сервера (`VITE_STANDALONE=1`, демо на GitHub Pages): копия серверных расчётов — меняешь их на Java, меняй и здесь; расхождение ловит `parity.json` (`ParityTest` пишет, `parity.test.ts` сверяет) |
 | `video/` | ролики на Remotion: 9 шаблонов + серия «Я проверил 60 329 сигналов», RU/EN; `video/README.md` |
 | `research/` | исследование сигналов на архиве Binance: предсказательной силы нет (`signals-2026-10.md`) |
 | `loadtest/` | k6, отчёт `REPORT.md`: на сервере 300 зрителей без ошибок, с мака через туннель потолок ~60–150 |
