@@ -9,6 +9,8 @@ test('each page counts itself once, and the visit keeps the source it came with'
   const backend = await fakeBackend(page);
   await page.goto('/?utm_source=tiktok');
   await expect.poll(() => backend.hits).toContainEqual({ page: 'landing', source: 'tiktok' });
+  // read and remembered: a link copied from the address bar no longer says TikTok
+  await expect(page).toHaveURL(/\/$/);
 
   await page.locator('.hero .cta').click();
   await expect(page).toHaveURL(/\/app\//);

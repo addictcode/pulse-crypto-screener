@@ -25,7 +25,24 @@ export function sourceOf(search: string, referrer: string, ownHost: string, reme
   return remembered ?? '';
 }
 
+/**
+ * A tag is read once and then taken out of the address bar: a link copied from there would
+ * otherwise carry this visitor's source to whoever opens it (a TikTok link pasted into Telegram
+ * would count Telegram's visitors as TikTok's). The hash, which holds the terminal's view, stays.
+ */
+export function withoutTag(href: string): string | null {
+  const url = new URL(href);
+  const tags = [...url.searchParams.keys()].filter((key) => key === 'ref' || key.startsWith('utm_'));
+  if (!tags.length) return null;
+  tags.forEach((key) => url.searchParams.delete(key));
+  return url.pathname + url.search + url.hash;
+}
+
+/** This page's source, once worked out: later hits of the same page (a button click) reuse it. */
+let known: string | null = null;
+
 function source(): string {
+  if (known !== null) return known;
   let remembered: string | null = null;
   try {
     remembered = sessionStorage.getItem(SOURCE_KEY);
@@ -39,6 +56,9 @@ function source(): string {
   } catch {
     // see above
   }
+  known = found;
+  const clean = withoutTag(location.href);
+  if (clean !== null) history.replaceState(history.state, '', clean);
   return found;
 }
 
@@ -48,7 +68,12 @@ function source(): string {
  * being left, which is exactly when a button click is reported. The demo has no server to tell.
  */
 export function hit(page: FunnelPage) {
-  if (STANDALONE || typeof navigator.sendBeacon !== 'function') return;
+  if (STANDALONE || typeof navigator.sendBeacon !== 'function') {
+    // nothing is counted here, but the address is tidied all the same
+    const clean = withoutTag(location.href);
+    if (clean !== null) history.replaceState(history.state, '', clean);
+    return;
+  }
   try {
     navigator.sendBeacon('/api/hit', new Blob([JSON.stringify({ page, source: source() })], { type: 'application/json' }));
   } catch {
