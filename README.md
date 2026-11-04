@@ -129,11 +129,13 @@ backend/  Spring Boot 4.1, Java 25
   compare/    Binance против Bybit: разрыв цены, фандинга, доля OI
   account/    пользователь и его настройки доставки (сейчас один владелец)
   telegram/   бот на Bot API: long polling, команды, доставка с паузами и дайджестом
-  stream/     /ws/market: снимок при подключении, дельты раз в 500 мс
+  stream/     /ws/market: снимок при подключении, дельты раз в 500 мс (терминал; вкладка в
+              фоне отпускает его через минуту, если не ждёт алерт и не идёт запись)
   visit/      счётчик воронки: POST /api/hit, по дням, страницам и источникам
   api/        /api/market, /api/candles, /api/liquidations, /api/status, /api/density/*,
               /api/signals, /api/signals/stats, /api/compare, /api/positioning,
-              /api/setups
+              /api/setups, /api/summary (лендинг: пять полей пары, стены у цены, лента —
+              раз в 2 с на всех, лендинг спрашивает раз в 5 с вместо стрима)
         │
         ▼
 web/      TypeScript + Vite, без фреймворка, Lightweight Charts
