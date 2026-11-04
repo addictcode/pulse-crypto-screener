@@ -76,6 +76,19 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void theLandingSummaryIsNotLimitedSoPhonesBehindOneAddressKeepTheirNumbers() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/summary");
+            request.addHeader(ClientAddress.HEADER, "4.4.4.4");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, new MockFilterChain());
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+        // and the address still has its whole burst for everything else
+        assertThat(filter.take("4.4.4.4", System.currentTimeMillis())).isZero();
+    }
+
+    @Test
     void theAppAndHealthAreNotLimited() throws Exception {
         for (int i = 0; i < 10; i++) {
             MockHttpServletResponse response = new MockHttpServletResponse();

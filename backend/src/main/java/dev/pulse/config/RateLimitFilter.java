@@ -26,6 +26,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** Buckets idle this long are full again anyway, so they can be forgotten. */
     static final long IDLE_MS = 10 * 60_000;
     static final int MAX_CLIENTS = 50_000;
+    static final String SUMMARY = "/api/summary";
     /** Where new clients go while the map is full of active ones: they share one bucket. */
     static final String OVERFLOW = "overflow";
     /** A full sweep of the map is O(clients): at most this often, not on every request. */
@@ -43,7 +44,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/");
+        String path = request.getRequestURI();
+        // the landing's summary is the same cached bytes for everyone (SummaryController), so a
+        // crowd costs nothing more; limited, ten phones behind one operator's IPv4 address (CGNAT)
+        // polling it every five seconds would already run the address out
+        return !path.startsWith("/api/") || path.equals(SUMMARY);
     }
 
     @Override
