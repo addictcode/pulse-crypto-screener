@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import calendar
 import csv
+import http.client
 import io
 import re
 import time
@@ -17,7 +18,7 @@ import urllib.error
 import urllib.request
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +41,8 @@ def _get(path: str) -> bytes | None:
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     return None
-            except (urllib.error.URLError, TimeoutError, ConnectionError):
+            except (urllib.error.URLError, http.client.HTTPException, TimeoutError, ConnectionError):
+                # a cut-off download (IncompleteRead) is as retryable as a refused one
                 pass
         time.sleep(2 ** attempt)
     raise RuntimeError(f"archive unreachable: {path}")
@@ -151,6 +153,65 @@ def candles(symbol: str, start: date, end: date) -> dict[str, np.ndarray]:
             grid["qv"][i] = float(r[7])
     grid["t"] = t0 + np.arange(n, dtype=np.int64) * MINUTE_MS
     return grid
+
+
+def _cached_text(path: str) -> str | None:
+    """The CSV inside an archived zip, header and all; None if the archive does not have it."""
+    file = CACHE / path
+    if file.exists():
+        data = file.read_bytes() or None
+    else:
+        data = _get(path)
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_bytes(data or b"")
+    if not data:
+        return None
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        return archive.read(archive.namelist()[0]).decode()
+
+
+def open_interest(symbol: str, start: date, end: date) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Open interest in contracts, a point every 5 minutes, from the daily "metrics" files: (time in
+    ms, contracts), sorted by time (the files are not). Days the archive lacks are simply absent.
+    """
+    times: list[int] = []
+    values: list[float] = []
+    day = start
+    while day <= end:
+        text = _cached_text(f"data/futures/um/daily/metrics/{symbol}/{symbol}-metrics-{day.isoformat()}.zip")
+        for row in csv.DictReader(io.StringIO(text or "")):
+            stamp = datetime.strptime(row["create_time"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            if row["sum_open_interest"]:
+                times.append(int(stamp.timestamp() * 1000))
+                values.append(float(row["sum_open_interest"]))
+        day += timedelta(days=1)
+    order = np.argsort(times, kind="stable")
+    return np.asarray(times, dtype=np.int64)[order], np.asarray(values)[order]
+
+
+def funding(symbol: str, start: date, end: date) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Funding settlements from the monthly "fundingRate" files: (time in ms, rate as a fraction, hours
+    between settlements). Only settled rates: the live predicted rate between them is not archived.
+    """
+    times: list[int] = []
+    rates: list[float] = []
+    hours: list[float] = []
+    month = date(start.year, start.month, 1)
+    t0 = calendar.timegm(start.timetuple()) * 1000
+    t1 = calendar.timegm((end + timedelta(days=1)).timetuple()) * 1000
+    while month <= end:
+        text = _cached_text(f"data/futures/um/monthly/fundingRate/{symbol}/{symbol}-fundingRate-{month.year}-{month.month:02d}.zip")
+        for row in csv.DictReader(io.StringIO(text or "")):
+            t = int(row["calc_time"])
+            if t0 <= t < t1:
+                times.append(t)
+                rates.append(float(row["last_funding_rate"]))
+                hours.append(float(row["funding_interval_hours"]))
+        month = date(month.year + month.month // 12, month.month % 12 + 1, 1)
+    order = np.argsort(times, kind="stable")
+    return np.asarray(times, dtype=np.int64)[order], np.asarray(rates)[order], np.asarray(hours)[order]
 
 
 def prefetch(symbols_: list[str], start: date, end: date, workers: int = 8) -> None:
