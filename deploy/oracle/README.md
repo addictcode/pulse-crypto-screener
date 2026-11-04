@@ -166,9 +166,10 @@ Workflow `ci.yml` после зелёных тестов на `main` заход�
 съедает память, пока работает старая версия. CI на каждый мерж собирает образы под ARM и x86
 и кладёт их в GitHub Container Registry с меткой коммита. Чтобы сервер их брал:
 
-1. После первого зелёного прогона `ci` на `main`: GitHub → профиль → **Packages** →
-   `pulse-backend` → **Package settings** → **Change visibility** → **Public**; то же для
-   `pulse-web`. Код и так открыт, а публичный образ сервер скачивает без пароля.
+1. Образы публичные (как и репозиторий) — сервер скачивает их без пароля; проверено 4 ноября
+   2026 на первом мерже: `ghcr.io/addictcode/pulse-backend` и `pulse-web`, под arm64 и amd64.
+   Если когда-нибудь `docker pull` ответит `denied`, — GitHub → профиль → **Packages** → пакет →
+   **Package settings** → **Change visibility** → **Public**.
 2. В `/opt/pulse/.env`:
    ```
    PULSE_BACKEND_IMAGE=ghcr.io/addictcode/pulse-backend
