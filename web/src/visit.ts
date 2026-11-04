@@ -3,6 +3,8 @@ import { STANDALONE } from './api';
 /** The steps of the funnel a page may report; the server keeps the same list. */
 export type FunnelPage = 'landing' | 'app' | 'record' | 'clip' | 'bot-click' | 'channel-click';
 
+const PAGE_VIEWS = new Set<FunnelPage>(['landing', 'app', 'record', 'clip']);
+
 const SOURCE_KEY = 'pulse.source';
 
 /**
@@ -73,6 +75,18 @@ export function hit(page: FunnelPage) {
     const clean = withoutTag(location.href);
     if (clean !== null) history.replaceState(history.state, '', clean);
     return;
+  }
+  // a page counts once a visit: a reload or a second look at the same page is not a new visitor.
+  // The server cannot tell that by address any more (phones share one behind their operator), so
+  // the page remembers it; clicks on the Telegram buttons count every time
+  if (PAGE_VIEWS.has(page)) {
+    try {
+      const key = `pulse.counted.${page}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // storage blocked: count it, the server still limits how often one address can
+    }
   }
   try {
     navigator.sendBeacon('/api/hit', new Blob([JSON.stringify({ page, source: source() })], { type: 'application/json' }));

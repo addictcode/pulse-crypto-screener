@@ -9,8 +9,11 @@ class HitGateTest {
     private final HitGate gate = new HitGate();
 
     @Test
-    void aSecondHitWithinAMinuteIsNotCounted() {
-        assertThat(gate.admit("1.1.1.1", FunnelStep.LANDING, 0)).isTrue();
+    void phonesBehindOneAddressCountUpToALimitAMinute() {
+        for (int i = 0; i < HitGate.PER_WINDOW; i++) {
+            assertThat(gate.admit("1.1.1.1", FunnelStep.LANDING, i)).isTrue();
+        }
+        // more than that from one address in a minute is a script, not a crowd
         assertThat(gate.admit("1.1.1.1", FunnelStep.LANDING, HitGate.WINDOW_MS - 1)).isFalse();
         assertThat(gate.admit("1.1.1.1", FunnelStep.LANDING, HitGate.WINDOW_MS)).isTrue();
     }
