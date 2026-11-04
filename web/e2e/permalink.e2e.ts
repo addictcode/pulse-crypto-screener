@@ -9,14 +9,14 @@ const PAGES = 'https://addictcode.github.io/pulse-crypto-screener/';
 const TUNNEL = 'https://calm-river-test.trycloudflare.com';
 const REDIRECT = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
 
-async function permalink(page: Page, tunnelUp: boolean) {
+async function permalink(page: Page, tunnelUp: boolean, address = TUNNEL) {
   await page.route(`${PAGES}**`, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/pulse-crypto-screener/') return route.fulfill({ contentType: 'text/html', body: REDIRECT });
     return route.fulfill({ contentType: 'text/html', body: '<title>demo</title>' });
   });
-  await page.route('https://api.github.com/**', (route) => route.fulfill({ body: TUNNEL }));
-  await page.route(`${TUNNEL}/**`, (route) => {
+  await page.route('https://api.github.com/**', (route) => route.fulfill({ body: address }));
+  await page.route(`${address}/**`, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/status') {
       return tunnelUp
@@ -49,4 +49,17 @@ test('a dead tunnel opens the demo, tag and all', async ({ page }) => {
   await permalink(page, false);
   await page.goto(`${PAGES}?utm_source=tiktok`);
   await expect(page).toHaveURL(`${PAGES}demo/?utm_source=tiktok`);
+});
+
+test('after the move the link follows the server', async ({ page }) => {
+  const server = 'https://mypulse.duckdns.org';
+  await permalink(page, true, server);
+  await page.goto(`${PAGES}?utm_source=tiktok`);
+  await expect(page).toHaveURL(`${server}/?utm_source=tiktok`);
+});
+
+test('an address of any other kind is not followed', async ({ page }) => {
+  await permalink(page, true, 'https://pulse.example.com');
+  await page.goto(PAGES);
+  await expect(page).toHaveURL(`${PAGES}demo/?ref=direct`);
 });

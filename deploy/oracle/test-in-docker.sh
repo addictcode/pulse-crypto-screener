@@ -71,5 +71,9 @@ RULES
   [ "$(stat -c %U /opt/pulse/.env)" = pulse ] && [ "$(stat -c %a /opt/pulse/.env)" = 600 ] || fail ".env owner or mode"
   grep -q "^PULSE_DOMAIN=test.duckdns.org$" /opt/pulse/.env || fail "domain not in .env"
   grep -Eq "^POSTGRES_PASSWORD=[0-9a-f]{48}$" /opt/pulse/.env || fail "no database password"
+  [ "$(grep -c backup.sh /etc/cron.d/pulse-backup)" = 1 ] || fail "nightly backup not exactly once"
+  [ -x /opt/pulse/deploy/backup.sh ] || fail "backup.sh not executable in the clone"
+  [ "$(grep -c heartbeat.sh /etc/cron.d/pulse-heartbeat)" = 1 ] || fail "heartbeat not exactly once"
+  [ -x /opt/pulse/deploy/heartbeat.sh ] || fail "heartbeat.sh not executable in the clone"
   echo "all checks passed"
 '

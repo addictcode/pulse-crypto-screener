@@ -40,7 +40,8 @@
 </main>
 <script>
   // The full version runs on its author's computer behind a tunnel whose address changes on
-  // every restart; deploy/home.sh writes the current one to url.txt on the "live" branch. When
+  // every restart, or on a server; deploy/home.sh writes the current address to url.txt on the
+  // "live" branch. When
   // it does not answer, the demo in ./demo/ takes over: the same terminal, reading Binance
   // straight from the browser.
   const REPO = 'addictcode/pulse-crypto-screener';
@@ -85,7 +86,9 @@
     const response = fresh && fresh.ok ? fresh : await fetch(`https://raw.githubusercontent.com/${REPO}/live/url.txt`);
     if (!response.ok) throw new Error(String(response.status));
     const address = (await response.text()).trim();
-    if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(address)) throw new Error('unexpected address');
+    // the tunnel on the author's computer, or the server once Pulse has moved (a DuckDNS name);
+    // anything else in the file is not followed. A domain of your own goes into this list too.
+    if (!/^https:\/\/[a-z0-9-]+\.(trycloudflare\.com|duckdns\.org)$/.test(address)) throw new Error('unexpected address');
     return address;
   }
 

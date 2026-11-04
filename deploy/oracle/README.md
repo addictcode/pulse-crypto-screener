@@ -124,6 +124,17 @@ nano /opt/pulse/.env          # вписать PULSE_TELEGRAM_*, сохрани�
 cd /opt/pulse && docker compose -f compose.prod.yaml up -d
 ```
 
+Запас по зрителям. По умолчанию стек рассчитан на мак: 1.5 ГБ бэкенду и 300 стримов терминала
+(лендинг стрим не держит). У A1 с 12 ГБ запас больше — впиши в `/opt/pulse/.env` и перезапусти:
+
+```
+PULSE_BACKEND_MEMORY=3g
+PULSE_STREAM_CLIENTS=800
+```
+
+Перед роликом проверь на самом сервере, что всплеск выдерживается: `loadtest/run.sh burst -e
+ARRIVALS=1000` (`loadtest/README.md`), отказов должно быть 0, память бэкенда — с запасом от лимита.
+
 ## 8. Деплой из GitHub на каждый мерж
 
 Workflow `ci.yml` после зелёных тестов на `main` заходит на сервер пользователем `pulse` и
@@ -147,8 +158,95 @@ Workflow `ci.yml` после зелёных тестов на `main` заход�
    | `VPS_SSH_KEY` | содержимое `~/.ssh/pulse_deploy` (закрытый ключ, целиком, со строками BEGIN/END) — `pbcopy < ~/.ssh/pulse_deploy` |
    | `VPS_KNOWN_HOSTS` | вывод `ssh-keyscan IP` |
 
-Следующий мерж в `main` развернётся сам: в Actions у прогона `ci` появится шаг **Deploy over SSH**.
+Следующий мерж в `main` развернётся сам: в Actions у прогона `ci` появится шаг **Deploy over SSH**
+(сначала дамп базы, потом новая версия).
 Руками то же самое делает `deploy/deploy.sh pulse@IP`.
+
+**Готовые образы вместо сборки на сервере.** Сборка Java на двух ядрах A1 идёт 5–10 минут и
+съедает память, пока работает старая версия. CI на каждый мерж собирает образы под ARM и x86
+и кладёт их в GitHub Container Registry с меткой коммита. Чтобы сервер их брал:
+
+1. После первого зелёного прогона `ci` на `main`: GitHub → профиль → **Packages** →
+   `pulse-backend` → **Package settings** → **Change visibility** → **Public**; то же для
+   `pulse-web`. Код и так открыт, а публичный образ сервер скачивает без пароля.
+2. В `/opt/pulse/.env`:
+   ```
+   PULSE_BACKEND_IMAGE=ghcr.io/addictcode/pulse-backend
+   PULSE_WEB_IMAGE=ghcr.io/addictcode/pulse-web
+   ```
+
+Дальше `deploy/update.sh` (его вызывают и CI, и `deploy/deploy.sh`) скачивает образы ровно этого
+коммита. Если их нет — CI ещё собирает или сборка упала, — он соберёт их на месте, как раньше:
+старый образ под новой версией кода сервер не запустит. Без этих двух строк всё собирается на
+сервере, как до того.
+
+## 9. Переезд с мака
+
+Делается один раз, когда сервер из шагов 1–8 открывается по своему адресу. На маке копилась
+статистика сигналов (с 31.10.2026 — чистая, на ней будет повторное исследование), её надо
+перенести. Минут 15; пока идёт перенос, сайт по постоянной ссылке показывает демо.
+
+1. **Остановить автозапуск на маке.** Иначе LaunchAgent вернёт постоянную ссылку на туннель:
+   ```bash
+   deploy/home.sh autostart-off
+   ```
+2. **Остановить бэкенд на маке и снять последний дамп.** Бот опрашивает Telegram одним
+   соединением на токен: если бэкенд работает и на маке, и на сервере, Telegram отвечает 409, а
+   посты в канале идут дважды. Поэтому сначала стоп, потом дамп — в нём уже ничего не потеряется:
+   ```bash
+   docker compose -p pulse -f compose.prod.yaml -f compose.tunnel.yaml stop backend
+   docker exec pulse-postgres-1 pg_dump -U pulse -d pulse -Fc > ~/Backups/pulse/pulse-move.dump
+   docker exec -i pulse-postgres-1 pg_restore -l < ~/Backups/pulse/pulse-move.dump | grep -c 'TABLE DATA'
+   ```
+   Последняя команда должна напечатать число больше нуля.
+3. **Перенести настройки Telegram.** Строки `PULSE_TELEGRAM_*` и `PULSE_HEARTBEAT_URL` из `.env`
+   на маке — в `/opt/pulse/.env` на сервере (шаг 7). `PULSE_DOMAIN`, `POSTGRES_PASSWORD` и
+   строки туннеля (`PULSE_SITE_ADDRESS`, `PULSE_HTTP_PORT`, `PULSE_PUBLIC_ORIGIN`) не переносить:
+   у сервера свои.
+4. **Залить дамп на сервер и восстановить.** На сервере уже есть пустая база, созданная при
+   первом запуске. Её пересоздают целиком, а не чистят `--clean`: если на маке были не все
+   миграции, таблицы новых остались бы, а журнал Liquibase из дампа о них не знает, и бэкенд не
+   запустится («already exists»).
+   ```bash
+   scp -i ~/.ssh/oracle_pulse ~/Backups/pulse/pulse-move.dump pulse@IP:
+   ssh -i ~/.ssh/oracle_pulse pulse@IP
+   cd /opt/pulse
+   deploy/backup.sh before-move
+   docker compose -f compose.prod.yaml stop backend
+   docker compose -f compose.prod.yaml exec -T postgres psql -U pulse -d postgres -c 'drop database pulse' -c 'create database pulse owner pulse'
+   docker compose -f compose.prod.yaml exec -T postgres pg_restore -U pulse -d pulse --no-owner < ~/pulse-move.dump
+   docker compose -f compose.prod.yaml up -d backend
+   docker compose -f compose.prod.yaml logs --tail 50 backend
+   ```
+   В логах Liquibase не должно быть ошибок; если на маке были не все миграции, бэкенд докатит
+   остальные сам. На `https://mypulse.duckdns.org/record/` — та же статистика, что была на маке.
+5. **Перевести постоянную ссылку на сервер** (с мака, из папки репозитория):
+   ```bash
+   deploy/home.sh publish https://mypulse.duckdns.org
+   ```
+   Постоянная ссылка ведёт только на `*.trycloudflare.com` и `*.duckdns.org`; для своего домена
+   его надо добавить в проверку адреса в `index.html` в корне репозитория и в `deploy/home.sh`.
+6. **Погасить стек на маке.** Данные остаются в Docker-томе — ещё одна копия на всякий случай:
+   ```bash
+   deploy/home.sh stop
+   ```
+7. Проверить бота: `/status` должен ответить уже с сервера.
+
+## Резервные копии
+
+Каждую ночь в 03:40 UTC и перед каждым деплоем (`deploy/update.sh`, его вызывают CI и `deploy/deploy.sh`) сервер снимает дамп
+базы в `/home/pulse/backups` и хранит две недели; дамп без данных таблиц не сохраняется, а деплой
+без удачного дампа не идёт. Журнал — `/home/pulse/backup.log`. Вручную:
+`ssh pulse@IP '/opt/pulse/deploy/backup.sh manual'`.
+
+Это защита от неудачной миграции или удаления, но не от потери самого сервера. Раз в неделю
+забирай копии на мак:
+
+```bash
+rsync -a -e "ssh -i ~/.ssh/oracle_pulse" pulse@IP:backups/ ~/Backups/pulse/server/
+```
+
+Восстановить дамп — как в шаге 9.4, с нужным файлом из `backups/`.
 
 ## Что настроено на сервере
 
@@ -161,6 +259,11 @@ Workflow `ci.yml` после зелёных тестов на `main` заход�
   перезагрузка — в 04:30 UTC; контейнеры поднимаются сами (`restart: unless-stopped`).
 - **Своп** 2 ГБ на пик сборки Java-образа.
 - **DuckDNS**: cron раз в 10 минут сообщает адрес сервера.
+- **Дамп базы** каждую ночь и перед деплоем — раздел «Резервные копии».
+- **Пульс для healthchecks.io**: если в `.env` есть `PULSE_HEARTBEAT_URL` (бесплатная проверка
+  на healthchecks.io с периодом 1 минута), сервер раз в минуту проверяет свой публичный адрес и,
+  если Pulse ответил, пингует её. Пинги прекратились — проверка шлёт письмо или сообщение в
+  Telegram, по какой бы причине сайт ни лёг.
 - Повторный запуск безопасен: `sudo bash /opt/pulse/deploy/oracle/setup.sh` ничего не
   дублирует и не меняет пароль базы.
 

@@ -43,6 +43,11 @@ export class Alerts {
   /** Fires after an alert is added, removed or triggered. */
   readonly changed = new Emitter<void>();
   private list: PriceAlert[] = load<PriceAlert[]>('alerts', []).filter((a) => a && a.symbol && a.level > 0);
+
+  /** Alerts still waiting for their price. */
+  get armed(): number {
+    return this.list.length;
+  }
   private symbol = '';
   private audio: AudioContext | null = null;
 

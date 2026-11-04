@@ -12,8 +12,24 @@
   ```
 
   Перезаписывает в отчёте только блок между `<!-- tables:start -->` и `<!-- tables:end -->`.
-- `archive.py` — свечи из `data.binance.vision` (или того же S3-бакета, если сайт недоступен),
+- `oi-funding-2026-11.md` — OPEN_INTEREST и FUNDING на том же архиве и второй вопрос ко всем
+  пяти сигналам: живее ли час после них обычного. Направления нет ни у одного; час после PUMP,
+  DUMP, VOLUME и OI — размашистее обычного (у OI — вдвое).
+- `oi_funding.py` — реплей для этого отчёта: `python3 research/oi_funding.py` (150 пар, около
+  часа с пустым кэшем). Тесты: `python3 -m unittest research/test_oi_funding.py`.
+- `archive.py` — свечи, открытый интерес и фандинг из `data.binance.vision` (или того же S3-бакета, если сайт недоступен),
   кэш в `research/.cache/` (в `.gitignore`; полный прогон — около 700 МБ и 15–20 минут загрузки).
 - `test_signals.py` — правила на синтетических свечах: `python3 -m unittest research/test_signals.py`.
+- `live.py` — то же исследование на сигналах, которые живой Pulse записал в базу (пункт «через
+  2–3 недели чистых данных» из CLAUDE.md): ход цены через 5, 15 и 60 минут в сторону сигнала,
+  тот же бутстрэп по дням, вердикт по часу. Считает только с 31.10.2026 (раньше — склейка кадров).
+
+  ```bash
+  python3 research/live.py --docker pulse-postgres-1   # на маке или на сервере, где стек
+  python3 research/live.py --csv signals.csv           # экспорт таблицы signal, команда — в live.py
+  ```
+
+  Печатает таблицу и вывод — их вставить в новый отчёт рядом с `signals-2026-10.md`.
+  Тесты: `python3 -m unittest research/test_live.py`.
 
 Нужны Python 3.11+, numpy и pandas.

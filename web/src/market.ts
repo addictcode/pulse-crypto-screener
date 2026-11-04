@@ -54,6 +54,10 @@ export class Market {
   readonly connectionChanged = new Emitter<ConnectionState>();
   readonly gapsUpdated = new Emitter<void>();
 
+  // the first signals and tape a page receives are history, not news (see apply)
+  private signalsLoaded = false;
+  private tapeLoaded = false;
+
   apply(message: StreamMessage) {
     switch (message.type) {
       case 'snapshot':
@@ -94,11 +98,14 @@ export class Market {
         this.wallsUpdated.emit();
         break;
       case 'signals': {
-        // on connect the server sends recent history; afterwards one signal at a time
+        // the first list is history (on connect, or the landing's first poll); after that, what
+        // was not known yet is news, whether it came alone or with the next poll
+        const first = !this.signalsLoaded;
+        this.signalsLoaded = true;
         const known = new Set(this.signals.map((s) => s.id));
         const fresh = message.items.filter((s) => !known.has(s.id));
         this.signals = [...fresh, ...this.signals].sort((a, b) => b.time - a.time).slice(0, RECENT_SIGNALS);
-        this.newSignals.emit(message.items.length === 1 ? fresh : []);
+        this.newSignals.emit(first ? [] : fresh);
         break;
       }
       case 'outcomes': {
@@ -108,12 +115,14 @@ export class Market {
         break;
       }
       case 'tape': {
-        // a reconnect sends recent history; afterwards each scan's new items
+        // the first list is history; afterwards each scan's (or each poll's) new items
+        const first = !this.tapeLoaded;
+        this.tapeLoaded = true;
         const key = (t: TapeItem) => `${t.time}:${t.symbol}:${t.kind}`;
         const known = new Set(this.tape.map(key));
         const fresh = message.items.filter((t) => !known.has(key(t)));
         this.tape = [...fresh, ...this.tape].sort((a, b) => b.time - a.time).slice(0, RECENT_TAPE);
-        this.newTape.emit(this.tape.length === fresh.length ? [] : fresh);
+        this.newTape.emit(first ? [] : fresh);
         break;
       }
       case 'sparklines':
@@ -145,15 +154,27 @@ export class Market {
   }
 }
 
+/** A tab in the background lets its stream go after this long (see connect). */
+export const RELEASE_HIDDEN_MS = 60_000;
+
 /**
  * Keeps one WebSocket to the backend alive. The backend sends a fresh snapshot on every
  * connect, so a reconnect needs no catch-up logic on this side.
+ *
+ * A tab left in the background (a video watched, the terminal forgotten) closes its stream after
+ * a minute and opens it again when looked at: the server has a client limit, and a forgotten tab
+ * should not take the place of someone watching. `keepInBackground` says when the stream is needed
+ * unseen: price alerts fire exactly in a hidden tab, and a recording must not lose its feed.
  */
-export function connect(market: Market, url: string) {
+export function connect(market: Market, url: string, keepInBackground: () => boolean = () => false) {
   let attempt = 0;
+  let socket: WebSocket | null = null;
+  let released = false;
+  let releaseTimer: number | undefined;
 
   const open = () => {
     const ws = new WebSocket(url);
+    socket = ws;
     let served = false;
     ws.onopen = () => market.setConnection('live');
     ws.onmessage = (event) => {
@@ -166,13 +187,37 @@ export function connect(market: Market, url: string) {
       market.apply(JSON.parse(event.data) as StreamMessage);
     };
     ws.onclose = (event) => {
+      if (socket !== ws) return;
+      socket = null;
       market.setConnection('reconnecting');
+      if (released) return;
       // 1013, try again later: the server is at its client limit; spread the retries out
       const floor = event.code === 1013 ? 5_000 + Math.random() * 5_000 : 0;
       const delay = Math.max(floor, Math.min(15_000, 500 * 2 ** attempt++));
-      setTimeout(open, delay);
+      setTimeout(() => {
+        if (!released && !socket) open();
+      }, delay);
     };
   };
+
+  document.addEventListener('visibilitychange', () => {
+    clearTimeout(releaseTimer);
+    if (document.hidden) {
+      releaseTimer = window.setTimeout(() => {
+        if (!document.hidden || keepInBackground()) return;
+        released = true;
+        // let go of it at once: if the tab comes back before the close completes, a new one opens
+        const ws = socket;
+        socket = null;
+        ws?.close(1000, 'tab in the background');
+        market.setConnection('reconnecting');
+      }, RELEASE_HIDDEN_MS);
+    } else if (released) {
+      released = false;
+      attempt = 0;
+      if (!socket) open();
+    }
+  });
 
   open();
 }

@@ -161,6 +161,14 @@ if [ -n "$DUCKDNS_TOKEN" ] && [[ "$PULSE_DOMAIN" == *.duckdns.org ]]; then
   curl -fsS -K /etc/pulse/duckdns.curl -o /dev/null || echo "DuckDNS did not answer; the cron job will try again"
 fi
 
+log "Cron: nightly database dump (two weeks in /home/pulse/backups), uptime heartbeat"
+# 03:40 UTC, before the 04:30 reboot window of the security updates; deploys also dump first
+echo '40 3 * * * pulse cd /opt/pulse && deploy/backup.sh nightly >> /home/pulse/backup.log 2>&1' > /etc/cron.d/pulse-backup
+chmod 644 /etc/cron.d/pulse-backup
+# the uptime alarm: pings PULSE_HEARTBEAT_URL from .env while the site answers (empty: does nothing)
+echo '* * * * * pulse /opt/pulse/deploy/heartbeat.sh > /dev/null 2>&1' > /etc/cron.d/pulse-heartbeat
+chmod 644 /etc/cron.d/pulse-heartbeat
+
 domain=$(sed -n 's/^PULSE_DOMAIN=//p' "$ENV_FILE")
 if [ "$PULSE_START" != 1 ]; then
   log "Set up; not started (PULSE_START=$PULSE_START)"

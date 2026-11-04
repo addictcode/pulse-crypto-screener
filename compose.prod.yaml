@@ -27,6 +27,9 @@ services:
 
   backend:
     build: ./backend
+    # the default is the name Compose gives a local build; a server set up to pull ready images
+    # names them in .env (PULSE_BACKEND_IMAGE, see deploy/update.sh)
+    image: ${PULSE_BACKEND_IMAGE:-pulse-backend}:${PULSE_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -45,7 +48,10 @@ services:
       PULSE_TELEGRAM_DIGEST_HOUR: ${PULSE_TELEGRAM_DIGEST_HOUR:-}
       PULSE_TELEGRAM_DIGEST_LANG: ${PULSE_TELEGRAM_DIGEST_LANG:-en}
       PULSE_PREMIUM_ENABLED: ${PULSE_PREMIUM_ENABLED:-false}
-    mem_limit: 1536m
+      PULSE_STREAM_CLIENTS: ${PULSE_STREAM_CLIENTS:-300}
+      PULSE_STREAM_CLIENTS_PER_ADDRESS: ${PULSE_STREAM_CLIENTS_PER_ADDRESS:-30}
+    # the heap is 70% of this (MaxRAMPercentage in the Dockerfile); raise both together on a server
+    mem_limit: ${PULSE_BACKEND_MEMORY:-1536m}
     # the image has neither curl nor wget, so bash speaks HTTP itself. "Healthy" means the market
     # feed is alive, not merely that the JVM runs (see MarketHealthIndicator).
     healthcheck:
@@ -58,6 +64,7 @@ services:
 
   web:
     build: ./web
+    image: ${PULSE_WEB_IMAGE:-pulse-web}:${PULSE_IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       - backend

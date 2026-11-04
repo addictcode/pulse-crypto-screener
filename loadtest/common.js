@@ -62,14 +62,28 @@ export function stream(ip, seconds) {
   streamRefused.add(refused || !res || res.status !== 101);
 }
 
-/** The landing page: the stream for the live numbers, setups and links, a counted visit. */
+export const summaryBytes = new Counter('summary_bytes');
+
+/**
+ * The landing page: setups and links, a counted visit, then the live numbers from a poll of
+ * /api/summary every 5 seconds while it stays (web/src/api.ts, startSummary), not the stream.
+ */
 export function landing(ip, seconds) {
   page(ip, '/');
   get(ip, '/api/links');
   get(ip, '/api/setups');
   http.post(`${BASE}/api/hit`, JSON.stringify({ page: 'landing', source: 'tiktok' }),
     { headers: { 'X-Forwarded-For': ip, 'Content-Type': 'application/json' }, tags: { name: '/api/hit' } });
-  stream(ip, seconds);
+  const until = Date.now() + seconds * 1000;
+  do {
+    // as a browser asks: compressed, so the bytes counted are the ones on the wire
+    const asked = params(ip, '/api/summary');
+    const res = http.get(`${BASE}/api/summary`, { ...asked, headers: { ...asked.headers, 'Accept-Encoding': 'gzip' } });
+    apiLimited.add(res.status === 429);
+    check(res, { '/api/summary ok': (r) => r.status === 200 });
+    summaryBytes.add(Number(res.headers['Content-Length'] || (res.body || '').length));
+    sleep(5);
+  } while (Date.now() < until);
 }
 
 /** The terminal: the stream plus the dozen calls of a first load (chart, positioning, signals, ...). */

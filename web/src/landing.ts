@@ -5,7 +5,7 @@ import './landing.css';
 
 import { age, base, pct, px, tone, usd } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
-import { STANDALONE, setupBoard, startFeed } from './api';
+import { STANDALONE, setupBoard, startSummary } from './api';
 import { Market } from './market';
 import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
@@ -35,7 +35,10 @@ const hasWebgl = (() => {
   }
 })();
 const withoutPlanet = () => document.body.classList.add('static');
-if (hasWebgl) {
+// a visitor who asked the browser to save data (Data Saver, mostly phones on mobile data) is
+// spared the planet's 135 KB and gets the same still disc as a browser without WebGL
+const savesData = Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+if (hasWebgl && !savesData) {
   const tip = $('planet-tip');
   const layer = $('planet-layer');
   void import('./planet')
@@ -360,4 +363,5 @@ void Promise.all([loadTelegramTargets(), document.fonts.ready]).then(([[first]])
 });
 void mountTelegram($('final-tg'), 'ghost');
 
-void startFeed(market).catch(() => undefined);
+// a poll of the summary, not the stream: the landing needs a fraction of it (see startSummary)
+void startSummary(market).catch(() => undefined);
