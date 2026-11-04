@@ -12,7 +12,12 @@
   ```
 
   Перезаписывает в отчёте только блок между `<!-- tables:start -->` и `<!-- tables:end -->`.
-- `archive.py` — свечи из `data.binance.vision` (или того же S3-бакета, если сайт недоступен),
+- `oi-funding-2026-11.md` — OPEN_INTEREST и FUNDING на том же архиве и второй вопрос ко всем
+  пяти сигналам: живее ли час после них обычного. Направления нет ни у одного; час после PUMP,
+  DUMP, VOLUME и OI — размашистее обычного (у OI — вдвое).
+- `oi_funding.py` — реплей для этого отчёта: `python3 research/oi_funding.py` (150 пар, около
+  часа с пустым кэшем). Тесты: `python3 -m unittest research/test_oi_funding.py`.
+- `archive.py` — свечи, открытый интерес и фандинг из `data.binance.vision` (или того же S3-бакета, если сайт недоступен),
   кэш в `research/.cache/` (в `.gitignore`; полный прогон — около 700 МБ и 15–20 минут загрузки).
 - `test_signals.py` — правила на синтетических свечах: `python3 -m unittest research/test_signals.py`.
 - `live.py` — то же исследование на сигналах, которые живой Pulse записал в базу (пункт «через
