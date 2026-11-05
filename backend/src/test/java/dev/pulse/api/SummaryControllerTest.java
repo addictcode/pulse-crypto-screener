@@ -8,18 +8,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.ObjectProvider;
 
 import dev.pulse.depth.BookSide;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.Wall;
+import dev.pulse.market.Liquidation;
 import dev.pulse.market.MarketStore;
+import dev.pulse.market.PositionSide;
 import dev.pulse.market.SymbolMetrics;
 import dev.pulse.signal.SignalHistory;
 import dev.pulse.signal.TapeDetector;
@@ -47,6 +51,11 @@ class SummaryControllerTest {
                 new Wall("BTCUSDT", BookSide.BID, 82_500, 40, -0.6, 8, 120, null),
                 new Wall("BTCUSDT", BookSide.ASK, 90_000, 40, 8.4, 8, 120, null)), Map.of("BTCUSDT", 0.1)));
         when(signals.recent(anyInt())).thenReturn(List.of());
+        when(store.sparklines(ArgumentMatchers.<Collection<String>>any(), anyInt()))
+                .thenAnswer(call -> {
+                    Collection<String> asked = call.getArgument(0);
+                    return asked.contains("ETHUSDT") ? Map.of("ETHUSDT", List.of(1.0, 1.1)) : Map.of();
+                });
     }
 
     private JsonNode body() {
@@ -71,6 +80,16 @@ class SummaryControllerTest {
         assertThat(walls.path("coverage").path("BTCUSDT").asDouble()).isEqualTo(0.1);
         // no tape detector in this context: an empty tape, not a failure
         assertThat(body().path("tape")).isEmpty();
+    }
+
+    @Test
+    void sparklinesComeOnlyForThePairsTheEventsName() {
+        when(store.recentLiquidations(anyInt())).thenReturn(List.of(
+                new Liquidation("ETHUSDT", PositionSide.LONG, 3000, 10, 1)));
+        JsonNode sparklines = body().path("sparklines");
+
+        assertThat(sparklines.propertyNames()).containsExactly("ETHUSDT");
+        assertThat(sparklines.path("ETHUSDT")).hasSize(2);
     }
 
     @Test

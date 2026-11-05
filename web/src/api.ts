@@ -82,6 +82,8 @@ export interface Summary {
   walls: { ts: number; walls: Wall[]; coverage: Record<string, number> };
   signals: Signal[];
   tape: TapeItem[];
+  /** Two hours of the pairs the events name, for the phone feed's cards. */
+  sparklines: Record<string, number[]>;
 }
 
 /** How often the landing asks; the server rebuilds the answer at most every 2 seconds. */
@@ -99,31 +101,51 @@ export function applySummary(market: Market, summary: Summary) {
   // a signal already shown gets its outcome once the hour has passed
   market.apply({ type: 'outcomes', items: summary.signals });
   market.apply({ type: 'tape', items: summary.tape });
+  if (summary.sparklines && Object.keys(summary.sparklines).length) market.apply({ type: 'sparklines', series: summary.sparklines });
 }
 
 /**
- * The landing's feed: a poll of /api/summary while the tab is visible, not the full stream. Most
- * visitors only see the landing; this keeps them off the stream's client limit and its ~40 KB/s
- * (loadtest/REPORT.md). The demo has no server and keeps its own feed.
+ * A poll of /api/summary while the tab is visible, instead of the full stream: the landing, and
+ * the phone's live feed, need a fraction of it (loadtest/REPORT.md: the stream is ~40 KB/s, on a
+ * phone's mobile data that is 140 MB an hour). `ready` settles after the first answer; `stop`
+ * ends the polling, for when the full terminal takes over with the stream.
  */
-export async function startSummary(market: Market): Promise<void> {
-  if (STANDALONE) return startFeed(market);
+export function pollSummary(market: Market): { ready: Promise<void>; stop(): void } {
+  let stopped = false;
   const poll = async () => {
+    if (stopped) return;
     try {
-      applySummary(market, await getJson<Summary>('/api/summary'));
+      const summary = await getJson<Summary>('/api/summary');
+      // an answer that arrives after the stream took over must not roll its fresher data back
+      if (stopped) return;
+      applySummary(market, summary);
       market.setConnection('live');
     } catch {
-      market.setConnection('reconnecting');
+      if (!stopped) market.setConnection('reconnecting');
     }
   };
-  setInterval(() => {
+  const timer = setInterval(() => {
     if (!document.hidden) void poll();
   }, SUMMARY_MS);
   // back from another tab: catch up now instead of at the next tick
-  document.addEventListener('visibilitychange', () => {
+  const onVisible = () => {
     if (!document.hidden) void poll();
-  });
-  await poll();
+  };
+  document.addEventListener('visibilitychange', onVisible);
+  return {
+    ready: poll(),
+    stop() {
+      stopped = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    },
+  };
+}
+
+/** The landing's feed: the summary on the server, the demo's own feed without one. */
+export async function startSummary(market: Market): Promise<void> {
+  if (STANDALONE) return startFeed(market);
+  await pollSummary(market).ready;
 }
 
 /**

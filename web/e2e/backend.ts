@@ -60,6 +60,7 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     walls: { ts: Date.now(), walls: [], coverage: { BTCUSDT: 0.1 } },
     signals: [],
     tape: [],
+    sparklines: Object.fromEntries(ROWS.map((r) => [r.symbol, [1, 1.01, 0.99, 1.02, 1.03]])),
   };
   const slim = ({ symbol, price, ch5m, ch24h, vol24h }: SymbolMetrics) => ({ symbol, price, ch5m, ch24h, vol24h });
   const remember = (message: StreamMessage) => {
@@ -122,6 +123,9 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     push: (message) => {
       remember(message);
       sockets.forEach((ws) => ws.send(JSON.stringify(message)));
+      // a page that polls the summary (the landing, the phone feed) asks again when it becomes
+      // visible: that makes it take the news now instead of at its next five-second tick
+      void page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))).catch(() => undefined);
     },
     hits,
     streams: () => sockets.length,
