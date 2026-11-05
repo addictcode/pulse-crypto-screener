@@ -103,7 +103,7 @@ public record PulseProperties(Binance binance, Bybit bybit, Stream stream, Densi
      */
     public record Telegram(boolean enabled, String token, Long ownerChatId, String apiUrl, boolean open, String channel,
                            Duration channelDelay, int channelPerHour, double channelStrength, String botUsername,
-                           Integer digestHour, String digestLang) {
+                           Integer digestHour, String digestLang, String siteUrl) {
 
         public boolean digestInRussian() {
             return "ru".equalsIgnoreCase(digestLang);

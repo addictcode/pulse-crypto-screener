@@ -55,14 +55,26 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
   // what /api/summary answers (the landing polls it): the same market, kept up to date by push()
   const state: Summary = {
     ts: Date.now(),
-    rows: ROWS.map(({ symbol, price, ch5m, ch24h, vol24h }) => ({ symbol, price, ch5m, ch24h, vol24h })),
+    rows: ROWS.map((r) => ({ symbol: r.symbol, price: r.price, ch5m: r.ch5m, ch24h: r.ch24h, vol24h: r.vol24h })),
     liquidations: [],
     walls: { ts: Date.now(), walls: [], coverage: { BTCUSDT: 0.1 } },
     signals: [],
     tape: [],
+    sparklines: Object.fromEntries(ROWS.map((r) => [r.symbol, [1, 1.01, 0.99, 1.02, 1.03]])),
   };
+  const slim = ({ symbol, price, ch5m, ch24h, vol24h }: SymbolMetrics) => ({ symbol, price, ch5m, ch24h, vol24h });
   const remember = (message: StreamMessage) => {
     state.ts = Date.now();
+    if (message.type === 'snapshot') {
+      state.rows = message.rows.map(slim);
+      state.liquidations = message.liquidations;
+    }
+    if (message.type === 'delta') {
+      for (const partial of message.rows) {
+        const row = state.rows.find((r) => r.symbol === partial.symbol);
+        if (row) Object.assign(row, Object.fromEntries(Object.entries(partial).filter(([key]) => key in row)));
+      }
+    }
     if (message.type === 'tape') state.tape = [...message.items, ...state.tape];
     if (message.type === 'signals') state.signals = [...message.items, ...state.signals];
     if (message.type === 'liquidations') state.liquidations = [...message.items, ...state.liquidations];
@@ -111,6 +123,9 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     push: (message) => {
       remember(message);
       sockets.forEach((ws) => ws.send(JSON.stringify(message)));
+      // a page that polls the summary (the landing, the phone feed) asks again when it becomes
+      // visible: that makes it take the news now instead of at its next five-second tick
+      void page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))).catch(() => undefined);
     },
     hits,
     streams: () => sockets.length,

@@ -48,6 +48,11 @@ env:
   # a pull request renders six to prove the workflow; a batch branch or a manual run the batch
   MAX: ${{ inputs.max || (github.event_name == 'pull_request' && '6' || '400') }}
 
+
+# the token reads the code and nothing more; a job that needs more says so itself
+permissions:
+  contents: read
+
 jobs:
   plan:
     runs-on: ubuntu-24.04

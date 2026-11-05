@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs Pulse on this machine behind a Cloudflare quick tunnel and prints the public address.
 #   deploy/home.sh           start or update, then show the address
+#   deploy/home.sh deploy    update to the committed version: dump the database, build, restart
 #   deploy/home.sh url       only show the current address
 #   deploy/home.sh publish   point the permanent link (GitHub Pages) at the current address
 #   deploy/home.sh publish https://NAME.duckdns.org   point it at the server after the move
@@ -135,6 +136,35 @@ ENV
     fi
     echo "Pulse is at: $address"
     echo "Permanent link: deploy/home.sh publish (once), or deploy/home.sh watch to keep it current"
+    ;;
+  deploy)
+    # What a deploy by hand must do, in one go: the database dumped before a new version can
+    # migrate it, and images built from the commit, so half-edited files never reach the site.
+    if [ -n "$(git status --porcelain -- backend web)" ]; then
+      echo "note: uncommitted changes in backend/ or web/ are not deployed, the images come from $(git rev-parse --short HEAD)"
+    fi
+    compose up -d postgres
+    for _ in $(seq 1 30); do
+      [ "$(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q postgres)" 2>/dev/null)" = healthy ] && break
+      sleep 2
+    done
+    COMPOSE_PROJECT_NAME=pulse COMPOSE_FILE=compose.prod.yaml:compose.tunnel.yaml \
+      PULSE_BACKUP_DIR="$HOME/Backups/pulse" PULSE_BACKUP_DAYS=60 deploy/backup.sh pre-deploy
+    git archive HEAD:backend | docker build -t pulse-backend:latest -
+    git archive HEAD:web | docker build -t pulse-web:latest -
+    compose up -d --no-build --remove-orphans
+    # healthy means the market feed is alive (MarketHealthIndicator); give the first start time
+    state=starting
+    for _ in $(seq 1 60); do
+      state=$(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q backend)" 2>/dev/null || echo missing)
+      [ "$state" = healthy ] && break
+      sleep 5
+    done
+    echo "backend: $state"
+    compose logs --since 10m backend 2>/dev/null | grep -iE 'liquibase.*(error|fail)|changeset.*fail' || echo "Liquibase: no errors"
+    curl -fsS -m 10 -o /dev/null http://localhost:8088/api/status && echo "site: answers on http://localhost:8088"
+    echo "Pulse is at: $(url)"
+    [ "$state" = healthy ]
     ;;
   autostart)
     # A LaunchAgent of the logged-in user: it has the keychain (for the GitHub CLI) and starts

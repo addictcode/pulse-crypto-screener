@@ -200,18 +200,27 @@ export function connect(market: Market, url: string, keepInBackground: () => boo
     };
   };
 
+  const releaseLater = () => {
+    releaseTimer = window.setTimeout(() => {
+      if (!document.hidden) return;
+      // still needed unseen: ask again in a minute, so it goes once the alert has fired
+      if (keepInBackground()) {
+        releaseLater();
+        return;
+      }
+      released = true;
+      // let go of it at once: if the tab comes back before the close completes, a new one opens
+      const ws = socket;
+      socket = null;
+      ws?.close(1000, 'tab in the background');
+      market.setConnection('reconnecting');
+    }, RELEASE_HIDDEN_MS);
+  };
+
   document.addEventListener('visibilitychange', () => {
     clearTimeout(releaseTimer);
     if (document.hidden) {
-      releaseTimer = window.setTimeout(() => {
-        if (!document.hidden || keepInBackground()) return;
-        released = true;
-        // let go of it at once: if the tab comes back before the close completes, a new one opens
-        const ws = socket;
-        socket = null;
-        ws?.close(1000, 'tab in the background');
-        market.setConnection('reconnecting');
-      }, RELEASE_HIDDEN_MS);
+      releaseLater();
     } else if (released) {
       released = false;
       attempt = 0;

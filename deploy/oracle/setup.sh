@@ -148,6 +148,12 @@ fi
 if [ -n "$PULSE_DOMAIN" ]; then
   sed -i "s/^PULSE_DOMAIN=.*/PULSE_DOMAIN=$PULSE_DOMAIN/" "$ENV_FILE"
 fi
+# ready images from CI (public on ghcr.io, see README step 8): the first start pulls them instead
+# of building Java on two cores; deploy/update.sh builds here whatever is not there
+owner=$(printf '%s' "$REPO" | sed -nE 's#^https://github.com/([^/]+)/.*#\1#p' | tr '[:upper:]' '[:lower:]')
+if [ -n "$owner" ] && ! grep -q '^PULSE_BACKEND_IMAGE=' "$ENV_FILE"; then
+  printf '\n# ready images built by CI (deploy/update.sh); remove both lines to build on this server\nPULSE_BACKEND_IMAGE=ghcr.io/%s/pulse-backend\nPULSE_WEB_IMAGE=ghcr.io/%s/pulse-web\n' "$owner" "$owner" >> "$ENV_FILE"
+fi
 chown pulse:pulse "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
@@ -175,7 +181,7 @@ if [ "$PULSE_START" != 1 ]; then
 elif [ -z "$domain" ] || [ "$domain" = pulse-example.duckdns.org ]; then
   log "Set up. Put your domain into PULSE_DOMAIN in $ENV_FILE, then: sudo -u pulse docker compose -f $APP_DIR/compose.prod.yaml up -d --build"
 else
-  log "Starting Pulse for $domain (the first build takes 5-10 minutes)"
-  sudo -u pulse -H bash -c "cd '$APP_DIR' && docker compose -f compose.prod.yaml up -d --build"
+  log "Starting Pulse for $domain (ready images: a minute or two; a build here: 5-10 minutes)"
+  sudo -u pulse -H bash -c "cd '$APP_DIR' && deploy/update.sh"
   log "Done. https://$domain"
 fi

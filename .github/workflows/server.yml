@@ -16,6 +16,11 @@ on:
       - deploy/**
       - .env.example
 
+
+# the token reads the code and nothing more; a job that needs more says so itself
+permissions:
+  contents: read
+
 jobs:
   oracle-setup:
     runs-on: ubuntu-24.04

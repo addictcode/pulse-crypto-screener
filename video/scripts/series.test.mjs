@@ -59,3 +59,12 @@ test('the headline numbers match the research report', () => {
   const stats = SERIES.ru.flatMap((e) => e.beats).filter((b) => b.kind === 'stat').map((b) => b.value);
   assert.deepEqual(stats, [60329, 9956, 9247]);
 });
+
+test('part 6 says only what the second study found', () => {
+  const report = readFileSync(new URL('../../research/oi-funding-2026-11.md', import.meta.url), 'utf8');
+  // "almost twice as much": PUMP and OPEN_INTEREST on the checking half, against the usual hour
+  assert.match(report, /\| PUMP \| проверочная \| \d+ \| ×1\.8\d/);
+  assert.match(report, /\| OPEN_INTEREST \| проверочная \| \d+ \| ×2\.\d+/);
+  const said = [...SERIES.ru, ...SERIES.en].find((e) => e.slug === 'signals-6').beats.map((b) => b.say).join(' ');
+  assert.doesNotMatch(said, /наверняка|guaranteed|always|всегда/);
+});

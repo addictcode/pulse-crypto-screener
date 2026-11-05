@@ -9,8 +9,14 @@ cd "$(dirname "$0")/.."
 
 dir=${PULSE_BACKUP_DIR:-$HOME/backups}
 keep=${PULSE_BACKUP_DAYS:-14}
+# the server's stack by default; the Mac's names its own project and files in COMPOSE_PROJECT_NAME
+# and COMPOSE_FILE (deploy/home.sh deploy does)
 compose() {
-  docker compose -f compose.prod.yaml "$@"
+  if [ -n "${COMPOSE_FILE:-}" ]; then
+    docker compose "$@"
+  else
+    docker compose -f compose.prod.yaml "$@"
+  fi
 }
 
 if [ -z "$(compose ps -q postgres 2>/dev/null)" ]; then

@@ -2,6 +2,7 @@ package dev.pulse.config;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.http.HttpHeaders;
@@ -26,6 +27,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** Buckets idle this long are full again anyway, so they can be forgotten. */
     static final long IDLE_MS = 10 * 60_000;
     static final int MAX_CLIENTS = 50_000;
+    static final Set<String> CACHED = Set.of("/api/summary", "/api/setups");
     /** Where new clients go while the map is full of active ones: they share one bucket. */
     static final String OVERFLOW = "overflow";
     /** A full sweep of the map is O(clients): at most this often, not on every request. */
@@ -43,7 +45,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/");
+        String path = request.getRequestURI();
+        // What the landing polls is cached and the same for everyone (SummaryController, the
+        // default board of SetupController), so a crowd costs nothing more. Limited, ten phones
+        // behind one operator's IPv4 address (CGNAT) polling it would already run the address out.
+        // With parameters the request is not the cached one and stays limited.
+        return !path.startsWith("/api/") || (CACHED.contains(path) && request.getQueryString() == null);
     }
 
     @Override

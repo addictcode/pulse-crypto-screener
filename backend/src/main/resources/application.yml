@@ -125,6 +125,9 @@ pulse:
     # the daily digest in the channel at this hour, UTC (0-23); empty: no digest. /digest works anyway
     digest-hour: ${PULSE_TELEGRAM_DIGEST_HOUR:}
     digest-lang: ${PULSE_TELEGRAM_DIGEST_LANG:en}
+    # channel posts link here, tagged utm_source=telegram: the permanent link follows the site
+    # wherever it runs (tunnel or server); empty: no link
+    site-url: ${PULSE_SITE_URL:https://addictcode.github.io/pulse-crypto-screener/}
   # Paid premium through Telegram Stars. Prepared, switched off: /premium only says it is not on
   # sale, no invoice goes out, and nothing free users get changes either way.
   premium:

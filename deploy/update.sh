@@ -25,13 +25,16 @@ web_image=$(setting PULSE_WEB_IMAGE)
 if [ -n "$backend_image" ] && [ -n "$web_image" ]; then
   PULSE_IMAGE_TAG=$(git rev-parse HEAD)
   export PULSE_IMAGE_TAG
-  if compose pull backend web; then
-    echo "images of $PULSE_IMAGE_TAG pulled"
-    compose up -d --no-build --remove-orphans
-  else
-    echo "no ready images for $PULSE_IMAGE_TAG, building them here"
-    compose up -d --build --remove-orphans
+  missing=()
+  for service in backend web; do
+    compose pull "$service" || missing+=("$service")
+  done
+  if [ ${#missing[@]} -gt 0 ]; then
+    # only what is not there: a pulled image is not built again
+    echo "no ready image of ${missing[*]} for $PULSE_IMAGE_TAG, building it here"
+    compose build "${missing[@]}"
   fi
+  compose up -d --no-build --remove-orphans
   # plain `docker compose` commands afterwards (no tag given) mean this same version
   docker tag "$backend_image:$PULSE_IMAGE_TAG" "$backend_image:latest"
   docker tag "$web_image:$PULSE_IMAGE_TAG" "$web_image:latest"

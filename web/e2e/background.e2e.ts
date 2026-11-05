@@ -58,4 +58,11 @@ test('a waiting price alert keeps the stream in the background', async ({ page }
   await setHidden(page, true);
   await page.clock.fastForward(120_000);
   expect(backend.openStreams()).toBe(1);
+
+  // the price gets there: the alert fires, nothing waits any more, and within a minute the stream goes
+  backend.push({ type: 'delta', ts: Date.now(), rows: [{ symbol: 'BTCUSDT', price: 91_000 }] });
+  await page.clock.fastForward(5_000);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('pulse.alerts'))).toBe('[]');
+  await page.clock.fastForward(61_000);
+  await expect.poll(() => backend.openStreams()).toBe(0);
 });

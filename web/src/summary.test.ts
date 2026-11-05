@@ -17,6 +17,7 @@ const summary = (over: Partial<Summary> = {}): Summary => ({
   walls: { ts: 1, walls: [], coverage: { WIFUSDT: 0.1 } },
   signals: [],
   tape: [],
+  sparklines: {},
   ...over,
 });
 
@@ -63,5 +64,13 @@ describe('the landing summary', () => {
     applySummary(market, summary({ signals: [signal(1, 10)] }));
     applySummary(market, summary({ signals: [signal(1, 10, 1.4)] }));
     expect(market.signals[0].ret1h).toBe(1.4);
+  });
+});
+
+describe('the phone feed from the summary', () => {
+  it('gets the two hours of the pairs the events name', () => {
+    const market = new Market();
+    applySummary(market, summary({ sparklines: { SOLUSDT: [1, 1.02, 0.99] } }));
+    expect(market.sparklines.get('SOLUSDT')).toEqual([1, 1.02, 0.99]);
   });
 });

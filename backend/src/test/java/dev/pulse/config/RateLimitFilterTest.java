@@ -76,6 +76,39 @@ class RateLimitFilterTest {
     }
 
     @Test
+    void theLandingSummaryIsNotLimitedSoPhonesBehindOneAddressKeepTheirNumbers() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/summary");
+            request.addHeader(ClientAddress.HEADER, "4.4.4.4");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, new MockFilterChain());
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+        // and the address still has its whole burst for everything else
+        assertThat(filter.take("4.4.4.4", System.currentTimeMillis())).isZero();
+    }
+
+    @Test
+    void theCachedBoardIsFreeButTheSameEndpointWithParametersIsLimited() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/setups");
+            request.addHeader(ClientAddress.HEADER, "5.5.5.5");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request, response, new MockFilterChain());
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+        MockHttpServletResponse last = null;
+        for (int i = 0; i < 4; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/setups");
+            request.setQueryString("days=" + (i + 1));
+            request.addHeader(ClientAddress.HEADER, "5.5.5.5");
+            last = new MockHttpServletResponse();
+            filter.doFilter(request, last, new MockFilterChain());
+        }
+        assertThat(last.getStatus()).isEqualTo(429);
+    }
+
+    @Test
     void theAppAndHealthAreNotLimited() throws Exception {
         for (int i = 0; i < 10; i++) {
             MockHttpServletResponse response = new MockHttpServletResponse();

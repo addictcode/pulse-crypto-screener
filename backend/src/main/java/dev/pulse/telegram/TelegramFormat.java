@@ -45,7 +45,7 @@ final class TelegramFormat {
      * @param prices current price by symbol; a symbol without one shows no follow-up
      * @param bot    the bot's username, without "@"; empty when unknown
      */
-    static String channel(List<Signal> signals, Map<String, Double> prices, long delayMinutes, String bot) {
+    static String channel(List<Signal> signals, Map<String, Double> prices, long delayMinutes, String bot, String siteUrl) {
         StringBuilder text = new StringBuilder();
         if (signals.size() == 1) {
             Signal s = signals.getFirst();
@@ -64,7 +64,23 @@ final class TelegramFormat {
         if (!bot.isEmpty()) {
             text.append("The bot had this ").append(delayMinutes).append(" min earlier, as it happened: @").append(bot).append('\n');
         }
+        String site = siteLine(siteUrl, false);
+        if (!site.isEmpty()) {
+            text.append(site).append('\n');
+        }
         return text.append("<i>What the market did, not a forecast. Not financial advice.</i>").toString();
+    }
+
+    /**
+     * A link to the site, tagged so its visit counter files the visitor under Telegram (the
+     * permanent link carries the tag on to wherever the site runs). Empty without a site.
+     */
+    static String siteLine(String siteUrl, boolean ru) {
+        if (siteUrl == null || siteUrl.isBlank()) {
+            return "";
+        }
+        String url = siteUrl.strip() + (siteUrl.contains("?") ? "&" : "?") + "utm_source=telegram";
+        return (ru ? "График и весь рынок: " : "Chart and the whole market: ") + "<a href=\"" + escape(url) + "\">Pulse</a>";
     }
 
     private static Optional<String> since(Signal s, Double now) {

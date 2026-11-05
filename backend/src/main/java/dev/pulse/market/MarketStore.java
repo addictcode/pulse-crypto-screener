@@ -2,6 +2,7 @@ package dev.pulse.market;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -163,6 +164,18 @@ public class MarketStore implements MarketSink {
     public Map<String, List<Double>> sparklines(int points) {
         Map<String, List<Double>> sparks = new LinkedHashMap<>();
         states.forEach((symbol, state) -> sparks.put(symbol, state.sparkline(points)));
+        return sparks;
+    }
+
+    /** The same for a few pairs only; pairs not listed here are left out. */
+    public Map<String, List<Double>> sparklines(Collection<String> symbols, int points) {
+        Map<String, List<Double>> sparks = new LinkedHashMap<>();
+        for (String symbol : symbols) {
+            SymbolState state = states.get(symbol);
+            if (state != null) {
+                sparks.put(symbol, state.sparkline(points));
+            }
+        }
         return sparks;
     }
 

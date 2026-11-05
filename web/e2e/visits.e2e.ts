@@ -9,6 +9,8 @@ test('each page counts itself once, and the visit keeps the source it came with'
   const backend = await fakeBackend(page);
   await page.goto('/?utm_source=tiktok');
   await expect.poll(() => backend.hits).toContainEqual({ page: 'landing', source: 'tiktok' });
+  // read and remembered: a link copied from the address bar no longer says TikTok
+  await expect(page).toHaveURL(/\/$/);
 
   await page.locator('.hero .cta').click();
   await expect(page).toHaveURL(/\/app\//);
@@ -20,6 +22,11 @@ test('each page counts itself once, and the visit keeps the source it came with'
 
   await page.goto('/record/');
   await expect.poll(() => backend.hits).toContainEqual({ page: 'record', source: 'tiktok' });
+  // back on the landing, and a reload: the same visitor, still one visit
+  await page.goto('/');
+  await page.reload();
+  await page.goto('/record/');
+  await expect.poll(() => backend.hits.filter((h) => h.page === 'record')).toHaveLength(1);
   expect(backend.hits.filter((h) => h.page === 'landing')).toHaveLength(1);
 });
 

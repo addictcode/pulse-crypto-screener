@@ -60,17 +60,18 @@ class VisitControllerTest {
     }
 
     @Test
-    void oneAddressCountsOncePerPageAMinute() throws Exception {
-        hit("1.1.1.1", "{\"page\":\"landing\"}", 204);
-        hit("1.1.1.1", "{\"page\":\"landing\"}", 204);
+    void oneAddressCountsUpToTheLimitAMinutePerPage() throws Exception {
+        for (int i = 0; i < HitGate.PER_WINDOW + 5; i++) {
+            hit("1.1.1.1", "{\"page\":\"landing\"}", 204);
+        }
         hit("1.1.1.1", "{\"page\":\"app\"}", 204);
         hit("2.2.2.2", "{\"page\":\"landing\"}", 204);
-        assertThat(counted).hasSize(3);
+        assertThat(counted).hasSize(HitGate.PER_WINDOW + 2);
 
         clock.advance(HitGate.WINDOW_MS);
         hit("1.1.1.1", "{\"page\":\"landing\"}", 204);
 
-        assertThat(counted).hasSize(4);
+        assertThat(counted).hasSize(HitGate.PER_WINDOW + 3);
     }
 
     private void hit(String address, String json, int expected) throws Exception {

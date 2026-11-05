@@ -42,7 +42,7 @@ RULES
   git config --global --add safe.directory "*"
   git clone -q /src /opt/pulse
   install -d /etc/pulse
-  printf "PULSE_DOMAIN=test.duckdns.org\nDUCKDNS_TOKEN=\nREPO=/src\nBRANCH=unused\n" > /etc/pulse/install.env
+  printf "PULSE_DOMAIN=test.duckdns.org\nDUCKDNS_TOKEN=\nREPO=https://github.com/AddictCode/pulse-crypto-screener.git\nBRANCH=unused\n" > /etc/pulse/install.env
 
   for run in 1 2; do
     echo "== setup.sh, run $run"
@@ -71,6 +71,7 @@ RULES
   [ "$(stat -c %U /opt/pulse/.env)" = pulse ] && [ "$(stat -c %a /opt/pulse/.env)" = 600 ] || fail ".env owner or mode"
   grep -q "^PULSE_DOMAIN=test.duckdns.org$" /opt/pulse/.env || fail "domain not in .env"
   grep -Eq "^POSTGRES_PASSWORD=[0-9a-f]{48}$" /opt/pulse/.env || fail "no database password"
+  [ "$(grep -c "^PULSE_BACKEND_IMAGE=ghcr.io/addictcode/pulse-backend$" /opt/pulse/.env)" = 1 ] || fail "ready images not set exactly once"
   [ "$(grep -c backup.sh /etc/cron.d/pulse-backup)" = 1 ] || fail "nightly backup not exactly once"
   [ -x /opt/pulse/deploy/backup.sh ] || fail "backup.sh not executable in the clone"
   [ "$(grep -c heartbeat.sh /etc/cron.d/pulse-heartbeat)" = 1 ] || fail "heartbeat not exactly once"
