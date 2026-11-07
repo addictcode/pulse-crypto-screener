@@ -43,6 +43,7 @@ COOLDOWN_MIN = {**base.COOLDOWN_MIN, "oi": 30, "funding": 240}
 
 HORIZONS = (15, 60, 240)
 ACTIVITY = 60               # the "does it move more" question is asked on the hour
+DELAY = 5                   # minutes: the archive may stamp an OI point at the start of its window
 BASELINE_MINUTES = 1440     # "usual" is the day before the signal
 
 KINDS = ("pump", "dump", "volume", "oi", "funding")
@@ -115,6 +116,7 @@ def replay_symbol(symbol: str, start: date, end: date) -> list[dict]:
     df["usual"] = moved.shift(ACTIVITY).rolling(BASELINE_MINUTES, min_periods=BASELINE_MINUTES // 2).mean()
 
     t = df["t"].to_numpy()
+    closes = close.to_numpy()
     liquid = (df["vol24"] >= base.MIN_VOLUME_24H).to_numpy()
     oi_t, oi_v = archive.open_interest(symbol, first, end)
     f_t, f_rate, _ = archive.funding(symbol, first, end)
@@ -129,6 +131,10 @@ def replay_symbol(symbol: str, start: date, end: date) -> list[dict]:
                "usual": df["usual"].iat[i]}
         for h in HORIZONS:
             row[f"r{h}"] = df[f"r{h}"].iat[i]
+        # the same signal seen DELAY minutes late: what is left once nothing can be known early
+        j = i + DELAY
+        for h in (15, ACTIVITY):
+            row[f"late_r{h}"] = (closes[j + h] / closes[j] - 1) * 100 if j + h < len(closes) else np.nan
         rows.append(row)
     return rows
 
@@ -151,6 +157,12 @@ def measure(signals: pd.DataFrame) -> pd.DataFrame:
     with np.errstate(divide="ignore", invalid="ignore"):
         signals["act"] = signals[f"r{ACTIVITY}"].abs() / signals["usual"]
     signals.loc[~np.isfinite(signals["act"]), "act"] = np.nan
+    if "late_r15" in signals:
+        for h in (15, ACTIVITY):
+            signals[f"late_m{h}"] = signals["dir"] * signals[f"late_r{h}"]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            signals["late_act"] = signals[f"late_r{ACTIVITY}"].abs() / signals["usual"]
+        signals.loc[~np.isfinite(signals["late_act"]), "late_act"] = np.nan
     return signals
 
 
@@ -179,6 +191,60 @@ def activity_table(halves: dict, rng: np.random.Generator) -> list[str]:
             cell = "–" if e.n == 0 else f"×{e.mean:.2f} [×{e.lo:.2f}; ×{e.hi:.2f}]"
             lines.append(f"| {LABELS[kind]} | {name} | {e.n} | {cell} | {share} |")
     return lines
+
+
+def robust_table(halves: dict) -> list[str]:
+    """Means in crypto follow a few huge candles: the median, the mean without the 1% at each end."""
+    lines = ["| Сигнал, горизонт | Половина | n | Среднее | Медиана | Без 1% хвостов | Доля в свою сторону |",
+             "|---|---|---:|---:|---:|---:|---:|"]
+    for kind in ("oi", "funding"):
+        for h in (15, 60):
+            for name, (frame, _) in halves.items():
+                m = frame[(frame["type"] == kind) & (frame["dir"] != 0)][f"m{h}"].dropna()
+                if m.empty:
+                    continue
+                lo, hi = m.quantile([0.01, 0.99])
+                trimmed = m[(m > lo) & (m < hi)]
+                lines.append(f"| {LABELS[kind]}, {h} мин | {name} | {len(m)} | {m.mean():+.2f} | {m.median():+.2f} | "
+                             f"{trimmed.mean():+.2f} | {(m > 0).mean():.0%} |")
+    return lines
+
+
+def late_table(halves: dict) -> list[str]:
+    """OPEN_INTEREST as recorded, and the same signals DELAY minutes later."""
+    lines = [f"| | Половина | Как в архиве: медиана, доля | На {DELAY} мин позже: медиана, доля |", "|---|---|---:|---:|"]
+    for h in (15, ACTIVITY):
+        for name, (frame, _) in halves.items():
+            part = frame[(frame["type"] == "oi") & (frame["dir"] != 0)]
+            now, late = part[f"m{h}"].dropna(), part[f"late_m{h}"].dropna()
+            if now.empty:
+                continue
+            lines.append(f"| OPEN_INTEREST, {h} мин | {name} | {now.median():+.2f}%, {(now > 0).mean():.0%} | "
+                         f"{late.median():+.2f}%, {(late > 0).mean():.0%} |")
+    for name, (frame, _) in halves.items():
+        part = frame[frame["type"] == "oi"]
+        now, late = part["act"].dropna(), part["late_act"].dropna()
+        if now.empty:
+            continue
+        lines.append(f"| OPEN_INTEREST, размах часа | {name} | ×{now.mean():.2f} (медиана ×{now.median():.2f}), живее {(now > 1).mean():.0%} | "
+                     f"×{late.mean():.2f} (медиана ×{late.median():.2f}), живее {(late > 1).mean():.0%} |")
+    return lines
+
+
+def concentration(halves: dict) -> list[str]:
+    frame = pd.concat([f for f, _ in halves.values()])
+    funding = frame[frame["type"] == "funding"]
+    if funding.empty:
+        return []
+    top = funding["symbol"].value_counts().head(5)
+    test = halves["проверочная"][0]
+    return [f"FUNDING: отрицательная ставка в {(funding['dir'] < 0).mean():.1%} случаев; пар — "
+            f"{test[test['type'] == 'funding']['symbol'].nunique()} на проверочной половине; больше всего у "
+            + ", ".join(f"{base_name(s)} ({n})" for s, n in top.items()) + "."]
+
+
+def base_name(symbol: str) -> str:
+    return symbol.removesuffix("USDT")
 
 
 def verdicts(halves: dict, rng: np.random.Generator) -> list[str]:
@@ -242,6 +308,18 @@ def write_report(signals: pd.DataFrame, symbols: list[str], start: date, end: da
         "## Итог по проверочной половине",
         "",
         *[f"- {v}" for v in verdicts(halves, rng)],
+        "",
+        "## Проверки",
+        "",
+        "Медианы и среднее без 1% крайних значений (в сторону сигнала, %):",
+        "",
+        *robust_table(halves),
+        "",
+        f"OPEN_INTEREST, если сигнал увидеть на {DELAY} минут позже метки архива (см. текст ниже):",
+        "",
+        *late_table(halves),
+        "",
+        *concentration(halves),
         "",
         END_MARK,
     ]

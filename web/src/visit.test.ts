@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { sourceOf } from './visit';
+import { sourceOf, withoutTag } from './visit';
 
 describe('sourceOf', () => {
   it('prefers a tag in the address', () => {
@@ -20,5 +20,16 @@ describe('sourceOf', () => {
   it('is empty for a typed address', () => {
     expect(sourceOf('', '', 'pulse.example', null)).toBe('');
     expect(sourceOf('', 'not a url', 'pulse.example', null)).toBe('');
+  });
+});
+
+describe('the address after the tag is read', () => {
+  it('loses ref and utm_ tags and keeps everything else', () => {
+    expect(withoutTag('https://x.org/app/?utm_source=tiktok&utm_campaign=a&lang=ru#screener:SOLUSDT')).toBe('/app/?lang=ru#screener:SOLUSDT');
+    expect(withoutTag('https://x.org/?ref=direct')).toBe('/');
+  });
+
+  it('leaves an address without tags alone', () => {
+    expect(withoutTag('https://x.org/record/#7')).toBeNull();
   });
 });

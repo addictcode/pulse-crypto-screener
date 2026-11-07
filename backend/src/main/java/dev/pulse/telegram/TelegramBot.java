@@ -351,7 +351,7 @@ class TelegramBot {
                 }
             });
             try {
-                api.sendMessage((Object) config.channel(), TelegramFormat.channel(due, prices, delayMinutes, username));
+                api.sendMessage((Object) config.channel(), TelegramFormat.channel(due, prices, delayMinutes, username, config.siteUrl()));
             } catch (RuntimeException e) {
                 // most often the bot is not an admin of the channel
                 log.warn("Telegram: channel post failed: {}", api.redact(e.getMessage()));
@@ -379,7 +379,8 @@ class TelegramBot {
         }
         digestPostedFor = now.toLocalDate();
         try {
-            api.sendMessage((Object) config.channel(), digest(config.digestInRussian()));
+            String site = TelegramFormat.siteLine(config.siteUrl(), config.digestInRussian());
+            api.sendMessage((Object) config.channel(), digest(config.digestInRussian()) + (site.isEmpty() ? "" : "\n" + site));
             return true;
         } catch (RuntimeException e) {
             log.warn("Telegram: digest post failed: {}", api.redact(e.getMessage()));

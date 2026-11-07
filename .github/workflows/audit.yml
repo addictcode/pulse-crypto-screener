@@ -7,6 +7,11 @@ on:
     - cron: '17 6 * * 1'
   workflow_dispatch:
 
+
+# the token reads the code and nothing more; a job that needs more says so itself
+permissions:
+  contents: read
+
 jobs:
   web:
     runs-on: ubuntu-24.04

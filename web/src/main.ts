@@ -3,7 +3,7 @@ import '@fontsource-variable/unbounded';
 import './styles.css';
 
 import { Alerts } from './alerts';
-import { STANDALONE, startFeed, watchVenues } from './api';
+import { STANDALONE, pollSummary, startFeed, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
 import { ClipFrame } from './clip';
 import { Densities } from './densities';
@@ -265,14 +265,31 @@ if (STANDALONE) {
   document.body.dataset.mode = 'lite';
   document.getElementById('st-source')!.textContent = t('Binance USDT-M, demo running in your browser');
 }
-// a hidden tab lets the stream go after a minute, unless an alert waits or a recording runs
-startFeed(market, () => alerts.armed > 0 || document.body.hasAttribute('data-recording')).catch(() => {
-  const status = document.getElementById('st-conn')!;
-  status.dataset.state = 'reconnecting';
-  status.textContent = t('Binance cannot be reached from this network');
-  // only the demo can fail here: it asks Binance from the visitor's browser, and Binance does not
-  // serve every country and network (the United States gets 451)
-  feed.unreachable(t('This demo reads Binance straight from your browser, and Binance cannot be reached from this network or country. The full version gets the data on its server and works from anywhere.'));
-});
+let streaming = false;
+let summary: { stop(): void } | null = null;
+const stream = () => {
+  if (streaming) return;
+  streaming = true;
+  summary?.stop();
+  // a hidden tab lets the stream go after a minute, unless an alert waits or a recording runs
+  startFeed(market, () => alerts.armed > 0 || document.body.hasAttribute('data-recording')).catch(() => {
+    const status = document.getElementById('st-conn')!;
+    status.dataset.state = 'reconnecting';
+    status.textContent = t('Binance cannot be reached from this network');
+    // only the demo can fail here: it asks Binance from the visitor's browser, and Binance does not
+    // serve every country and network (the United States gets 451)
+    feed.unreachable(t('This demo reads Binance straight from your browser, and Binance cannot be reached from this network or country. The full version gets the data on its server and works from anywhere.'));
+  });
+};
+if (!STANDALONE && document.body.dataset.phone === 'feed') {
+  // The phone's live feed needs the events, not every field of every pair twice a second: it
+  // polls the summary, and the stream starts once the full terminal or a chart is opened.
+  summary = pollSummary(market);
+  new MutationObserver(() => {
+    if (document.body.dataset.phone !== 'feed') stream();
+  }).observe(document.body, { attributes: true, attributeFilter: ['data-phone'] });
+} else {
+  stream();
+}
 watchVenues(market);
 hit('app');

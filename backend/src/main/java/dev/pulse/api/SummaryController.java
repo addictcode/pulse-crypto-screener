@@ -1,7 +1,9 @@
 package dev.pulse.api;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.LongSupplier;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,6 +43,8 @@ public class SummaryController {
     static final int SIGNALS = 30;
     static final int TAPE = 80;
     static final int LIQUIDATIONS = 50;
+    /** As the stream sends them: 24 five-minute closes, the cards' two hours. */
+    static final int SPARKLINE_POINTS = 24;
 
     /** One pair as the landing uses it: the planet, the ticker, the movers and the totals. */
     public record Row(String symbol, double price, Double ch5m, Double ch24h, double vol24h) {
@@ -52,8 +56,12 @@ public class SummaryController {
     public record Walls(long ts, List<Wall> walls, Map<String, Double> coverage) {
     }
 
+    /**
+     * @param sparklines two hours of each pair the events below name: the phone's live feed draws
+     *                   them on its cards (every pair's would triple the answer)
+     */
     public record Summary(long ts, List<Row> rows, List<Liquidation> liquidations, Walls walls,
-            List<Signal> signals, List<TapeItem> tape) {
+            List<Signal> signals, List<TapeItem> tape, Map<String, List<Double>> sparklines) {
     }
 
     private record Built(long at, byte[] json) {
@@ -104,12 +112,21 @@ public class SummaryController {
         DensityScanner.DensityState state = density.latest();
         List<Wall> near = state.walls().stream().filter(w -> Math.abs(w.distance()) <= NEAR_WALLS_PCT).toList();
         TapeDetector detector = tape.getIfAvailable();
+        List<Liquidation> liquidations = store.recentLiquidations(LIQUIDATIONS);
+        List<Signal> recentSignals = signals.recent(SIGNALS);
+        List<TapeItem> recentTape = detector == null ? List.of() : detector.recent(TAPE);
+        Set<String> named = new HashSet<>();
+        liquidations.forEach(l -> named.add(l.symbol()));
+        recentSignals.forEach(s -> named.add(s.symbol()));
+        recentTape.forEach(t -> named.add(t.symbol()));
+        Map<String, List<Double>> sparklines = store.sparklines(named, SPARKLINE_POINTS);
         return new Summary(
                 now,
                 store.snapshot(now).stream().map(Row::of).toList(),
-                store.recentLiquidations(LIQUIDATIONS),
+                liquidations,
                 new Walls(state.ts(), near, state.coverage()),
-                signals.recent(SIGNALS),
-                detector == null ? List.of() : detector.recent(TAPE));
+                recentSignals,
+                recentTape,
+                sparklines);
     }
 }

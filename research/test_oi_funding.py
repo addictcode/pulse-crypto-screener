@@ -87,5 +87,37 @@ class MeasureTest(unittest.TestCase):
         self.assertTrue(np.isnan(o.measure(frame)["act"].iat[0]))
 
 
+class ReplayTest(unittest.TestCase):
+
+    def test_a_late_look_starts_five_minutes_after_the_archive_stamp(self):
+        from datetime import date
+        days = 4
+        n = days * 1440
+        t = T0 + np.arange(n, dtype=np.int64) * MIN
+        close = np.full(n, 100.0)
+        jump = 3 * 1440 + 600            # day 3, 10:00: open interest +5% and the price leaps at once
+        close[jump:jump + 5] = 110.0     # the leap is over within five minutes
+        close[jump + 5:] = 110.0
+        candles = {"t": t, "open": close.copy(), "high": close * 1.0001, "low": close * 0.9999, "close": close,
+                   "qv": np.full(n, 10_000.0)}
+        oi_t = T0 + np.arange(0, n, 5, dtype=np.int64) * MIN
+        # stamped at the start of the window in which the leap happens, as the archive may do
+        oi_v = np.where(oi_t >= T0 + jump * MIN, 1050.0, 1000.0)
+        saved = (o.archive.candles, o.archive.open_interest, o.archive.funding)
+        try:
+            o.archive.candles = lambda *a: candles
+            o.archive.open_interest = lambda *a: (oi_t, oi_v)
+            o.archive.funding = lambda *a: (np.array([], dtype=np.int64), np.array([]), np.array([]))
+            rows = o.replay_symbol("TESTUSDT", date(2026, 10, 3), date(2026, 10, 4))
+        finally:
+            o.archive.candles, o.archive.open_interest, o.archive.funding = saved
+        oi = [r for r in rows if r["type"] == "oi"]
+        self.assertTrue(oi)
+        first = oi[0]
+        # as stamped, the signal sits right before the leap and "sees" it; five minutes late it is over
+        self.assertGreater(first["r15"], 5)
+        self.assertAlmostEqual(first["late_r15"], 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

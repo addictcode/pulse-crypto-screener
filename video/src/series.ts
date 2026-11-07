@@ -3,7 +3,9 @@
  * research/signals-2026-10.md (91 days of Binance minute candles, 150 pairs, the rules of
  * SignalRules, outcomes an hour later, a train half and a test half split by time).
  *
- * Every number below is copied from that report; change them only together with it. Each
+ * Every number below is copied from that report; change them only together with it. Part 6's
+ * "the hour after a signal moves almost twice as much" is research/oi-funding-2026-11.md (PUMP ×1.8,
+ * OPEN_INTEREST ×2.4 against the pair's usual hour, both halves). Each
  * episode is a list of beats; a beat is what is on screen plus what the voice says over it, so
  * the narration script and the video come from the same place and cannot drift apart.
  */
@@ -104,6 +106,7 @@ const ru: Episode[] = [
     beats: [
       { kind: 'title', text: 'Так зачем тогда\nсигналы?', say: 'Если сигналы не предсказывают цену, зачем они нужны?' },
       { kind: 'text', text: 'Сигнал — не прогноз.\nЭто то, что происходит\nпрямо сейчас.', say: 'Сигнал — это не прогноз. Это то, что происходит на рынке прямо сейчас.' },
+      { kind: 'text', text: 'Куда — неизвестно.\nНо час после сигнала\nв среднем почти вдвое\nразмашистее обычного.', say: 'Куда пойдёт цена — неизвестно. Но час после пампа или скачка открытого интереса в среднем почти вдвое размашистее обычного часа этой монеты. Рынок проснулся.' },
       { kind: 'text', text: 'Памп. Ликвидации.\nСтена в стакане.\nТы видишь это первым.', say: 'Памп, каскад ликвидаций, огромная стена в стакане — ты видишь это раньше, чем остальные.' },
       { kind: 'text', text: 'Решение — за тобой.\nИ с честными цифрами.', say: 'А решение остаётся за тобой. Только теперь — с честными цифрами, а не с обещаниями.' },
       { kind: 'outro', line: 'Pulse — радар рынка · ссылка в профиле', say: 'Pulse — радар всего рынка фьючерсов. Ссылка в профиле.' },
@@ -185,6 +188,7 @@ const en: Episode[] = [
     beats: [
       { kind: 'title', text: 'So why\nsignals at all?', say: 'If signals don’t predict price, why bother?' },
       { kind: 'text', text: 'A signal isn’t a forecast.\nIt’s what’s happening\nright now.', say: 'A signal isn’t a forecast. It’s what’s happening in the market right now.' },
+      { kind: 'text', text: 'Which way? Unknown.\nBut on average the hour\nafter a signal moves\nalmost twice as much.', say: 'Which way the price goes is unknown. But the hour after a pump or an open interest jump moves, on average, almost twice as much as that coin’s usual hour. The market just woke up.' },
       { kind: 'text', text: 'A pump. Liquidations.\nA wall in the order book.\nYou see it first.', say: 'A pump, a liquidation cascade, a huge wall in the order book. You see it before everyone else.' },
       { kind: 'text', text: 'The decision is yours.\nWith honest numbers.', say: 'The decision is still yours. Just with honest numbers instead of promises.' },
       { kind: 'outro', line: 'Pulse — a market radar · link in bio', say: 'Pulse, a radar for the whole futures market. Link in bio.' },

@@ -604,7 +604,11 @@ export const RU: Record<string, string> = {
     'Четыре способа отделить хорошие сигналы от остальных (большой объём, часы торгов в США, тренд на 4 часах, ликвидность) не дали разницы на половине данных, отложенной для проверки.',
   'So Pulse is for seeing a move as it happens and understanding the market, not for guessing the next candle.':
     'Поэтому Pulse нужен, чтобы видеть движение в момент, когда оно происходит, и понимать рынок, а не угадывать следующую свечу.',
+  'What a signal does mark is a market waking up: the hour after a pump, dump, volume or open interest signal moved 1.3 to 2.4 times as much as that pair\'s usual hour, in both halves of the data. Which way it went was a coin toss.':
+    'Что сигнал действительно отмечает — рынок просыпается: час после пампа, дампа, объёма или скачка открытого интереса был в 1,3–2,4 раза размашистее обычного часа этой пары, на обеих половинах данных. Куда — как монетка.',
   'Read the study and how it was done': 'Исследование целиком и как оно сделано',
+  'The second study: open interest, funding and how much the market moves after a signal':
+    'Второе исследование: открытый интерес, фандинг и насколько рынок двигается после сигнала',
   'How it is counted': 'Как считается',
   'The price at the moment a signal fires is compared with the price 5 minutes, 15 minutes and an hour later. Nothing is removed afterwards.':
     'Цена в момент сигнала сравнивается с ценой через 5 минут, 15 минут и час. Задним числом ничего не удаляется.',

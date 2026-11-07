@@ -37,6 +37,8 @@ test.describe('the live feed on a phone', () => {
     events(backend);
     const cards = page.locator('.feed-card');
     await expect(cards).toHaveCount(3);
+    // the feed lives on the summary: no stream, and no 40 KB a second of a phone's mobile data
+    expect(backend.streams()).toBe(0);
     await expect(cards.first()).toContainText('BTC jumps 2.6% in five minutes');
     await expect(cards.nth(1)).toContainText('$300.0K');
     await expect(cards.first().locator('.fc-spark svg')).toBeVisible();
@@ -54,6 +56,8 @@ test.describe('the live feed on a phone', () => {
     await expect(page.locator('body')).toHaveAttribute('data-phone', 'terminal');
     await expect(page).toHaveURL(/#screener:SOLUSDT$/);
     await expect(page.locator('#chart canvas').first()).toBeVisible();
+    // the full terminal takes the stream
+    await expect.poll(() => backend.streams()).toBe(1);
 
     // a chart opened from a card does not change where this phone starts
     await page.goto('/app/');

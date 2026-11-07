@@ -81,7 +81,10 @@ export function landing(ip, seconds) {
     const res = http.get(`${BASE}/api/summary`, { ...asked, headers: { ...asked.headers, 'Accept-Encoding': 'gzip' } });
     apiLimited.add(res.status === 429);
     check(res, { '/api/summary ok': (r) => r.status === 200 });
-    summaryBytes.add(Number(res.headers['Content-Length'] || (res.body || '').length));
+    // compressed bytes as sent; a chunked answer has no length, and the body k6 hands over is
+    // already decompressed, so it is left to the built-in data_received rather than overstated
+    const sent = Number(res.headers['Content-Length']);
+    if (sent > 0) summaryBytes.add(sent);
     sleep(5);
   } while (Date.now() < until);
 }
