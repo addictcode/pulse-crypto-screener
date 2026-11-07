@@ -86,6 +86,28 @@ The videos are split over parallel jobs, one render tab each, and every one is c
 `captions-reels.txt` and `captions-shorts.txt` for both languages, the
 60-day `schedule.csv` and the `events.json` the batch was made from).
 
+## Rounds of the game
+
+The site has the Guess format as a game (`web/play/`, at `/play/`): a real chart stops at the
+signal candle, the player picks higher or lower, the real next hour plays and the coin is named.
+`scripts/play-rounds.mjs` cuts the rounds from events and writes packs of ten to
+`web/public/play/rounds-NN.json`:
+
+```bash
+node scripts/archive-events.mjs --days 60 --pairs 150 --max 400 --per-coin 4 --file /tmp/play-events.json
+node scripts/play-rounds.mjs --events public/events.json,/tmp/play-events.json
+```
+
+The game takes a bigger set than the videos (its own file: `--file` leaves `public/events.json`,
+`days.json` and `pulse.json` alone), because three rules thin it out:
+
+- only a clear answer: the close an hour after the signal candle at least 1% away from its close
+  (the game counts from what is on screen, the videos from the signal price inside the minute);
+- only crypto: a coin with a spot market on Binance, as in `research/` (perpetuals on shares such
+  as INTC or HOOD look like coins in the archive). The spot list is cached in
+  `public/spot-usdt.json`; `--refresh-spot` asks the archive again;
+- five that went up and five that went down in every pack, so "always higher" is worth a coin.
+
 ## Broken frames
 
 With two or more render tabs at once, Chrome now and then handed over a frame of the wrong size

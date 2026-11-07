@@ -114,7 +114,7 @@ export const TEXT: Record<Lang, Text> = {
       tagline: 'видит рынок раньше тебя',
       link: 'ссылка в профиле',
       note: 'Реальные данные Binance. Не финансовый совет.',
-      guess: 'подпишись, чтобы угадать следующую',
+      guess: 'сыграй сам: ссылка в профиле',
       top3: 'Pulse видит такие свечи сразу',
     },
     guess: {
@@ -219,7 +219,7 @@ export const TEXT: Record<Lang, Text> = {
       tagline: 'sees the market before you do',
       link: 'link in bio',
       note: 'Real Binance data. Not financial advice.',
-      guess: 'follow to guess the next one',
+      guess: 'play it yourself: link in bio',
       top3: 'Pulse sees candles like these live',
     },
     guess: {

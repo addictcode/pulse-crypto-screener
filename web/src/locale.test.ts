@@ -51,6 +51,8 @@ function dynamicKeys(): string[] {
     'Pump', 'Dump', 'Volume', 'Open interest', 'Funding', 'Liquidations', 'Near wall',
     'Volume, price up', 'Volume, price down', 'OI climbs', 'OI drops', 'Funding positive', 'Funding negative',
     'Shorts liquidated', 'Longs liquidated', 'Near bid wall', 'Near ask wall',
+    // the game's verdict, picked by play-game.ts#verdict
+    ...[...read(join(src, 'play-game.ts')).matchAll(/return '([^']*)';/g)].map((m) => m[1]),
   ];
 }
 
@@ -60,6 +62,7 @@ describe('Russian locale', () => {
     ...htmlKeys(join(src, '../app/index.html')),
     ...htmlKeys(join(src, '../index.html')),
     ...htmlKeys(join(src, '../record/index.html')),
+    ...htmlKeys(join(src, '../play/index.html')),
     ...dynamicKeys(),
   ];
 
