@@ -18,11 +18,6 @@ export const RU: Record<string, string> = {
   'short': 'шорт',
   '{sym} {tf}: {side} setup': '{sym} {tf}: сетап в {side}',
   'entry {entry}, stop {stop}, target {target}': 'вход {entry}, стоп {stop}, тейк {target}',
-  'Getting started': 'С чего начать',
-  'finds any pair, view or command': 'находит любую пару, раздел или команду',
-  'and a click on the chart sets a price alert': 'и клик по графику ставят ценовой алерт',
-  'lists every shortcut': 'показывает все горячие клавиши',
-  'Indicators has Pulse Setups: a trade plan with a stop, a target and an honest record. The Setups tab shows how it does live.': 'В индикаторах есть Pulse Setups: план сделки со стопом, тейком и честным счётом. Вкладка «Сетапы» показывает, как он работает вживую.',
   'Got it': 'Понятно',
   'Journal of Pulse Setups': 'Журнал Pulse Setups',
   'Pulse Setups, live record': 'Pulse Setups, живой счёт',
@@ -635,4 +630,40 @@ export const RU: Record<string, string> = {
   '{n} min ago': '{n} мин назад',
   '{n} h ago': '{n} ч назад',
   'Liquidation': 'Ликвидация',
+
+  // ---------- words explained in place, the first-visit tour ----------
+  'Funding: a payment between longs and shorts every few hours that keeps the futures price near the spot price. Positive means longs pay shorts.':
+    'Фандинг — платёж между лонгами и шортами раз в несколько часов, который держит цену фьючерса рядом со спотом. Положительный — лонги платят шортам.',
+  'Open interest: the total size of open futures positions. When it rises, new money is coming into the pair; it does not say on which side.':
+    'Открытый интерес — общий размер открытых позиций по фьючерсу. Растёт — в пару заходят новые деньги; на чьей они стороне, он не говорит.',
+  'A wall: a resting order in the order book many times larger than the levels around it. It may hold the price for a while, or be pulled.':
+    'Стена — лимитная заявка в стакане, в разы крупнее соседних уровней. Может какое-то время держать цену, а может быть снята.',
+  'A liquidation: the exchange closes a position that ran out of margin. Waves of them come with sharp moves.':
+    'Ликвидация — биржа закрывает позицию, у которой кончилась маржа. Волны ликвидаций сопровождают резкие движения.',
+  "Volume surge: trading in the last five minutes against this pair's hourly pace. 3× is three times as busy as usual.":
+    'Всплеск объёма — торговля за последние пять минут против часового темпа этой пары. 3× — втрое оживлённее обычного.',
+  'NATR: the average range of one candle in percent of the price. How widely this pair usually swings.':
+    'NATR — средний размах одной свечи в процентах от цены. Насколько широко обычно ходит эта пара.',
+  'A sharp move in minutes. The hour after one is usually livelier than an ordinary hour, either way.':
+    'Резкое движение за минуты. Час после такого обычно размашистее обычного — в любую сторону.',
+  "Far busier trading than this pair's usual pace: the market woke up here.": 'Торгуют намного активнее обычного для этой пары: здесь рынок проснулся.',
+  'Open positions grew or shrank fast: money is coming into this pair or leaving it.': 'Открытые позиции быстро выросли или сократились: деньги заходят в пару или уходят из неё.',
+  'One side pays the other unusually much to keep its positions open.': 'Одна сторона платит другой необычно много, чтобы держать позиции открытыми.',
+  'Positions were closed by force: those traders ran out of margin.': 'Позиции закрыты принудительно: у этих трейдеров кончилась маржа.',
+  'The price came close to a large resting order in the book.': 'Цена подошла к крупной заявке в стакане.',
+  'The whole market': 'Весь рынок',
+  'Every Binance USDT perpetual in one list, re-sorted live. Tap a row to open its chart; words with a dotted line explain themselves.':
+    'Все бессрочные USDT-фьючерсы Binance в одном списке, сортируются вживую. Нажми на строку — откроется график; слова с пунктиром объясняют себя сами.',
+  'The chart': 'График',
+  'The pair you picked, with its signals and liquidations marked. Drawing tools and indicators sit above it.':
+    'Выбранная пара, на ней отмечены сигналы и ликвидации. Инструменты рисования и индикаторы — над графиком.',
+  'What is happening': 'Что происходит',
+  'Pumps, dumps, volume bursts and liquidation waves the moment they happen. A signal says what happened, not where the price goes next.':
+    'Пампы, дампы, всплески объёма и волны ликвидаций в момент события. Сигнал говорит, что произошло, а не куда цена пойдёт дальше.',
+  'Find anything': 'Найти что угодно',
+  'Search finds any pair, view or command; on a keyboard it is Ctrl K, and ? lists every shortcut.':
+    'Поиск находит любую пару, раздел или команду; с клавиатуры — Ctrl K, а ? покажет все горячие клавиши.',
+  '{n} of {total}': '{n} из {total}',
+  Skip: 'Пропустить',
+  Next: 'Дальше',
 };
