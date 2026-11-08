@@ -326,6 +326,14 @@
     <div><b data-i18n>Risk per trade</b><span data-i18n>What a stop costs you. Pulse Setups sizes the position from it.</span></div>
     <label class="field set-money"><span>$</span><span class="sr" data-i18n>Risk per trade</span><input id="set-risk" type="text" inputmode="decimal" autocomplete="off"></label>
   </div>
+  <div class="set-row" id="set-push-row" hidden>
+    <div><b data-i18n>Notifications</b><span data-i18n>Without Telegram: straight to this browser or phone, a few an hour at most.</span><span id="set-push-note" role="status"></span></div>
+    <select class="btn" id="set-push" data-i18n-attrs="aria-label" aria-label="Notifications">
+      <option value="off" data-i18n>Off</option>
+      <option value="watchlist" data-i18n>My watchlist pairs</option>
+      <option value="strong" data-i18n>Strong signals, all pairs</option>
+    </select>
+  </div>
   <div class="set-row">
     <div><b data-i18n>Tips for newcomers</b><span data-i18n>The card with the first things to try.</span></div>
     <button type="button" class="btn" id="set-tips" data-i18n>Show again</button>

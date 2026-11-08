@@ -635,4 +635,17 @@ export const RU: Record<string, string> = {
   '{n} min ago': '{n} мин назад',
   '{n} h ago': '{n} ч назад',
   'Liquidation': 'Ликвидация',
+
+  // ---------- web push (settings) ----------
+  Notifications: 'Уведомления',
+  'Without Telegram: straight to this browser or phone, a few an hour at most.': 'Без Telegram: прямо в этот браузер или телефон, не больше нескольких в час.',
+  'My watchlist pairs': 'Пары из моего избранного',
+  'Strong signals, all pairs': 'Сильные сигналы по всем парам',
+  'On an iPhone, notifications work once Pulse is on the Home Screen: Share, then Add to Home Screen, then open it from there.':
+    'На iPhone уведомления работают, когда Pulse на экране «Домой»: «Поделиться» → «На экран „Домой“», и открыть его оттуда.',
+  'This browser cannot show notifications from a site.': 'Этот браузер не умеет показывать уведомления от сайтов.',
+  'Notifications are blocked for this site in the browser settings.': 'Уведомления для этого сайта запрещены в настройках браузера.',
+  'Your watchlists are empty: add pairs with the star first.': 'Избранное пустое: сначала отметь пары звёздочкой.',
+  'Done. At most a few notifications an hour.': 'Готово. Не больше нескольких уведомлений в час.',
+  'Notifications could not be turned on. Try again later.': 'Не получилось включить уведомления. Попробуй позже.',
 };

@@ -21,6 +21,7 @@ import { Screener } from './screener';
 import { SetupJournal, welcomeOnce } from './setups';
 import { Layout } from './layout';
 import { Settings } from './settings';
+import { mountPush } from './push';
 import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
@@ -214,6 +215,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
 ]);
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
 welcomeOnce();
+void mountPush();
 const settings = new Settings(welcomeOnce);
 
 document.addEventListener('keydown', (e) => {
