@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012-push-subscription
+      author: pulse
+      comment: >
+        Web push without an account: a browser's push endpoint and keys, and what it asked for. No
+        address, no user agent: the endpoint is all a push service needs, and it is deleted as soon
+        as the push service says it is gone (404 or 410).
+      changes:
+        - createTable:
+            tableName: push_subscription
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: endpoint, type: varchar(1024), constraints: { nullable: false, unique: true, uniqueConstraintName: uq_push_subscription_endpoint } }
+              - column: { name: p256dh, type: varchar(128), constraints: { nullable: false } }
+              - column: { name: auth, type: varchar(64), constraints: { nullable: false } }
+              # comma separated symbols of the watchlist; empty means every pair
+              - column: { name: symbols, type: varchar(2048), defaultValue: "", constraints: { nullable: false } }
+              - column: { name: strong_only, type: boolean, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: lang, type: varchar(2), defaultValue: "en", constraints: { nullable: false } }
+              - column: { name: created_at, type: timestamp with time zone, constraints: { nullable: false } }

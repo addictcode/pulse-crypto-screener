@@ -23,6 +23,7 @@ import { tourOnce } from './tour';
 import { mountGlossary } from './glossary';
 import { Layout } from './layout';
 import { Settings } from './settings';
+import { mountPush } from './push';
 import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
@@ -219,6 +220,7 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
 mountGlossary();
 tourOnce();
+void mountPush();
 const settings = new Settings(tourOnce);
 
 document.addEventListener('keydown', (e) => {

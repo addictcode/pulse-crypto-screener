@@ -49,6 +49,10 @@ services:
       PULSE_TELEGRAM_DIGEST_LANG: ${PULSE_TELEGRAM_DIGEST_LANG:-en}
       PULSE_SITE_URL: ${PULSE_SITE_URL:-https://addictcode.github.io/pulse-crypto-screener/}
       PULSE_PREMIUM_ENABLED: ${PULSE_PREMIUM_ENABLED:-false}
+      # web push: on only with both keys (node deploy/vapid-keys.mjs)
+      PULSE_VAPID_PUBLIC_KEY: ${PULSE_VAPID_PUBLIC_KEY:-}
+      PULSE_VAPID_PRIVATE_KEY: ${PULSE_VAPID_PRIVATE_KEY:-}
+      PULSE_VAPID_SUBJECT: ${PULSE_VAPID_SUBJECT:-mailto:pulse@example.com}
       PULSE_STREAM_CLIENTS: ${PULSE_STREAM_CLIENTS:-300}
       PULSE_STREAM_CLIENTS_PER_ADDRESS: ${PULSE_STREAM_CLIENTS_PER_ADDRESS:-30}
     # the heap is 70% of this (MaxRAMPercentage in the Dockerfile); raise both together on a server
