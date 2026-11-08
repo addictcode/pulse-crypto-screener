@@ -7,7 +7,8 @@ import type { Signal } from './types';
  * Russian is rebuilt from the signal's fields, which carry everything except the wall size.
  */
 export function signalTitle(s: Signal): string {
-  if (lang === 'en') return s.title;
+  // Russian is rebuilt from the fields; the other languages keep the backend's English
+  if (lang !== 'ru') return s.title;
   const sym = base(s.symbol);
   const up = s.direction > 0;
   const down = s.direction < 0;

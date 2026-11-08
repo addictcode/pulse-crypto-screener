@@ -1,7 +1,22 @@
 import { RU } from './locale-ru';
 import { load, save } from './storage';
 
-export type Lang = 'en' | 'ru';
+export type Lang = 'en' | 'ru' | 'es' | 'tr';
+
+/** Draft translations, for the public pages only; loaded only by those who read them. */
+const DRAFTS: Partial<Record<Lang, () => Promise<Record<string, string>>>> = {
+  es: () => import('./locale-es').then((m) => m.ES),
+  tr: () => import('./locale-tr').then((m) => m.TR),
+};
+
+/**
+ * The languages this page speaks: the public pages list theirs in <html data-langs>, the terminal
+ * speaks English and Russian (a full translation of it into more is a decision of its own).
+ */
+function pageLangs(): Lang[] {
+  const listed = typeof document === 'undefined' ? '' : (document.documentElement.dataset.langs ?? '');
+  return (listed ? listed.split(/\s+/) : ['en', 'ru']) as Lang[];
+}
 
 /**
  * English is the source language: the text in the code and in the HTML is the key, and the
@@ -9,17 +24,21 @@ export type Lang = 'en' | 'ru';
  * checks that nothing is missing.
  */
 function detect(): Lang {
+  const langs = pageLangs();
   const saved = load<string | null>('lang', null);
-  if (saved === 'en' || saved === 'ru') return saved;
-  const browser = typeof navigator === 'undefined' ? '' : (navigator.language ?? '');
-  return browser.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  if (saved && (langs as string[]).includes(saved)) return saved as Lang;
+  const browser = (typeof navigator === 'undefined' ? '' : (navigator.language ?? '')).toLowerCase().slice(0, 2);
+  return (langs as string[]).includes(browser) ? (browser as Lang) : 'en';
 }
 
 export const lang: Lang = detect();
+/** Whether the words on screen are a draft translation (the footer says so). */
+export const draft = lang in DRAFTS;
+const dict: Record<string, string> = lang === 'ru' ? RU : draft ? await DRAFTS[lang]!() : {};
 
 /** `t('{n} walls', { n: 3 })`: translate, then fill the placeholders. */
 export function t(text: string, vars?: Record<string, string | number>): string {
-  const out = lang === 'ru' ? (RU[text] ?? text) : text;
+  const out = dict[text] ?? text;
   return vars ? out.replace(/\{(\w+)\}/g, (_match: string, key: string) => String(vars[key] ?? '')) : out;
 }
 
@@ -36,6 +55,12 @@ export function setLang(next: Lang) {
  */
 export function localize(root: ParentNode = document) {
   document.documentElement.lang = lang;
+  if (draft && root === document) {
+    const note = document.createElement('span');
+    note.className = 'draft-note';
+    note.textContent = lang === 'es' ? 'Traducción preliminar' : 'Ön çeviri';
+    document.querySelector('.foot')?.append(note);
+  }
   document.title = t(document.title);
   root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     el.textContent = t((el.textContent ?? '').trim());
