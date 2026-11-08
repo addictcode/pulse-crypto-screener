@@ -15,6 +15,8 @@ public enum VisitSource {
     DIRECT("direct"),
     /** The bot opened from a button on our own site. */
     SITE("site"),
+    /** A result card of the game, shared by a player. */
+    GAME("game"),
     OTHER("other");
 
     private final String key;
@@ -49,6 +51,9 @@ public enum VisitSource {
         }
         if (value.equals("site")) {
             return SITE;
+        }
+        if (value.equals("game")) {
+            return GAME;
         }
         if (value.equals("direct")) {
             return DIRECT;
