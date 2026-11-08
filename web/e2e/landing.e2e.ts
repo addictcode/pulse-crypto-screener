@@ -11,7 +11,7 @@ test('the landing page shows live numbers and leads to the terminal', async ({ p
   // generous: the page also starts a WebGL scene, which a headless browser renders in software
   await expect(page.locator('#s-pairs')).toHaveText(String(ROWS.length), { timeout: 20_000 });
 
-  await page.locator('.hero .cta').click();
+  await page.locator('.hero a[href="app/"]').click();
 
   await expect(page).toHaveURL(/\/app\/$|\/app\/#/);
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
@@ -21,8 +21,10 @@ test('the landing page speaks Russian', async ({ page }) => {
   await fakeBackend(page);
   await page.goto('/');
   await page.locator('#lang [data-lang="ru"]').click();
-  await expect(page.locator('.hero h1')).toContainText('Весь рынок фьючерсов');
-  await expect(page.locator('.hero .cta')).toHaveText('Открыть терминал');
+  await expect(page.locator('.hero h1')).toContainText(/Смотри, где\s+рынок\s+просыпается/);
+  await expect(page.locator('.hero .cta')).toHaveText('Угадай, что дальше');
+  await expect(page.locator('.hero a[href="app/"]')).toHaveText('Открыть терминал');
+  await expect(page.locator('#proof h2')).toHaveText('Мы проверили сигналы сами.');
 });
 
 test('the setups panel shows the journal the server keeps', async ({ page }) => {
@@ -104,7 +106,7 @@ test('the landing polls the summary and leaves the stream to the terminal', asyn
   expect(backend.streams()).toBe(0);
 
   // the terminal still has the full stream
-  await page.locator('.hero .cta').click();
+  await page.locator('.hero a[href="app/"]').click();
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
   expect(backend.streams()).toBe(1);
 });
@@ -120,4 +122,17 @@ test('a browser saving data gets the still disc instead of the planet', async ({
   await expect(page.locator('#s-pairs')).toHaveText(String(ROWS.length), { timeout: 20_000 });
   await expect(page.locator('body')).toHaveClass(/\bstatic\b/);
   expect(planets).toEqual([]);
+});
+
+test('the first screen leads to the game, and the proof gives the real numbers', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/');
+  await expect(page.locator('.hero h1')).toContainText(/See where\s+the market\s+wakes up\./);
+  await page.locator('.hero .cta').click();
+  await expect(page).toHaveURL(/\/play\/$/);
+  await page.goBack();
+  const proof = page.locator('#proof');
+  await expect(proof.locator('dd')).toHaveText(['60 329', '44–48%', '×1.3–2.4']);
+  await expect(proof).toContainText('does not tell you where the price goes');
+  await expect(proof.locator('a[href="record/"]')).toBeVisible();
 });

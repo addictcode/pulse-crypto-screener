@@ -431,16 +431,14 @@ export const RU: Record<string, string> = {
   'Pulse, a radar for crypto futures': 'Pulse: радар крипто-фьючерсов',
   'Pulse watches every Binance USDT perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
     'Pulse дважды в секунду смотрит на все USDT-фьючерсы Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
-  'Pulse watches every Binance perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
-    'Pulse дважды в секунду смотрит на все бессрочные контракты Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
   'Sections': 'Разделы страницы',
   'Live': 'Вживую',
   'Features': 'Возможности',
   'How it works': 'Как это работает',
   'Open terminal': 'Открыть терминал',
-  'The whole': 'Весь рынок',
-  'futures market': 'фьючерсов',
-  'on <em>one radar</em>.': 'на <em>одном радаре</em>.',
+  'See where': 'Смотри, где',
+  'the market': 'рынок',
+  '<em>wakes up</em>.': '<em>просыпается</em>.',
   'Pairs live': 'Пар в работе',
   'Order books': 'Стаканов',
   'Tape, last min': 'Лента за минуту',
@@ -678,4 +676,18 @@ export const RU: Record<string, string> = {
     'В этот раз ты обыграл монетку. На десяти раундах такое часто бывает просто на удаче: сама монетка угадывает от 3 до 7 примерно в девяти играх из десяти.',
   'A draw with the coin. That is what guessing the next hour usually looks like.': 'Ничья с монеткой. Так обычно и выглядит попытка угадать следующий час.',
   'The coin won this time. No shame in it: the next hour is hard to call for anyone.': 'В этот раз выиграла монетка. Ничего страшного: следующий час трудно угадать кому угодно.',
+
+  // ---------- landing: the first screen and the proof (F2) ----------
+  'Pulse watches every Binance futures pair twice a second and shows sharp moves, volume bursts and liquidations the moment they happen. Where the price goes next it does not guess, and neither does anyone honest.':
+    'Pulse дважды в секунду смотрит на все фьючерсы Binance и показывает резкие движения, всплески объёма и ликвидации в момент, когда они происходят. Куда цена пойдёт дальше, он не угадывает — и никто честный не угадывает.',
+  'We checked the signals ourselves.': 'Мы проверили сигналы сами.',
+  "Before asking anyone to trust them, we replayed Pulse's own rules on 91 days of Binance's archive, 150 pairs. This is what came out.":
+    'Прежде чем просить им доверять, мы прогнали правила Pulse на 91 дне архива Binance по 150 парам. Вот что получилось.',
+  'signals replayed and followed for an hour': 'сигналов прогнано и прослежено на час вперёд',
+  "went the signal's way within the hour: no better than a coin": 'пошли в сторону сигнала за час — не лучше монетки',
+  'how much livelier the hour after a signal is than an ordinary hour': 'во столько раз час после сигнала размашистее обычного часа',
+  'So Pulse does not tell you where the price goes. It shows where the market just woke up, while it is happening.':
+    'Поэтому Pulse не говорит, куда пойдёт цена. Он показывает, где рынок только что проснулся, пока это происходит.',
+  'The live record': 'Живая статистика',
+  'The study': 'Исследование',
 };
