@@ -103,6 +103,10 @@ export class PriceChart {
   private scanning = false;
   /** Set by the page: a pair picked from the scan results. */
   onPick: (symbol: string) => void = () => undefined;
+  /** A shared moment to show (unix seconds): centred and marked once the chart has loaded. */
+  private moment: number | null = null;
+  /** The candle last clicked on, the moment a share link points at. */
+  private clicked: number | null = null;
 
   constructor(market: Market, alerts: Alerts) {
     this.market = market;
@@ -269,7 +273,24 @@ export class PriceChart {
     ctx.font = `500 ${12 * scale}px ${family}`;
     ctx.fillText(`${this.interval}  Binance perpetual`, afterSymbol, head / 2);
     ctx.textAlign = 'right';
-    ctx.fillText(`Pulse  ${stamp} UTC`, canvas.width - pad, head / 2);
+    // where it came from, so a picture passed around still leads back: the address and the mark
+    const where = `${location.host}  ${stamp} UTC`;
+    ctx.fillText(where, canvas.width - pad, head / 2);
+    const markX = canvas.width - pad - ctx.measureText(where).width - 14 * scale;
+    ctx.fillStyle = token('--ink') || '#e6e9ef';
+    ctx.font = `600 ${13 * scale}px ${family}`;
+    ctx.fillText('Pulse', markX, head / 2);
+    const logoX = markX - ctx.measureText('Pulse').width - 16 * scale;
+    const r = 7 * scale;
+    ctx.strokeStyle = token('--ink') || '#e6e9ef';
+    ctx.lineWidth = 1.4 * scale;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.PI / 3 * i - Math.PI / 2;
+      ctx[i ? 'lineTo' : 'moveTo'](logoX + r * Math.cos(angle), head / 2 + r * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.stroke();
     return { canvas, name: `pulse-${this.symbol}-${this.interval}-${stamp.replace(/[: ]/g, '')}.png` };
   }
 
@@ -418,8 +439,10 @@ export class PriceChart {
     this.alertLines.clear();
     this.syncAlerts();
     // Alt + click: an alert at the price under the cursor
+    this.clicked = null;
     this.chart.subscribeClick((param) => {
       const event = param.sourceEvent;
+      if (!event?.altKey && param.time !== undefined) this.clicked = param.time as number;
       if (!event?.altKey || !param.point || !this.candles) return;
       const price = this.candles.coordinateToPrice(param.point.y);
       if (price !== null && price > 0) this.alerts.add(this.symbol, price);
@@ -427,6 +450,43 @@ export class PriceChart {
     this.addLiquidationMarkers(this.market.liquidations.filter((l) => l.symbol === this.symbol));
     this.addSignalMarkers(this.market.signals.filter((s) => s.symbol === this.symbol));
     this.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, bars.length - 110), to: bars.length + 3 });
+    this.applyMoment();
+  }
+
+  /** Opens on a shared moment: kept until the chart has its candles, then centred and marked. */
+  focusMoment(at: number) {
+    this.moment = at;
+    this.applyMoment();
+  }
+
+  private applyMoment() {
+    if (this.moment === null || !this.chart || !this.markers || !this.times.length) return;
+    const step = INTERVALS[this.interval];
+    const time = Math.floor(this.moment / step) * step;
+    const index = this.times.findIndex((t) => t >= time);
+    // older than the history on screen: nothing to point at, the chart opens as usual
+    if (index < 0 || this.times[0] > time) {
+      this.moment = null;
+      return;
+    }
+    this.markerList.push({ time: time as UTCTimestamp, position: 'aboveBar', color: css('--ink'), shape: 'arrowDown', size: 1.2, text: t('shared moment') });
+    this.markerList.sort((a, b) => (a.time as number) - (b.time as number));
+    this.markers.setMarkers(this.markerList);
+    this.chart.timeScale().setVisibleLogicalRange({ from: index - 70, to: index + 40 });
+    // the candle shown, for tests and anyone reading the page
+    this.el.dataset.moment = String(time);
+    this.moment = null;
+  }
+
+  /**
+   * The moment a share link points at: the candle clicked last, else the latest signal on this pair
+   * the chart can show, else now.
+   */
+  shareMoment(): number | null {
+    if (this.clicked !== null) return this.clicked;
+    const first = this.times[0];
+    const signal = this.market.signals.find((s) => s.symbol === this.symbol && first !== undefined && s.time / 1000 >= first);
+    return signal ? Math.floor(signal.time / 1000) : null;
   }
 
   private tick(price: number) {
