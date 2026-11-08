@@ -635,4 +635,47 @@ export const RU: Record<string, string> = {
   '{n} min ago': '{n} мин назад',
   '{n} h ago': '{n} ч назад',
   'Liquidation': 'Ликвидация',
+
+  // ---------- the game at /play/ ----------
+  "Guess what's next": 'Угадай, что дальше',
+  "Guess what's next: Pulse": 'Угадай, что дальше: Pulse',
+  'A real chart stops at a sharp move. Up or down over the next hour? Ten rounds of real Binance futures, against a coin.':
+    'Настоящий график останавливается на резком движении. Выше или ниже через час? Десять раундов на реальных фьючерсах Binance против монетки.',
+  'A real chart of Binance futures stops right after a sharp move. Will the price be higher or lower an hour later? Ten rounds, and a coin plays alongside you.':
+    'Настоящий график фьючерсов Binance останавливается сразу после резкого движения. Цена через час будет выше или ниже? Десять раундов, а рядом с тобой играет монетка.',
+  'Play ten rounds': 'Сыграть 10 раундов',
+  Play: 'Игра',
+  'Minute candles before a sharp move': 'Минутные свечи до резкого движения',
+  'An hour from now, higher or lower?': 'Через час выше или ниже?',
+  Higher: 'Выше',
+  Lower: 'Ниже',
+  'Next round': 'Следующий раунд',
+  'See the result': 'Посмотреть итог',
+  'Share the result': 'Поделиться результатом',
+  'Play again': 'Сыграть ещё',
+  "How Pulse's own signals did": 'Как отработали сигналы самого Pulse',
+  'Pulse does not guess either. On 60,000 real signals the price went their way within the hour 44 to 48% of the time. What it can show is where the market woke up, as it happens.':
+    'Pulse тоже не угадывает. На 60 тысячах настоящих сигналов цена за час шла в их сторону в 44–48% случаев. Что он может показать — где рынок проснулся, в тот же момент.',
+  'Real Binance charts from the archive. Not financial advice.': 'Настоящие графики Binance из архива. Не финансовый совет.',
+  'Played so far: {games} games, you guessed {you} of {rounds}, the coin {coin}.':
+    'Сыграно игр: {games}. Ты угадал {you} из {rounds}, монетка — {coin}.',
+  'You {you} · coin {coin}': 'Ты {you} · монетка {coin}',
+  'Round {n} of {total}': 'Раунд {n} из {total}',
+  'Right.': 'Угадал.',
+  'Not this time.': 'Не в этот раз.',
+  'An hour later: {move}': 'Через час: {move}',
+  'It was {coin}, {day}: a {kind} of {move} in five minutes. The coin said {side}.':
+    'Это была {coin}, {day}: {kind} на {move} за пять минут. Монетка сказала «{side}».',
+  pump: 'памп',
+  dump: 'дамп',
+  higher: 'выше',
+  lower: 'ниже',
+  'You guessed {you} of {total}. The coin: {coin}.': 'Ты угадал {you} из {total}. Монетка — {coin}.',
+  'the coin: {coin}/{total}': 'монетка: {coin}/{total}',
+  'Real Binance charts. Can you beat a coin?': 'Настоящие графики Binance. Обыграешь монетку?',
+  'Picture saved, link copied': 'Картинка сохранена, ссылка скопирована',
+  'You beat the coin this time. Over ten rounds luck alone does that often: a coin itself gets anywhere from 3 to 7 right in about nine games out of ten.':
+    'В этот раз ты обыграл монетку. На десяти раундах такое часто бывает просто на удаче: сама монетка угадывает от 3 до 7 примерно в девяти играх из десяти.',
+  'A draw with the coin. That is what guessing the next hour usually looks like.': 'Ничья с монеткой. Так обычно и выглядит попытка угадать следующий час.',
+  'The coin won this time. No shame in it: the next hour is hard to call for anyone.': 'В этот раз выиграла монетка. Ничего страшного: следующий час трудно угадать кому угодно.',
 };
