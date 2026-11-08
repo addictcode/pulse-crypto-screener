@@ -347,6 +347,16 @@ cd web && VITE_STANDALONE=1 npx vite build --base=./ --outDir dist-demo
 европейском регионе), инструкция — [`deploy/oracle/README.md`](deploy/oracle/README.md). Бесплатные тарифы Render, Koyeb и
 подобных не подходят: бэкенду нужны постоянные соединения с биржей и около гигабайта памяти.
 
+## Поисковики
+
+Лендинг, `/record/` и игра есть на двух адресах: английский `/…` и русский `/ru/…`, у русского
+текст уже в HTML (его при сборке пишет плагин `web/seo.ts` из того же словаря `locale-ru.ts`), так
+что поисковик видит смысл страницы без JavaScript. Страницы связаны `canonical` и `hreflang`, у
+лендинга есть разметка schema.org, есть `sitemap.xml` и строка `Sitemap:` в `robots.txt`.
+Абсолютные адреса в них записаны как `https://{{.Host}}/…`: домен знает только сервер (туннель
+сегодня, Oracle завтра, а образы собирает CI), и Caddy подставляет его при отдаче (`templates` в
+`web/Caddyfile`). Демо на GitHub Pages помечено `noindex` — это копия, а не сайт.
+
 ## Деплой
 
 Прод — три контейнера из `compose.prod.yaml`: PostgreSQL (наружу не торчит), бэкенд и Caddy,
