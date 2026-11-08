@@ -18,6 +18,8 @@ class VisitSourceTest {
         assertThat(VisitSource.of("Google")).isEqualTo(VisitSource.GOOGLE);
         // the bot opened from a button on the site: t.me/<bot>?start=site
         assertThat(VisitSource.of("site")).isEqualTo(VisitSource.SITE);
+        // a moment shared from the terminal: ?utm_source=share
+        assertThat(VisitSource.of("share")).isEqualTo(VisitSource.SHARE);
     }
 
     @Test

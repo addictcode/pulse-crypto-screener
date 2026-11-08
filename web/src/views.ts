@@ -15,6 +15,25 @@ export function parseHash(hash: string): { view: View; symbol: string | null } {
   };
 }
 
+/**
+ * A shared moment: `#screener:SOLUSDT:15m:1793123456` names the timeframe and a time (unix
+ * seconds) on top of the pair. Links without them read as before.
+ */
+export function parseMoment(hash: string, timeframes: readonly string[]): { tf: string | null; at: number | null } {
+  const [, , tf, at] = hash.replace(/^#/, '').split(':');
+  const seconds = Number(at);
+  return {
+    tf: tf && timeframes.includes(tf) ? tf : null,
+    // a sane time: after 2017, Binance futures' start, and not far in the future
+    at: at && /^\d{9,11}$/.test(at) && seconds > 1_500_000_000 && seconds < Date.now() / 1000 + 86_400 ? seconds : null,
+  };
+}
+
+/** The address of a moment on a chart, tagged so the funnel can count visits from shared links. */
+export function momentLink(origin: string, path: string, symbol: string, tf: string, at: number | null): string {
+  return `${origin}${path}?utm_source=share#screener:${symbol}:${tf}${at === null ? '' : `:${Math.floor(at)}`}`;
+}
+
 export const currentView = (): View => (document.body.dataset.view as View) ?? 'screener';
 
 /** Puts the selected pair into the address bar without adding a history entry. */

@@ -15,6 +15,8 @@ public enum VisitSource {
     DIRECT("direct"),
     /** The bot opened from a button on our own site. */
     SITE("site"),
+    /** A moment shared from the terminal: ?utm_source=share. */
+    SHARE("share"),
     OTHER("other");
 
     private final String key;
@@ -49,6 +51,9 @@ public enum VisitSource {
         }
         if (value.equals("site")) {
             return SITE;
+        }
+        if (value.equals("share")) {
+            return SHARE;
         }
         if (value.equals("direct")) {
             return DIRECT;

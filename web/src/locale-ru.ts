@@ -635,4 +635,9 @@ export const RU: Record<string, string> = {
   '{n} min ago': '{n} мин назад',
   '{n} h ago': '{n} ч назад',
   'Liquidation': 'Ликвидация',
+
+  // ---------- sharing a moment (F3) ----------
+  'Share this moment': 'Поделиться этим моментом',
+  'Link copied': 'Ссылка скопирована',
+  'shared moment': 'момент из ссылки',
 };
