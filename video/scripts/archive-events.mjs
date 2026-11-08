@@ -1,12 +1,12 @@
 // Finds real sharp moves straight in Binance's archive of minute candles, without the signal
 // database, so a new batch of videos can be made anywhere (the cloud, GitHub Actions).
-//   node scripts/archive-events.mjs [--days 30] [--pairs 120] [--min 5] [--max 60] [--per-coin 3]
+//   node scripts/archive-events.mjs [--days 30] [--pairs 120] [--min 5] [--max 60] [--per-coin 3] [--file other.json]
 // Takes the most traded USDT perpetuals of the newest archived day, looks through each day of the
 // period for minutes where the price moved at least --min percent in five minutes, keeps the
 // strongest such minute per coin and day, and adds up to --max of them to public/events.json
 // (strongest first, pumps and dumps in turn). Events already in the file stay as they are.
 // Zips are cached in .cache/, so a second run downloads only what is new.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { addDays } from './days.mjs';
@@ -20,6 +20,8 @@ const { values } = parseArgs({
     min: { type: 'string', default: '5' },
     max: { type: 'string', default: '60' },
     'per-coin': { type: 'string', default: '3' },
+    // another events file, e.g. a bigger set for the site's game; the videos' extras are left alone
+    file: { type: 'string' },
   },
 });
 const DAYS = Number(values.days);
@@ -28,8 +30,9 @@ const MIN = Number(values.min);
 const MAX = Number(values.max);
 const PER_COIN = Number(values['per-coin']);
 
-const file = new URL('../public/events.json', import.meta.url);
-const existing = JSON.parse(readFileSync(file));
+const ownFile = values.file !== undefined;
+const file = ownFile ? values.file : new URL('../public/events.json', import.meta.url);
+const existing = ownFile && !existsSync(file) ? [] : JSON.parse(readFileSync(file));
 
 const last = await lastDay();
 const symbols = await listSymbols();
@@ -95,8 +98,10 @@ for (const e of queue) {
 const { events, added } = merge(existing, picked);
 writeFileSync(file, JSON.stringify(events));
 for (const e of added) console.log(`ok ${e.symbol} ${e.type} ${e.move}%`);
-console.log(`${added.length} new events, ${events.length} in public/events.json`);
-// the day around each new event, for the time-lapse template
-console.log(`${await addDays()} days added to public/days.json`);
-// the market around each new event, for the pulse template
-console.log(`${await addPulse()} hours added to public/pulse.json`);
+console.log(`${added.length} new events, ${events.length} in ${ownFile ? file : 'public/events.json'}`);
+if (!ownFile) {
+  // the day around each new event, for the time-lapse template
+  console.log(`${await addDays()} days added to public/days.json`);
+  // the market around each new event, for the pulse template
+  console.log(`${await addPulse()} hours added to public/pulse.json`);
+}

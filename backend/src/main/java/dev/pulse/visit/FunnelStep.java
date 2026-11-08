@@ -14,6 +14,9 @@ public enum FunnelStep {
     CLIP("clip", "clip", true),
     BOT_CLICK("bot-click", "→bot", true),
     CHANNEL_CLICK("channel-click", "→ch", true),
+    /** The game at /play/ opened, and a whole series of rounds played to the end. */
+    PLAY("play", "play", true),
+    PLAY_DONE("play-done", "done", true),
     /** Counted by the bot itself on /start, never accepted from a page. */
     BOT_START("bot-start", "/st", false);
 
