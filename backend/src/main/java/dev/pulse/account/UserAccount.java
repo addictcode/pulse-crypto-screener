@@ -48,6 +48,17 @@ public class UserAccount {
     @Column(name = "subscribed", nullable = false)
     private boolean subscribed;
 
+    /** "en" or "ru" when the person chose with /lang; null follows their Telegram app. */
+    @Column(name = "lang", length = 2)
+    private String lang;
+
+    /** The Monday summary of the week; on unless the person turned it off. */
+    @Column(name = "weekly", nullable = false)
+    private boolean weekly = true;
+
+    @Column(name = "weekly_sent_at")
+    private Instant weeklySentAt;
+
     public static UserAccount forTelegram(long chatId) {
         UserAccount user = new UserAccount();
         user.telegramChatId = chatId;

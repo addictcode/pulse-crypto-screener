@@ -38,9 +38,14 @@ final class DailyDigest {
      * all day would otherwise fill the list on its own.
      */
     static List<Signal> sharpest(List<Signal> signals, long now, int limit) {
+        return sharpest(signals, now, limit, DAY_MS);
+    }
+
+    /** The same over any window: the weekly summary looks back seven days. */
+    static List<Signal> sharpest(List<Signal> signals, long now, int limit, long window) {
         Map<String, Signal> best = new LinkedHashMap<>();
         for (Signal s : signals) {
-            if ((s.type() == SignalType.PUMP || s.type() == SignalType.DUMP) && s.time() > now - DAY_MS && s.time() <= now) {
+            if ((s.type() == SignalType.PUMP || s.type() == SignalType.DUMP) && s.time() > now - window && s.time() <= now) {
                 best.merge(s.symbol(), s, (a, b) -> b.value() > a.value() ? b : a);
             }
         }
