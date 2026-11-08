@@ -22,6 +22,16 @@
     <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/record/"/>
   </url>
   <url>
+    <loc>https://{{.Host}}/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/play/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/play/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/ru/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/play/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/play/"/>
+  </url>
+  <url>
     <loc>https://{{.Host}}/app/</loc>
   </url>
 </urlset>

@@ -125,6 +125,8 @@ pulse:
     # the daily digest in the channel at this hour, UTC (0-23); empty: no digest. /digest works anyway
     digest-hour: ${PULSE_TELEGRAM_DIGEST_HOUR:}
     digest-lang: ${PULSE_TELEGRAM_DIGEST_LANG:en}
+    # every subscriber's week on Mondays at this hour, UTC; -1 never. Each can say /weekly off
+    weekly-hour: ${PULSE_TELEGRAM_WEEKLY_HOUR:9}
     # channel posts link here, tagged utm_source=telegram: the permanent link follows the site
     # wherever it runs (tunnel or server); empty: no link
     site-url: ${PULSE_SITE_URL:https://addictcode.github.io/pulse-crypto-screener/}
@@ -140,3 +142,19 @@ pulse:
     # what premium gives, as shown in /premium; describing it does not switch anything on
     perks:
       - Supports the development of Pulse
+  # Web push without Telegram. Off until both VAPID keys are set (deploy/vapid-keys.mjs makes a
+  # pair); without them the site does not offer notifications at all.
+  push:
+    vapid-public-key: ${PULSE_VAPID_PUBLIC_KEY:}
+    vapid-private-key: ${PULSE_VAPID_PRIVATE_KEY:}
+    # who to contact about these pushes, as push services ask: mailto: or https:
+    subject: ${PULSE_VAPID_SUBJECT:mailto:pulse@example.com}
+    # at most this many notifications an hour to one browser, however busy the market
+    per-hour: 4
+    # requests a second to push services; a burst of signals waits in the queue
+    per-second: 20
+    # only signals this many times past the system floor, for subscriptions that ask for strong ones
+    strength: 2
+    # push services a subscription may point at; anything else is refused (no requests to arbitrary hosts)
+    allowed-hosts: fcm.googleapis.com,updates.push.services.mozilla.com,push.services.mozilla.com,web.push.apple.com,notify.windows.com
+    max-symbols: 50

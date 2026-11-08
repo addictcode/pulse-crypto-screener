@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 import { seoPages } from './seo';
 import { RU } from './src/locale-ru';
 
-// Three pages: the landing at /, the terminal at /app/ and the signal record at /record/. In development the browser talks to
+// Four pages: the landing at /, the terminal at /app/, the signal record at /record/ and the game at /play/. In development the browser talks to
 // Vite only; the API and the market stream are proxied to the Spring Boot backend.
 // PULSE_BACKEND points the dev server at another backend, e.g. the Docker stack on :8088,
 // so the frontend can be worked on without starting a second copy of the Java app.
@@ -22,6 +22,7 @@ export default defineConfig({
         landing: resolve(import.meta.dirname, 'index.html'),
         app: resolve(import.meta.dirname, 'app/index.html'),
         record: resolve(import.meta.dirname, 'record/index.html'),
+        play: resolve(import.meta.dirname, 'play/index.html'),
       },
     },
   },

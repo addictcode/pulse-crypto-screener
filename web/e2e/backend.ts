@@ -105,6 +105,8 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
   });
   await page.route('**/api/links', (route) => route.fulfill({ json: options.links ?? { bot: '', channel: '' } }));
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));
+  // no VAPID keys: the site offers no notifications (push.e2e.ts routes its own key)
+  await page.route('**/api/push/key', (route) => route.fulfill({ status: 404 }));
   await page.route('**/api/signals**', (route) => route.fulfill({ json: [] }));
   await page.route('**/api/setups**', (route) =>
     route.fulfill({

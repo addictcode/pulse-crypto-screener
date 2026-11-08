@@ -44,3 +44,11 @@ test('the Russian record page works from its own address', async ({ page }) => {
   await expect(page).toHaveURL(/\/record\/$/);
   await expect(page.locator('.rec-title')).toHaveText('The record');
 });
+
+test('the game has a Russian twin too, and it plays', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/ru/play/');
+  await expect(page.locator('.pl-title')).toHaveText('Угадай, что дальше');
+  await page.getByRole('button', { name: 'Сыграть 10 раундов' }).click();
+  await expect(page.locator('#pl-step')).toHaveText('Раунд 1 из 10');
+});

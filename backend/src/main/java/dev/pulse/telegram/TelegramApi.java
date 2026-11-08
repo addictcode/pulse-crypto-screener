@@ -55,7 +55,7 @@ final class TelegramApi {
     List<TelegramUpdate> getUpdates(long offset) {
         JsonNode body = http.get()
                 .uri("/getUpdates?offset={offset}&timeout={timeout}&allowed_updates={types}", offset, POLL_SECONDS,
-                        "[\"message\",\"pre_checkout_query\"]")
+                        "[\"message\",\"pre_checkout_query\",\"callback_query\"]")
                 .retrieve()
                 .body(JsonNode.class);
         List<TelegramUpdate> updates = new ArrayList<>();
@@ -69,6 +69,14 @@ final class TelegramApi {
                         new TelegramUpdate.PreCheckout(query.path("id").asString(""), query.path("currency").asString(""),
                                 query.path("total_amount").asInt(), query.path("invoice_payload").asString("")),
                         null));
+                continue;
+            }
+            JsonNode press = u.path("callback_query");
+            if (press.isObject()) {
+                updates.add(new TelegramUpdate(id, press.path("message").path("chat").path("id").asLong(), null,
+                        press.path("from").path("username").asString(null), press.path("from").path("language_code").asString(null), null, null,
+                        new TelegramUpdate.Callback(press.path("id").asString(""), press.path("message").path("message_id").asLong(),
+                                press.path("data").asString(""))));
                 continue;
             }
             JsonNode message = u.path("message");
@@ -118,6 +126,45 @@ final class TelegramApi {
                 "text", html,
                 "parse_mode", "HTML",
                 "link_preview_options", Map.of("is_disabled", true)));
+    }
+
+    /** A row of buttons under a message: [label, data] pairs, rows top to bottom. */
+    record Button(String text, String data) {
+    }
+
+    void sendMessage(long chatId, String html, List<List<Button>> keyboard) {
+        post("/sendMessage", Map.of(
+                "chat_id", chatId,
+                "text", html,
+                "parse_mode", "HTML",
+                "link_preview_options", Map.of("is_disabled", true),
+                "reply_markup", markup(keyboard)));
+    }
+
+    /** Rewrites a message the bot sent, with its buttons: a pressed button updates the same message. */
+    void editMessage(long chatId, long messageId, String html, List<List<Button>> keyboard) {
+        try {
+            post("/editMessageText", Map.of(
+                    "chat_id", chatId,
+                    "message_id", messageId,
+                    "text", html,
+                    "parse_mode", "HTML",
+                    "link_preview_options", Map.of("is_disabled", true),
+                    "reply_markup", markup(keyboard)));
+        } catch (HttpClientErrorException.BadRequest e) {
+            // "message is not modified": the same button pressed twice; nothing to change
+        }
+    }
+
+    /** Stops the spinner on a pressed button, with a short note at the top of the chat if given. */
+    void answerCallback(String callbackId, String note) {
+        post("/answerCallbackQuery", note == null ? Map.of("callback_query_id", callbackId) : Map.of("callback_query_id", callbackId, "text", note));
+    }
+
+    private static Map<String, Object> markup(List<List<Button>> keyboard) {
+        return Map.of("inline_keyboard", keyboard.stream()
+                .map(row -> row.stream().map(b -> Map.of("text", b.text(), "callback_data", b.data())).toList())
+                .toList());
     }
 
     void setMyCommands(List<Command> commands) {

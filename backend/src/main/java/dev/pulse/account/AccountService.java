@@ -55,6 +55,43 @@ public class AccountService {
         return !was;
     }
 
+    /** Whether this chat has ever started the bot. */
+    @Transactional(readOnly = true)
+    public boolean known(long chatId) {
+        return users.findByTelegramChatId(chatId).isPresent();
+    }
+
+    /** null goes back to following the person's Telegram app. */
+    @Transactional
+    public void setLang(long chatId, String lang) {
+        telegramUser(chatId).setLang(lang);
+    }
+
+    @Transactional
+    public void setWeekly(long chatId, boolean on) {
+        telegramUser(chatId).setWeekly(on);
+    }
+
+    /** Subscribers who want the weekly summary and have not had one in the last six days. */
+    @Transactional(readOnly = true)
+    public List<UserAccount> weeklyDue(Instant now) {
+        Instant before = now.minus(Duration.ofDays(6));
+        return users.findByTelegramChatIdIsNotNullAndSubscribedTrue().stream()
+                .filter(UserAccount::isWeekly)
+                .filter(u -> u.getWeeklySentAt() == null || u.getWeeklySentAt().isBefore(before))
+                .toList();
+    }
+
+    @Transactional
+    public void weeklySent(long userId, Instant at) {
+        users.findById(userId).ifPresent(u -> u.setWeeklySentAt(at));
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> watchlistOf(long userId) {
+        return watchlist.findByUserIdOrderBySymbol(userId).stream().map(WatchlistItem::getSymbol).toList();
+    }
+
     /** /stop, or Telegram telling us the person blocked the bot. Unknown chats are left alone. */
     @Transactional
     public void unsubscribe(long chatId) {
@@ -137,6 +174,6 @@ public class AccountService {
                 .map(WatchlistItem::getSymbol)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return new DeliverySettings(user.getId(), user.getTelegramChatId(), user.getMutedUntil(), user.isWatchlistOnly(),
-                symbols, disabled, thresholds);
+                symbols, disabled, thresholds, user.getLang());
     }
 }
