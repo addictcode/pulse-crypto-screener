@@ -14,6 +14,9 @@ const BUDGET = {
   'index.html': { js: 32 * KB, css: 11 * KB },
   'app/index.html': { js: 150 * KB, css: 17 * KB },
   'record/index.html': { js: 26 * KB, css: 12 * KB },
+  // the game: its own canvas chart, no chart library, so mostly the Russian dictionary like /record/;
+  // the rounds load as JSON, about 10 KB a pack
+  'play/index.html': { js: 28 * KB, css: 12 * KB },
 };
 /** The landing's planet loads after the words and numbers are on screen, as its own file. */
 const PLANET = 165 * KB;

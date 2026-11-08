@@ -18,11 +18,6 @@ export const RU: Record<string, string> = {
   'short': 'шорт',
   '{sym} {tf}: {side} setup': '{sym} {tf}: сетап в {side}',
   'entry {entry}, stop {stop}, target {target}': 'вход {entry}, стоп {stop}, тейк {target}',
-  'Getting started': 'С чего начать',
-  'finds any pair, view or command': 'находит любую пару, раздел или команду',
-  'and a click on the chart sets a price alert': 'и клик по графику ставят ценовой алерт',
-  'lists every shortcut': 'показывает все горячие клавиши',
-  'Indicators has Pulse Setups: a trade plan with a stop, a target and an honest record. The Setups tab shows how it does live.': 'В индикаторах есть Pulse Setups: план сделки со стопом, тейком и честным счётом. Вкладка «Сетапы» показывает, как он работает вживую.',
   'Got it': 'Понятно',
   'Journal of Pulse Setups': 'Журнал Pulse Setups',
   'Pulse Setups, live record': 'Pulse Setups, живой счёт',
@@ -431,16 +426,14 @@ export const RU: Record<string, string> = {
   'Pulse, a radar for crypto futures': 'Pulse: радар крипто-фьючерсов',
   'Pulse watches every Binance USDT perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
     'Pulse дважды в секунду смотрит на все USDT-фьючерсы Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
-  'Pulse watches every Binance perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.':
-    'Pulse дважды в секунду смотрит на все бессрочные контракты Binance и показывает пампы, всплески объёма, ликвидации и стены в стакане, которые держат цену, раньше, чем ты заметишь их сам.',
   'Sections': 'Разделы страницы',
   'Live': 'Вживую',
   'Features': 'Возможности',
   'How it works': 'Как это работает',
   'Open terminal': 'Открыть терминал',
-  'The whole': 'Весь рынок',
-  'futures market': 'фьючерсов',
-  'on <em>one radar</em>.': 'на <em>одном радаре</em>.',
+  'See where': 'Смотри, где',
+  'the market': 'рынок',
+  '<em>wakes up</em>.': '<em>просыпается</em>.',
   'Pairs live': 'Пар в работе',
   'Order books': 'Стаканов',
   'Tape, last min': 'Лента за минуту',
@@ -648,4 +641,95 @@ export const RU: Record<string, string> = {
   'Your watchlists are empty: add pairs with the star first.': 'Избранное пустое: сначала отметь пары звёздочкой.',
   'Done. At most a few notifications an hour.': 'Готово. Не больше нескольких уведомлений в час.',
   'Notifications could not be turned on. Try again later.': 'Не получилось включить уведомления. Попробуй позже.',
+  // ---------- words explained in place, the first-visit tour ----------
+  'Funding: a payment between longs and shorts every few hours that keeps the futures price near the spot price. Positive means longs pay shorts.':
+    'Фандинг — платёж между лонгами и шортами раз в несколько часов, который держит цену фьючерса рядом со спотом. Положительный — лонги платят шортам.',
+  'Open interest: the total size of open futures positions. When it rises, new money is coming into the pair; it does not say on which side.':
+    'Открытый интерес — общий размер открытых позиций по фьючерсу. Растёт — в пару заходят новые деньги; на чьей они стороне, он не говорит.',
+  'A wall: a resting order in the order book many times larger than the levels around it. It may hold the price for a while, or be pulled.':
+    'Стена — лимитная заявка в стакане, в разы крупнее соседних уровней. Может какое-то время держать цену, а может быть снята.',
+  'A liquidation: the exchange closes a position that ran out of margin. Waves of them come with sharp moves.':
+    'Ликвидация — биржа закрывает позицию, у которой кончилась маржа. Волны ликвидаций сопровождают резкие движения.',
+  "Volume surge: trading in the last five minutes against this pair's hourly pace. 3× is three times as busy as usual.":
+    'Всплеск объёма — торговля за последние пять минут против часового темпа этой пары. 3× — втрое оживлённее обычного.',
+  'NATR: the average range of one candle in percent of the price. How widely this pair usually swings.':
+    'NATR — средний размах одной свечи в процентах от цены. Насколько широко обычно ходит эта пара.',
+  'A sharp move in minutes. The hour after one is usually livelier than an ordinary hour, either way.':
+    'Резкое движение за минуты. Час после такого обычно размашистее обычного — в любую сторону.',
+  "Far busier trading than this pair's usual pace: the market woke up here.": 'Торгуют намного активнее обычного для этой пары: здесь рынок проснулся.',
+  'Open positions grew or shrank fast: money is coming into this pair or leaving it.': 'Открытые позиции быстро выросли или сократились: деньги заходят в пару или уходят из неё.',
+  'One side pays the other unusually much to keep its positions open.': 'Одна сторона платит другой необычно много, чтобы держать позиции открытыми.',
+  'Positions were closed by force: those traders ran out of margin.': 'Позиции закрыты принудительно: у этих трейдеров кончилась маржа.',
+  'The price came close to a large resting order in the book.': 'Цена подошла к крупной заявке в стакане.',
+  'The whole market': 'Весь рынок',
+  'Every Binance USDT perpetual in one list, re-sorted live. Tap a row to open its chart; words with a dotted line explain themselves.':
+    'Все бессрочные USDT-фьючерсы Binance в одном списке, сортируются вживую. Нажми на строку — откроется график; слова с пунктиром объясняют себя сами.',
+  'The chart': 'График',
+  'The pair you picked, with its signals and liquidations marked. Drawing tools and indicators sit above it.':
+    'Выбранная пара, на ней отмечены сигналы и ликвидации. Инструменты рисования и индикаторы — над графиком.',
+  'What is happening': 'Что происходит',
+  'Pumps, dumps, volume bursts and liquidation waves the moment they happen. A signal says what happened, not where the price goes next.':
+    'Пампы, дампы, всплески объёма и волны ликвидаций в момент события. Сигнал говорит, что произошло, а не куда цена пойдёт дальше.',
+  'Find anything': 'Найти что угодно',
+  'Search finds any pair, view or command; on a keyboard it is Ctrl K, and ? lists every shortcut.':
+    'Поиск находит любую пару, раздел или команду; с клавиатуры — Ctrl K, а ? покажет все горячие клавиши.',
+  '{n} of {total}': '{n} из {total}',
+  Skip: 'Пропустить',
+  Next: 'Дальше',
+  // ---------- the game at /play/ ----------
+  "Guess what's next": 'Угадай, что дальше',
+  "Guess what's next: Pulse": 'Угадай, что дальше: Pulse',
+  'A real chart stops at a sharp move. Up or down over the next hour? Ten rounds of real Binance futures, against a coin.':
+    'Настоящий график останавливается на резком движении. Выше или ниже через час? Десять раундов на реальных фьючерсах Binance против монетки.',
+  'A real chart of Binance futures stops right after a sharp move. Will the price be higher or lower an hour later? Ten rounds, and a coin plays alongside you.':
+    'Настоящий график фьючерсов Binance останавливается сразу после резкого движения. Цена через час будет выше или ниже? Десять раундов, а рядом с тобой играет монетка.',
+  'Play ten rounds': 'Сыграть 10 раундов',
+  Play: 'Игра',
+  'Minute candles before a sharp move': 'Минутные свечи до резкого движения',
+  'An hour from now, higher or lower?': 'Через час выше или ниже?',
+  Higher: 'Выше',
+  Lower: 'Ниже',
+  'Next round': 'Следующий раунд',
+  'See the result': 'Посмотреть итог',
+  'Share the result': 'Поделиться результатом',
+  'Play again': 'Сыграть ещё',
+  "How Pulse's own signals did": 'Как отработали сигналы самого Pulse',
+  'Pulse does not guess either. On 60,000 real signals the price went their way within the hour 44 to 48% of the time. What it can show is where the market woke up, as it happens.':
+    'Pulse тоже не угадывает. На 60 тысячах настоящих сигналов цена за час шла в их сторону в 44–48% случаев. Что он может показать — где рынок проснулся, в тот же момент.',
+  'Real Binance charts from the archive. Not financial advice.': 'Настоящие графики Binance из архива. Не финансовый совет.',
+  'Played so far: {games} games, you guessed {you} of {rounds}, the coin {coin}.':
+    'Сыграно игр: {games}. Ты угадал {you} из {rounds}, монетка — {coin}.',
+  'You {you} · coin {coin}': 'Ты {you} · монетка {coin}',
+  'Round {n} of {total}': 'Раунд {n} из {total}',
+  'Right.': 'Угадал.',
+  'Not this time.': 'Не в этот раз.',
+  'An hour later: {move}': 'Через час: {move}',
+  'It was {coin}, {day}: a {kind} of {move} in five minutes. The coin said {side}.':
+    'Это была {coin}, {day}: {kind} на {move} за пять минут. Монетка сказала «{side}».',
+  pump: 'памп',
+  dump: 'дамп',
+  higher: 'выше',
+  lower: 'ниже',
+  'You guessed {you} of {total}. The coin: {coin}.': 'Ты угадал {you} из {total}. Монетка — {coin}.',
+  'the coin: {coin}/{total}': 'монетка: {coin}/{total}',
+  'Real Binance charts. Can you beat a coin?': 'Настоящие графики Binance. Обыграешь монетку?',
+  'Picture saved, link copied': 'Картинка сохранена, ссылка скопирована',
+  'You beat the coin this time. Over ten rounds luck alone does that often: a coin itself gets anywhere from 3 to 7 right in about nine games out of ten.':
+    'В этот раз ты обыграл монетку. На десяти раундах такое часто бывает просто на удаче: сама монетка угадывает от 3 до 7 примерно в девяти играх из десяти.',
+  'A draw with the coin. That is what guessing the next hour usually looks like.': 'Ничья с монеткой. Так обычно и выглядит попытка угадать следующий час.',
+  'The coin won this time. No shame in it: the next hour is hard to call for anyone.': 'В этот раз выиграла монетка. Ничего страшного: следующий час трудно угадать кому угодно.',
+
+  // ---------- landing: the first screen and the proof (F2) ----------
+  'Pulse watches every Binance futures pair twice a second and shows sharp moves, volume bursts and liquidations the moment they happen. Where the price goes next it does not guess, and neither does anyone honest.':
+    'Pulse дважды в секунду смотрит на все фьючерсы Binance и показывает резкие движения, всплески объёма и ликвидации в момент, когда они происходят. Куда цена пойдёт дальше, он не угадывает — и никто честный не угадывает.',
+  'We checked the signals ourselves.': 'Мы проверили сигналы сами.',
+  "Before asking anyone to trust them, we replayed Pulse's own rules on 91 days of Binance's archive, 150 pairs. This is what came out.":
+    'Прежде чем просить им доверять, мы прогнали правила Pulse на 91 дне архива Binance по 150 парам. Вот что получилось.',
+  'signals replayed and followed for an hour': 'сигналов прогнано и прослежено на час вперёд',
+  "went the signal's way within the hour: no better than a coin": 'пошли в сторону сигнала за час — не лучше монетки',
+  'how much livelier the hour after a signal is than an ordinary hour': 'во столько раз час после сигнала размашистее обычного часа',
+  'So Pulse does not tell you where the price goes. It shows where the market just woke up, while it is happening.':
+    'Поэтому Pulse не говорит, куда пойдёт цена. Он показывает, где рынок только что проснулся, пока это происходит.',
+  'The live record': 'Живая статистика',
+  'The study': 'Исследование',
 };

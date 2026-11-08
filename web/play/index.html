@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" data-i18n-attrs="content" content="A real chart stops at a sharp move. Up or down over the next hour? Ten rounds of real Binance futures, against a coin.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pulse">
+<meta property="og:title" content="Guess what's next: Pulse">
+<meta property="og:description" content="Ten real charts, each stopped at a sharp move. Can you beat a coin?">
+<!-- absolute and on GitHub Pages: link previews need a full URL, and the tunnel address changes -->
+<meta property="og:image" content="https://addictcode.github.io/pulse-crypto-screener/demo/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%23070708' stroke='%23e9eaec' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%23e9eaec' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#040405">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Guess what's next: Pulse</title>
+<body class="landing play">
+
+<header class="nav">
+  <a class="brand" href="../" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="currentColor" fill-opacity=".14"/></svg><b>Pulse</b></a>
+  <nav data-i18n-attrs="aria-label" aria-label="Sections">
+    <a href="../" data-i18n>Home</a>
+    <a href="../record/" data-i18n>Record</a>
+  </nav>
+  <div class="lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button></div>
+</header>
+
+<main class="pl">
+  <!-- the start: what the game is, one button -->
+  <section class="pl-intro" id="pl-intro">
+    <h1 class="pl-title" data-i18n>Guess what's next</h1>
+    <p class="lede" data-i18n>A real chart of Binance futures stops right after a sharp move. Will the price be higher or lower an hour later? Ten rounds, and a coin plays alongside you.</p>
+    <div class="actions"><button type="button" class="cta" id="pl-start" data-i18n>Play ten rounds</button></div>
+    <p class="pl-history mute" id="pl-history" hidden></p>
+  </section>
+
+  <!-- a round: the chart, the question, then the answer in the same place -->
+  <section class="pl-round" id="pl-round" hidden>
+    <div class="pl-bar">
+      <span id="pl-step"></span>
+      <span class="pl-score" id="pl-score"></span>
+    </div>
+    <div class="pl-chart"><canvas id="pl-canvas" data-i18n-attrs="aria-label" aria-label="Minute candles before a sharp move" role="img"></canvas></div>
+    <div class="pl-panel">
+      <div class="pl-ask" id="pl-ask">
+        <p class="pl-q" data-i18n>An hour from now, higher or lower?</p>
+        <div class="pl-picks">
+          <button type="button" class="pl-pick up" data-pick="up" data-i18n>Higher</button>
+          <button type="button" class="pl-pick down" data-pick="down" data-i18n>Lower</button>
+        </div>
+      </div>
+      <div class="pl-after" id="pl-after" hidden>
+        <p class="pl-verdict" id="pl-verdict"></p>
+        <p class="pl-reveal" id="pl-reveal"></p>
+        <button type="button" class="cta" id="pl-next" data-i18n>Next round</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- the result: score against the coin, an honest word, the card to share -->
+  <section class="pl-done" id="pl-done" hidden>
+    <h2 class="pl-total" id="pl-total"></h2>
+    <p class="lede" id="pl-word"></p>
+    <p class="pl-note" data-i18n>Pulse does not guess either. On 60,000 real signals the price went their way within the hour 44 to 48% of the time. What it can show is where the market woke up, as it happens.</p>
+    <img class="pl-card" id="pl-card" alt="" width="1080" height="1350">
+    <div class="actions">
+      <button type="button" class="cta" id="pl-share" data-i18n>Share the result</button>
+      <button type="button" class="ghost" id="pl-again" data-i18n>Play again</button>
+      <a class="ghost" href="../app/" data-i18n>Open terminal</a>
+      <span class="tg-slot" id="pl-tg" hidden></span>
+    </div>
+    <p class="pl-links"><a href="../record/" data-i18n>How Pulse's own signals did</a></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span data-i18n>Real Binance charts from the archive. Not financial advice.</span>
+  <a href="../" data-i18n>Pulse home</a>
+</footer>
+
+<script type="module" src="/src/play.ts"></script>
+</body>
+</html>

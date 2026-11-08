@@ -1,4 +1,5 @@
 import { base, usd } from './format';
+import { meaning } from './glossary';
 import { t } from './i18n';
 import type { Market } from './market';
 import { signalTitle } from './signal-text';
@@ -50,17 +51,19 @@ interface Card {
   label: string;
   tone: 'up' | 'down' | 'hot';
   text: string;
+  /** what this kind of event is, in one line, never where the price goes */
+  what: string;
 }
 
 /** Everything that happened, newest first: signals, the tape and large liquidations as cards. */
 export function feedCards(market: Pick<Market, 'signals' | 'tape' | 'liquidations'>, limit = SHOWN): Card[] {
   const cards: Card[] = [];
   for (const s of market.signals) {
-    cards.push({ key: `s${s.id}`, time: s.time, symbol: s.symbol, label: t('Alert'), tone: ALERT_TONE[s.type], text: signalTitle(s) });
+    cards.push({ key: `s${s.id}`, time: s.time, symbol: s.symbol, label: t('Alert'), tone: ALERT_TONE[s.type], text: signalTitle(s), what: meaning(s.type) });
   }
   for (const item of market.tape) {
     const { label, value, tone } = tapeLabel(item);
-    cards.push({ key: `t${item.time}:${item.symbol}:${item.kind}`, time: item.time, symbol: item.symbol, label, tone, text: `${base(item.symbol)} ${value}` });
+    cards.push({ key: `t${item.time}:${item.symbol}:${item.kind}`, time: item.time, symbol: item.symbol, label, tone, text: `${base(item.symbol)} ${value}`, what: meaning(item.kind) });
   }
   for (const l of market.liquidations) {
     const value = l.price * l.quantity;
@@ -72,6 +75,7 @@ export function feedCards(market: Pick<Market, 'signals' | 'tape' | 'liquidation
       label: t('Liquidation'),
       tone: l.side === 'LONG' ? 'down' : 'up',
       text: `${base(l.symbol)}: ${usd(value)} ${l.side === 'LONG' ? t('longs liquidated') : t('shorts liquidated')}`,
+      what: meaning('LIQUIDATION'),
     });
   }
   return cards.sort((a, b) => b.time - a.time).slice(0, limit);
@@ -147,6 +151,7 @@ export class LiveFeed {
           `<li class="feed-card" data-sym="${c.symbol}">` +
           `<div class="fc-top"><span class="badge ${c.tone}">${c.label}</span><time data-time="${c.time}">${ago(c.time, now)}</time></div>` +
           `<p class="fc-text">${escape(c.text)}</p>` +
+          `<p class="fc-what">${escape(c.what)}</p>` +
           `<div class="fc-foot"><span class="fc-spark">${sparkline(points, 132, 40)}</span>` +
           `<button type="button" class="btn fc-open" data-open="${c.symbol}">${t('Open chart')}</button></div></li>`
         );

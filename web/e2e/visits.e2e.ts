@@ -12,7 +12,7 @@ test('each page counts itself once, and the visit keeps the source it came with'
   // read and remembered: a link copied from the address bar no longer says TikTok
   await expect(page).toHaveURL(/\/$/);
 
-  await page.locator('.hero .cta').click();
+  await page.locator('.hero a[href="app/"]').click();
   await expect(page).toHaveURL(/\/app\//);
   // the terminal is reached from our own landing: the visit is still from TikTok
   await expect.poll(() => backend.hits).toContainEqual({ page: 'app', source: 'tiktok' });

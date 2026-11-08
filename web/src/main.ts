@@ -18,7 +18,9 @@ import { Market } from './market';
 import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
-import { SetupJournal, welcomeOnce } from './setups';
+import { SetupJournal } from './setups';
+import { tourOnce } from './tour';
+import { mountGlossary } from './glossary';
 import { Layout } from './layout';
 import { Settings } from './settings';
 import { mountPush } from './push';
@@ -116,6 +118,8 @@ const setPhoneMode = (mode: PhoneMode) => {
   document.body.dataset.phone = mode;
   save('phoneMode', mode);
   if (mode === 'feed') history.replaceState(null, '', location.pathname);
+  // the first look at the full terminal gets its tour (it waited while the feed was on screen)
+  else requestAnimationFrame(() => tourOnce());
   window.scrollTo({ top: 0 });
 };
 const feed = new LiveFeed(
@@ -214,9 +218,10 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   { label: lang === 'ru' ? 'Switch to English' : 'Переключить на русский', icon: 'translate', run: () => setLang(lang === 'ru' ? 'en' : 'ru') },
 ]);
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
-welcomeOnce();
+mountGlossary();
+tourOnce();
 void mountPush();
-const settings = new Settings(welcomeOnce);
+const settings = new Settings(tourOnce);
 
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
