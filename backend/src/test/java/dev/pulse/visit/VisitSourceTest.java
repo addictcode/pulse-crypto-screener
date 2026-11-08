@@ -18,6 +18,8 @@ class VisitSourceTest {
         assertThat(VisitSource.of("Google")).isEqualTo(VisitSource.GOOGLE);
         // the bot opened from a button on the site: t.me/<bot>?start=site
         assertThat(VisitSource.of("site")).isEqualTo(VisitSource.SITE);
+        // a friend's /invite link: t.me/<bot>?start=invite
+        assertThat(VisitSource.of("invite")).isEqualTo(VisitSource.INVITE);
     }
 
     @Test
