@@ -27,7 +27,7 @@ final class TelegramSender {
     /** One signal can go to every subscriber at once; take a whole round of them per pass. */
     static final int DRAIN_MAX = 10_000;
 
-    private record Outgoing(long chatId, Signal signal) {
+    private record Outgoing(long chatId, Signal signal, boolean ru) {
     }
 
     private final TelegramApi api;
@@ -51,7 +51,11 @@ final class TelegramSender {
     }
 
     void enqueue(long chatId, Signal signal) {
-        queue.add(new Outgoing(chatId, signal));
+        enqueue(chatId, signal, false);
+    }
+
+    void enqueue(long chatId, Signal signal, boolean ru) {
+        queue.add(new Outgoing(chatId, signal, ru));
     }
 
     private void loop() {
@@ -61,12 +65,14 @@ final class TelegramSender {
                 List<Outgoing> batch = new ArrayList<>(List.of(first));
                 queue.drainTo(batch, DRAIN_MAX - 1);
                 Map<Long, List<Signal>> byChat = new LinkedHashMap<>();
+                Map<Long, Boolean> russian = new LinkedHashMap<>();
                 for (Outgoing o : batch) {
                     byChat.computeIfAbsent(o.chatId(), k -> new ArrayList<>()).add(o.signal());
+                    russian.put(o.chatId(), o.ru());
                 }
                 for (Map.Entry<Long, List<Signal>> chat : byChat.entrySet()) {
                     List<Signal> signals = chat.getValue();
-                    deliver(chat.getKey(), signals.subList(Math.max(0, signals.size() - DIGEST_MAX), signals.size()));
+                    deliver(chat.getKey(), signals.subList(Math.max(0, signals.size() - DIGEST_MAX), signals.size()), russian.get(chat.getKey()));
                     Thread.sleep(GAP_MS);
                 }
                 Thread.sleep(PAUSE_MS);
@@ -77,10 +83,10 @@ final class TelegramSender {
         }
     }
 
-    private void deliver(long chatId, List<Signal> signals) {
+    private void deliver(long chatId, List<Signal> signals, boolean ru) {
         String text = signals.size() >= DIGEST_FROM
-                ? TelegramFormat.digest(signals)
-                : String.join("\n\n", signals.stream().map(TelegramFormat::signal).toList());
+                ? TelegramFormat.digest(signals, ru)
+                : String.join("\n\n", signals.stream().map(s -> TelegramFormat.signal(s, ru)).toList());
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 api.sendMessage(chatId, text);

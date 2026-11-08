@@ -1,9 +1,9 @@
 import { STANDALONE } from './api';
 
 /** The steps of the funnel a page may report; the server keeps the same list. */
-export type FunnelPage = 'landing' | 'app' | 'record' | 'clip' | 'bot-click' | 'channel-click';
+export type FunnelPage = 'landing' | 'app' | 'record' | 'clip' | 'bot-click' | 'channel-click' | 'play' | 'play-done';
 
-const PAGE_VIEWS = new Set<FunnelPage>(['landing', 'app', 'record', 'clip']);
+const PAGE_VIEWS = new Set<FunnelPage>(['landing', 'app', 'record', 'clip', 'play']);
 
 const SOURCE_KEY = 'pulse.source';
 

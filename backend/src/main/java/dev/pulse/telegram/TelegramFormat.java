@@ -11,6 +11,7 @@ import dev.pulse.alert.AlertFired;
 import dev.pulse.alert.PriceAlert;
 import dev.pulse.setup.SetupTrade;
 import dev.pulse.signal.Signal;
+import dev.pulse.signal.SignalTextRu;
 import dev.pulse.signal.Text;
 
 /**
@@ -30,11 +31,27 @@ final class TelegramFormat {
                 + "<i>" + s.type().label() + ", " + CLOCK.format(Instant.ofEpochMilli(s.time())) + " UTC</i>";
     }
 
+    /**
+     * In Russian the headline is rebuilt from the signal's fields (SignalTextRu); the context line
+     * exists only in English, so the Russian message goes without it, as on the site.
+     */
+    static String signal(Signal s, boolean ru) {
+        if (!ru) {
+            return signal(s);
+        }
+        return "<b>" + escape(SignalTextRu.title(s)) + "</b>\n"
+                + "<i>" + Presets.labelRu(s.type()) + ", " + CLOCK.format(Instant.ofEpochMilli(s.time())) + " UTC</i>";
+    }
+
     /** Several signals at once, e.g. during a market-wide move, as one message. */
     static String digest(List<Signal> signals) {
-        StringBuilder text = new StringBuilder("<b>").append(signals.size()).append(" signals</b>\n");
+        return digest(signals, false);
+    }
+
+    static String digest(List<Signal> signals, boolean ru) {
+        StringBuilder text = new StringBuilder("<b>").append(ru ? "Сигналов: " + signals.size() : signals.size() + " signals").append("</b>\n");
         for (Signal s : signals) {
-            text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(s.title()));
+            text.append('\n').append(CLOCK.format(Instant.ofEpochMilli(s.time()))).append("  ").append(escape(ru ? SignalTextRu.title(s) : s.title()));
         }
         return text.toString();
     }
