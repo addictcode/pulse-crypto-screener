@@ -6,7 +6,7 @@ import './styles.css';
 
 import { Alerts } from './alerts';
 import { base } from './format';
-import { STANDALONE, pollSummary, startFeed, watchVenues } from './api';
+import { STANDALONE, pollSummary, startFeed, watchFeedAge, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
 import { ClipFrame } from './clip';
 import { Densities } from './densities';
@@ -29,6 +29,7 @@ import { Settings } from './settings';
 import { mountPush } from './push';
 import { SignalRecord } from './signals';
 import { save } from './storage';
+import { mountStaleBanner } from './stale';
 import { Tape } from './tape';
 import { currentView, initViews, momentLink, parseHash, parseMoment, rememberSymbol } from './views';
 import { hit } from './visit';
@@ -338,4 +339,6 @@ if (!STANDALONE && document.body.dataset.phone === 'feed') {
   stream();
 }
 watchVenues(market);
+watchFeedAge(market);
+mountStaleBanner(market, STANDALONE, '/status/');
 hit('app');

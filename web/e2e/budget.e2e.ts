@@ -21,6 +21,8 @@ const BUDGET = {
   // listener (client-errors.ts, 0.3 KB with Vite's loader for its lazy part): worth knowing when the
   // game breaks on someone's phone
   'play/index.html': { js: 29 * KB, css: 12 * KB },
+  // the status page: like /record/, the dictionaries and a poll, no chart library
+  'status/index.html': { js: 27 * KB, css: 12 * KB },
 };
 /** The landing's planet loads after the words and numbers are on screen, as its own file. */
 const PLANET = 165 * KB;

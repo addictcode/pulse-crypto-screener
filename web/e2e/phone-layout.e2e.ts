@@ -14,7 +14,7 @@ for (const width of [320, 360, 390]) {
   test.describe(`a phone ${width} px wide`, () => {
     test.use({ viewport: { width, height: 800 }, hasTouch: true });
 
-    for (const [path, lang] of [['/', 'en'], ['/', 'ru'], ['/record/', 'ru'], ['/play/', 'tr'], ['/app/', 'ru']] as const) {
+    for (const [path, lang] of [['/', 'en'], ['/', 'ru'], ['/record/', 'ru'], ['/play/', 'tr'], ['/app/', 'ru'], ['/status/', 'en'], ['/status/', 'ru'], ['/status/', 'es'], ['/status/', 'tr']] as const) {
       test(`${path} in ${lang} does not slide sideways`, async ({ page }) => {
         await fakeBackend(page);
         await page.addInitScript((l) => localStorage.setItem('pulse.lang', JSON.stringify(l)), lang);

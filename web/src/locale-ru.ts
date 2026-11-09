@@ -738,4 +738,11 @@ export const RU: Record<string, string> = {
   'Share this moment': 'Поделиться этим моментом',
   'Link copied': 'Ссылка скопирована',
   'shared moment': 'момент из ссылки',
+  '{n} s': '{n} с',
+  '{n} min': '{n} мин',
+  '{n} h': '{n} ч',
+  'No data from the Pulse server for {v}. Reconnecting; the numbers on screen are not live.': 'Сервер Pulse молчит уже {v}. Переподключаемся; числа на экране не живые.',
+  'The exchange data is {v} old: Pulse is reconnecting to Binance. The numbers on screen are not live.': 'Данным биржи уже {v}: Pulse переподключается к Binance. Числа на экране не живые.',
+  'No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.': 'От Binance нет данных уже {v}. Демо читает биржу прямо из браузера; возможно, из вашей сети Binance недоступен.',
+  'Status': 'Статус',
 };

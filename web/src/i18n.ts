@@ -42,6 +42,11 @@ export const lang: Lang = detect();
 export const draft = lang in DRAFTS;
 const dict: Record<string, string> = lang === 'ru' ? RU : draft ? await DRAFTS[lang]!() : {};
 
+/** Words of one page only (locale-status.ts), added to the dictionary by that page before it speaks. */
+export function extend(extra: Partial<Record<Lang, Record<string, string>>>) {
+  Object.assign(dict, extra[lang] ?? {});
+}
+
 /** `t('{n} walls', { n: 3 })`: translate, then fill the placeholders. */
 export function t(text: string, vars?: Record<string, string | number>): string {
   const out = dict[text] ?? text;
@@ -61,6 +66,8 @@ export function setLang(next: Lang) {
  */
 export function localize(root: ParentNode = document) {
   document.documentElement.lang = lang;
+  // links to what only the server has (/status/): the demo on GitHub Pages runs without one
+  if (import.meta.env.VITE_STANDALONE === '1') root.querySelectorAll('[data-server-only]').forEach((el) => el.remove());
   if (draft && root === document) {
     const note = document.createElement('span');
     note.className = 'draft-note';

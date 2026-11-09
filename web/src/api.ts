@@ -89,6 +89,8 @@ export interface Summary {
   tape: TapeItem[];
   /** Two hours of the pairs the events name, for the phone feed's cards. */
   sparklines: Record<string, number[]>;
+  /** Milliseconds since the exchange's newest frame on the server; null before the first. */
+  feedAge?: number | null;
 }
 
 /** How often the landing asks; the server rebuilds the answer at most every 2 seconds. */
@@ -107,6 +109,7 @@ export function applySummary(market: Market, summary: Summary) {
   market.apply({ type: 'outcomes', items: summary.signals });
   market.apply({ type: 'tape', items: summary.tape });
   if (summary.sparklines && Object.keys(summary.sparklines).length) market.apply({ type: 'sparklines', series: summary.sparklines });
+  market.setFeedAge(summary.feedAge);
 }
 
 /**
@@ -145,6 +148,25 @@ export function pollSummary(market: Market): { ready: Promise<void>; stop(): voi
       document.removeEventListener('visibilitychange', onVisible);
     },
   };
+}
+
+/**
+ * While the terminal holds the stream: asks the server now and then how old the exchange's data
+ * is (the stream itself keeps ticking when the exchange is quiet). Light: no history.
+ */
+export function watchFeedAge(market: Market) {
+  if (STANDALONE) return;
+  const ask = async () => {
+    if (document.hidden) return;
+    try {
+      const status = await getJson<{ feedAge: number | null }>('/api/status/full?history=false');
+      market.setFeedAge(status.feedAge);
+    } catch {
+      // the stream's own silence says the rest
+    }
+  };
+  void ask();
+  setInterval(() => void ask(), 15_000);
 }
 
 /** The landing's feed: the summary on the server, the demo's own feed without one. */

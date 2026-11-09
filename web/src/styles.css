@@ -465,6 +465,8 @@ table.grid { width: 100%; border-collapse: separate; border-spacing: 0; }
 .grid tbody tr { cursor: pointer; }
 .grid tbody tr:hover td { background: var(--bg-2); }
 .grid tbody tr.is-selected td { background: var(--bg-sel); }
+/* a flat change in grey on the lighter selected row was 4.1:1, under the 4.5 small text needs */
+.grid tbody tr.is-selected .flat { color: var(--ink-2); }
 .grid tbody tr:focus-visible { outline: none; }
 .grid tbody tr:focus-visible td { background: var(--bg-2); }
 .star { display: inline-flex; padding: 4px; margin: -4px; color: var(--rule-strong); font-size: 14px; border-radius: 4px; transition: color .15s; }

@@ -1,0 +1,4 @@
+/* stale.ts: the data stopped. Fixed to the top, so it moves nothing on the page; no colour, the
+   words carry it */
+.stale-banner { position: fixed; z-index: 90; left: 0; right: 0; top: 0; padding: 9px 16px; background: var(--ink, #e8e9ec); color: var(--bg-0, #040405); font: 600 13px / 1.4 var(--f-ui, system-ui); text-align: center; }
+.stale-banner a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

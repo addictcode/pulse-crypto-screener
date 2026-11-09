@@ -13,6 +13,7 @@ import type { VoxelPlanet } from './planet';
 import { alertRow, tapeLabel, tapeRow } from './tape';
 import type { SetupBoard } from './types';
 import { loadTelegramTargets, mountTelegram, telegramAnchor } from './telegram';
+import { mountStaleBanner } from './stale';
 import { hit } from './visit';
 
 localize();
@@ -367,3 +368,5 @@ void mountTelegram($('final-tg'), 'ghost');
 
 // a poll of the summary, not the stream: the landing needs a fraction of it (see startSummary)
 void startSummary(market).catch(() => undefined);
+// the numbers stopped: the page says so instead of looking like a calm market
+mountStaleBanner(market, STANDALONE, '/status/');

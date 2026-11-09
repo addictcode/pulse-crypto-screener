@@ -40,6 +40,16 @@ export class Market {
   connection: ConnectionState = 'connecting';
   /** Server timestamp of the newest tick, used to show how fresh the data is. */
   lastTick = 0;
+  /** This browser's clock when the newest tick arrived: how long the server has been silent. */
+  receivedAt = 0;
+  /**
+   * How old the exchange's data was on the server, when the server last said (summary, status);
+   * null until it has. The server keeps ticking when the exchange goes quiet, so ticks alone
+   * cannot tell a dead feed from a calm market.
+   */
+  feedAge: number | null = null;
+  /** This browser's clock when feedAge was told. */
+  feedAgeAt = 0;
 
   readonly snapshot = new Emitter<void>();
   /** Previous and current row for every symbol that changed in a tick. */
@@ -65,6 +75,7 @@ export class Market {
         message.rows.forEach((r) => this.rows.set(r.symbol, r));
         this.liquidations = message.liquidations.slice(0, RECENT_LIQUIDATIONS);
         this.lastTick = message.ts;
+        this.receivedAt = Date.now();
         this.snapshot.emit();
         break;
       case 'delta': {
@@ -78,6 +89,7 @@ export class Market {
           this.rows.set(next.symbol, next);
         }
         this.lastTick = message.ts;
+        this.receivedAt = Date.now();
         this.delta.emit(changes);
         break;
       }
@@ -144,6 +156,13 @@ export class Market {
   /** The wall closest to the price, which is the one a trader reacts to. */
   nearestWall(symbol: string): Wall | null {
     return this.wallsBySymbol.get(symbol)?.[0] ?? null;
+  }
+
+  /** The server's word on how old the exchange's data is (FeedAge on the server). */
+  setFeedAge(age: number | null | undefined) {
+    if (age === undefined) return;
+    this.feedAge = age;
+    this.feedAgeAt = Date.now();
   }
 
   setConnection(state: ConnectionState) {

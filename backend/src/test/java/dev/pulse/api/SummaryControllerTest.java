@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.ObjectProvider;
 
+import dev.pulse.status.FeedAge;
 import dev.pulse.depth.BookSide;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.Wall;
@@ -39,7 +40,7 @@ class SummaryControllerTest {
     private final ObjectProvider<TapeDetector> tape = mock(ObjectProvider.class);
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final AtomicLong now = new AtomicLong(1_000_000);
-    private final SummaryController controller = new SummaryController(store, density, signals, tape, mapper, now::get);
+    private final SummaryController controller = new SummaryController(store, density, signals, tape, new FeedAge(List.of()), mapper, now::get);
 
     @BeforeEach
     void market() {
