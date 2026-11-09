@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "e2e": "playwright test",
-    "stack": "playwright test -c e2e-stack"
+    "stack": "e2e-stack/run.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",

@@ -10,7 +10,7 @@ export default defineConfig({
   testDir: '.',
   testMatch: '**/*.e2e.ts',
   timeout: 60_000,
-  expect: { timeout: 15_000, toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled' } },
+  expect: { timeout: 15_000, toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled', caret: 'hide' } },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -25,10 +25,16 @@ export default defineConfig({
     locale: 'en-US',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // production is HTTPS; inside Docker the stack is http://web, which Chrome would treat as an
+    // insecure origin (no service worker, COOP ignored with a console error) unless told otherwise
+    launchOptions: { args: [`--unsafely-treat-insecure-origin-as-secure=${new URL(STACK).origin}`] },
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-    { name: 'phone-320', testIgnore: /edge/, use: { viewport: { width: 320, height: 720 }, hasTouch: true, isMobile: true } },
-    { name: 'phone-390', testIgnore: /edge/, use: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
+    { name: 'desktop', testIgnore: /snapshots/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    { name: 'phone-320', testIgnore: /edge|snapshots/, use: { viewport: { width: 320, height: 720 }, hasTouch: true, isMobile: true } },
+    { name: 'phone-390', testIgnore: /edge|snapshots/, use: { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
+    // the look (snapshots.e2e.ts): a desktop and a 360 px phone, no motion
+    { name: 'look-desktop', testMatch: /snapshots/, use: { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' } },
+    { name: 'look-phone', testMatch: /snapshots/, use: { viewport: { width: 360, height: 780 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' } },
   ],
 });

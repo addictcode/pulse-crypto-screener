@@ -43,10 +43,10 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
         working-directory: web
-      - run: npx playwright install --with-deps chromium
-        working-directory: web
       # the jar and the site are built here and copied into the production images
       - run: loadtest/run.sh --local-build up
+      # in Playwright's own image on the stack's network (e2e-stack/run.sh): the same browser and
+      # fonts as wherever the screenshot references were taken
       - run: npm run stack
         working-directory: web
       - if: failure()
