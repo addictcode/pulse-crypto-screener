@@ -1,0 +1,18 @@
+/* /status/: how live Pulse is. No colour but the words and the shades of white: colour on Pulse
+   means a price going up or down */
+.st-now { display: flex; align-items: center; gap: 10px; margin: 28px 0 18px; font-size: 18px; flex-wrap: wrap; }
+.st-now b { font-weight: 700; }
+.st-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.st-now.live .st-dot { background: var(--ink); box-shadow: 0 0 0 4px rgba(255, 255, 255, .12); }
+.st-kpi dd { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-kpi > div { min-width: 0; }
+.st-day h2 { margin-bottom: 14px; }
+.st-strip { display: flex; gap: 2px; height: 34px; }
+.st-strip span { flex: 1; min-width: 0; background: var(--rule-strong); }
+.st-strip span.live { background: var(--ink-2); }
+.st-strip span.stale { background: repeating-linear-gradient(135deg, var(--ink-3) 0 3px, transparent 3px 6px); }
+.st-axis { display: flex; justify-content: space-between; margin-top: 6px; color: var(--ink-3); font-size: 12px; }
+.st-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
+.st-key { width: 14px; height: 10px; display: inline-block; background: var(--rule-strong); }
+.st-key.live { background: var(--ink-2); }
+.st-key.stale { background: repeating-linear-gradient(135deg, var(--ink-3) 0 3px, transparent 3px 6px); }

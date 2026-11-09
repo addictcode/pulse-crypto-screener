@@ -23,6 +23,7 @@ import dev.pulse.signal.Signal;
 import dev.pulse.signal.SignalHistory;
 import dev.pulse.signal.TapeDetector;
 import dev.pulse.signal.TapeItem;
+import dev.pulse.status.FeedAge;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -59,9 +60,11 @@ public class SummaryController {
     /**
      * @param sparklines two hours of each pair the events below name: the phone's live feed draws
      *                   them on its cards (every pair's would triple the answer)
+     * @param feedAge    milliseconds since the exchange's newest frame, on the server's clock; past
+     *                   {@link FeedAge#STALE_MS} the landing says the numbers are not live
      */
     public record Summary(long ts, List<Row> rows, List<Liquidation> liquidations, Walls walls,
-            List<Signal> signals, List<TapeItem> tape, Map<String, List<Double>> sparklines) {
+            List<Signal> signals, List<TapeItem> tape, Map<String, List<Double>> sparklines, Long feedAge) {
     }
 
     private record Built(long at, byte[] json) {
@@ -71,22 +74,24 @@ public class SummaryController {
     private final DensityScanner density;
     private final SignalHistory signals;
     private final ObjectProvider<TapeDetector> tape;
+    private final FeedAge feed;
     private final JsonMapper mapper;
     private final LongSupplier clock;
     private volatile Built latest;
 
     @Autowired
     public SummaryController(MarketStore store, DensityScanner density, SignalHistory signals,
-            ObjectProvider<TapeDetector> tape, JsonMapper mapper) {
-        this(store, density, signals, tape, mapper, System::currentTimeMillis);
+            ObjectProvider<TapeDetector> tape, FeedAge feed, JsonMapper mapper) {
+        this(store, density, signals, tape, feed, mapper, System::currentTimeMillis);
     }
 
     SummaryController(MarketStore store, DensityScanner density, SignalHistory signals,
-            ObjectProvider<TapeDetector> tape, JsonMapper mapper, LongSupplier clock) {
+            ObjectProvider<TapeDetector> tape, FeedAge feed, JsonMapper mapper, LongSupplier clock) {
         this.store = store;
         this.density = density;
         this.signals = signals;
         this.tape = tape;
+        this.feed = feed;
         this.mapper = mapper;
         this.clock = clock;
     }
@@ -127,6 +132,7 @@ public class SummaryController {
                 new Walls(state.ts(), near, state.coverage()),
                 recentSignals,
                 recentTape,
-                sparklines);
+                sparklines,
+                feed.at(now));
     }
 }

@@ -48,7 +48,8 @@ export interface FakeBackend {
 }
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
-export async function fakeBackend(page: Page, options: { links?: TelegramLinks } = {}): Promise<FakeBackend> {
+/** @param feedAge how old the server says the exchange's data is, in ms (summary and status) */
+export async function fakeBackend(page: Page, options: { links?: TelegramLinks; feedAge?: number } = {}): Promise<FakeBackend> {
   // tests start as a returning visitor: the first-visit card would sit on top of what they click
   await page.addInitScript(() => {
     if (!localStorage.getItem('pulse.welcomed')) localStorage.setItem('pulse.welcomed', 'true');
@@ -63,6 +64,7 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     signals: [],
     tape: [],
     sparklines: Object.fromEntries(ROWS.map((r) => [r.symbol, [1, 1.01, 0.99, 1.02, 1.03]])),
+    feedAge: options.feedAge ?? 300,
   };
   const slim = ({ symbol, price, ch5m, ch24h, vol24h }: SymbolMetrics) => ({ symbol, price, ch5m, ch24h, vol24h });
   const remember = (message: StreamMessage) => {
@@ -109,6 +111,21 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
   await page.route('**/api/client-errors', (route) => {
     errors.push(route.request().postDataJSON() as FakeBackend['errors'][number]);
     return route.fulfill({ status: 204 });
+  });
+  await page.route('**/api/status/full**', (route) => {
+    const now = Date.now();
+    const full = !route.request().url().includes('history=false');
+    route.fulfill({
+      json: {
+        now, feedAge: options.feedAge ?? 300, stale: (options.feedAge ?? 300) > 30_000,
+        exchanges: [{ exchange: 'binance', symbols: 530, historyLoaded: 530, connections: 2, connectionsOpen: 2, lastFrameAt: now - 300 }],
+        booksSynced: 58, books: 60,
+        lastSignal: { id: 1, type: 'PUMP', symbol: 'WIFUSDT', time: now - 95_000, price: 0.84, value: 3.1, title: 't', detail: 'd' },
+        since: now - 3 * 3_600_000,
+        // three hours recorded, one stale quarter hour in the middle
+        minutes: full ? Array.from({ length: 180 }, (_, i) => ({ t: now - (180 - i) * 60_000, feedAge: i >= 90 && i < 95 ? 45_000 : 400, booksSynced: 58, books: 60 })) : [],
+      },
+    });
   });
   await page.route('**/api/links', (route) => route.fulfill({ json: options.links ?? { bot: '', channel: '' } }));
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));

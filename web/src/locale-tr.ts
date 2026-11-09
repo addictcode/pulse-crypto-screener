@@ -227,4 +227,12 @@ export const TR: Record<string, string> = {
   "Longs liquidated": "Longlar likide oldu",
   "Near bid wall": "Alış duvarına yakın",
   "Near ask wall": "Satış duvarına yakın",
+  "{n} s": "{n} sn",
+  "{n} min": "{n} dk",
+  "{n} h": "{n} sa",
+  "No data from the Pulse server for {v}. Reconnecting; the numbers on screen are not live.": "Pulse sunucusundan {v} süredir veri yok. Yeniden bağlanılıyor; ekrandaki sayılar canlı değil.",
+  "The exchange data is {v} old: Pulse is reconnecting to Binance. The numbers on screen are not live.": "Borsa verileri {v} eski: Pulse Binance'e yeniden bağlanıyor. Ekrandaki sayılar canlı değil.",
+  "No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.": "{v} süredir Binance'ten veri yok. Demo verileri doğrudan tarayıcından okur; Binance ağından erişilemiyor olabilir.",
+  "Status": "Durum",
+  "now": "şimdi",
 };

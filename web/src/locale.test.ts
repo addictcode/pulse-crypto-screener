@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { ES } from './locale-es';
+import { STATUS } from './locale-status';
 import { RU } from './locale-ru';
 import { TR } from './locale-tr';
 
@@ -68,6 +69,7 @@ describe('Russian locale', () => {
     ...htmlKeys(join(src, '../index.html')),
     ...htmlKeys(join(src, '../record/index.html')),
     ...htmlKeys(join(src, '../play/index.html')),
+    ...htmlKeys(join(src, '../status/index.html')),
     ...dynamicKeys(),
   ];
 
@@ -76,7 +78,7 @@ describe('Russian locale', () => {
   });
 
   it('translates every string of the interface', () => {
-    const missing = [...new Set(keys)].filter((key) => !(key in RU));
+    const missing = [...new Set(keys)].filter((key) => !(key in RU) && !(key in STATUS.ru));
     expect(missing).toEqual([]);
   });
 
@@ -94,11 +96,26 @@ describe('Russian locale', () => {
   });
 });
 
+describe('the words of /status/', () => {
+  it('are in every language the page speaks, with the same placeholders', () => {
+    const names = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join();
+    for (const dict of [STATUS.ru, STATUS.es, STATUS.tr]) {
+      expect(Object.keys(dict).sort()).toEqual(Object.keys(STATUS.ru).sort());
+      expect(Object.entries(dict).filter(([en, tr]) => names(en) !== names(tr))).toEqual([]);
+    }
+  });
+
+  it('are not in the shared dictionaries as well', () => {
+    expect(Object.keys(STATUS.ru).filter((key) => key in RU)).toEqual([]);
+  });
+});
+
 describe('draft translations of the public pages', () => {
   // the landing, the record and the game, with the modules they use; the terminal is English and Russian only
   const keys = [
-    ...codeKeys(['landing.ts', 'record.ts', 'play.ts', 'telegram.ts', 'tape.ts', 'format.ts']),
+    ...codeKeys(['landing.ts', 'record.ts', 'play.ts', 'telegram.ts', 'tape.ts', 'format.ts', 'stale.ts', 'status.ts']),
     ...htmlKeys(join(src, '../index.html')),
+    ...htmlKeys(join(src, '../status/index.html')),
     ...htmlKeys(join(src, '../record/index.html')),
     ...htmlKeys(join(src, '../play/index.html')),
     ...[...read(join(src, 'play-game.ts')).matchAll(/return '([^']*)';/g)].map((m) => m[1]),
@@ -108,7 +125,8 @@ describe('draft translations of the public pages', () => {
 
   for (const [name, dict] of [['Spanish', ES], ['Turkish', TR]] as const) {
     it(`${name} covers every string of those pages`, () => {
-      expect([...new Set(keys)].filter((key) => !(key in dict))).toEqual([]);
+      const own = name === 'Spanish' ? STATUS.es : STATUS.tr;
+      expect([...new Set(keys)].filter((key) => !(key in dict) && !(key in own))).toEqual([]);
     });
 
     it(`${name} has nothing the Russian dictionary does not know`, () => {

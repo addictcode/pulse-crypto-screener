@@ -35,6 +35,12 @@ const recordLive = async (page: Page) => {
   await expect(page.locator('#rec-n')).toHaveText(/^\s*[\d,  ]+\s*$/);
 };
 
+const statusLive = async (page: Page) => {
+  // the stack is fresh and on a made-up market that never stops: it must say it is live
+  await expect(page.locator('#st-now')).toHaveClass(/live/);
+  await expect(page.locator('#st-feed')).toHaveText(/\d/);
+};
+
 function visits(pair: string): Visit[] {
   return [
     ...PUBLIC.map((lang) => ({ path: '/', lang, choose: true, live: landingLive })),
@@ -44,6 +50,7 @@ function visits(pair: string): Visit[] {
     ...PUBLIC.map((lang) => ({ path: '/play/', lang, choose: true })),
     { path: '/ru/play/', lang: 'ru', choose: false },
     ...TERMINAL.map((lang) => ({ path: `/app/#screener:${pair}`, lang, choose: true, live: terminalLive })),
+    ...PUBLIC.map((lang) => ({ path: '/status/', lang, choose: true, live: statusLive })),
   ];
 }
 

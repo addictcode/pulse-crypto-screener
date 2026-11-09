@@ -40,6 +40,17 @@ const SHOTS: Shot[] = [
     hide: ['#pl-history'],
   },
   {
+    name: 'status',
+    path: () => '/status/',
+    langs: PUBLIC,
+    hide: ['#st-feed', '#st-age', '#st-books', '#st-signal', '#st-strip', '#st-share'],
+    // the first answer of the server is in: the word, the dot and the day
+    ready: async (page) => {
+      await expect(page.locator('#st-now')).toHaveClass(/live/);
+      await expect(page.locator('#st-strip span')).toHaveCount(96);
+    },
+  },
+  {
     name: 'terminal',
     path: (pair) => `/app/#screener:${pair}`,
     langs: TERMINAL,
@@ -62,6 +73,7 @@ for (const shot of SHOTS) {
       await page.goto(shot.path(process.env.STACK_PAIR ?? 'FAKE000USDT'));
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
       await page.evaluate(() => document.fonts.ready);
+      if (shot.ready) await shot.ready(page);
       await page.waitForTimeout(3_000);
       // the planet and the charts draw on canvases, live every frame. Added as a style tag: the
       // style option of toHaveScreenshot did not reach the page in Playwright 1.64.

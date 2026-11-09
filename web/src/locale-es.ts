@@ -227,4 +227,12 @@ export const ES: Record<string, string> = {
   "Longs liquidated": "Longs liquidados",
   "Near bid wall": "Cerca de un muro de compra",
   "Near ask wall": "Cerca de un muro de venta",
+  "{n} s": "{n} s",
+  "{n} min": "{n} min",
+  "{n} h": "{n} h",
+  "No data from the Pulse server for {v}. Reconnecting; the numbers on screen are not live.": "Sin datos del servidor de Pulse desde hace {v}. Reconectando; las cifras en pantalla no están en vivo.",
+  "The exchange data is {v} old: Pulse is reconnecting to Binance. The numbers on screen are not live.": "Los datos del exchange tienen {v}: Pulse se está reconectando a Binance. Las cifras en pantalla no están en vivo.",
+  "No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.": "Sin datos de Binance desde hace {v}. La demo los lee directamente desde tu navegador; puede que Binance no sea accesible desde tu red.",
+  "Status": "Estado",
+  "now": "ahora",
 };

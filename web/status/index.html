@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-langs="en ru es tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" data-i18n-attrs="content" content="Is Pulse live right now: the exchange feed, the order books, the last signal and the last day minute by minute.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pulse">
+<meta property="og:title" content="Pulse status">
+<meta property="og:description" content="Is Pulse live right now.">
+<!-- absolute and on GitHub Pages: link previews need a full URL, and the tunnel address changes -->
+<meta property="og:image" content="https://addictcode.github.io/pulse-crypto-screener/demo/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z' fill='%23070708' stroke='%23e9eaec' stroke-width='1.5'/%3E%3Cpath d='M12 12 21 7M12 12v10M12 12 3 7' fill='none' stroke='%23e9eaec' stroke-width='1.5' opacity='.5'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#040405">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="robots" content="noindex">
+<title>Pulse status</title>
+</head>
+<body class="landing record status">
+
+<header class="nav">
+  <a class="brand" href="../" data-i18n-attrs="aria-label" aria-label="Pulse home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 21 7v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12 21 7M12 12v10M12 12 3 7" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/><path d="M12 2 21 7l-9 5-9-5z" fill="currentColor" fill-opacity=".14"/></svg><b>Pulse</b></a>
+  <nav data-i18n-attrs="aria-label" aria-label="Sections">
+    <a href="../" data-i18n>Home</a>
+    <a href="../#setups" data-i18n>Setups</a>
+  </nav>
+  <div class="lang" role="group" data-i18n-attrs="aria-label" aria-label="Language" id="lang"><button type="button" data-lang="en">EN</button><button type="button" data-lang="ru">RU</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="tr">TR</button></div>
+  <a class="cta small" href="../app/" data-i18n>Open terminal</a>
+</header>
+
+<main class="rec">
+  <h1 class="rec-title" data-i18n>Status</h1>
+  <p class="lede" data-i18n>Is Pulse live right now: the exchange feed, the order books and the signals, and the last day minute by minute.</p>
+
+  <p class="st-now" id="st-now" role="status"><span class="st-dot"></span><b id="st-word">&nbsp;</b> <span class="mute" id="st-meta"></span></p>
+
+  <dl class="su-stats rec-kpi st-kpi" id="st-kpi">
+    <div><dt data-i18n>Exchange feed</dt><dd id="st-feed">–</dd></div>
+    <div><dt data-i18n>Data age</dt><dd id="st-age">–</dd></div>
+    <div><dt data-i18n>Order books in sync</dt><dd id="st-books">–</dd></div>
+    <div><dt data-i18n>Last signal</dt><dd id="st-signal">–</dd></div>
+  </dl>
+
+  <section class="rec-how st-day">
+    <h2 data-i18n>The last 24 hours</h2>
+    <div class="st-strip" id="st-strip" role="img" data-i18n-attrs="aria-label" aria-label="The last 24 hours"></div>
+    <div class="st-axis"><span data-i18n>24 hours ago</span><span data-i18n>now</span></div>
+    <p class="st-legend"><span class="st-key live"></span><span data-i18n>live</span> <span class="st-key stale"></span><span data-i18n>data older than 30 s</span> <span class="st-key none"></span><span data-i18n>no record (the server was restarted or down)</span></p>
+    <p class="mute" id="st-share"></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span data-i18n>Pulse is a personal research tool. Nothing here is investment advice.</span>
+  <a href="../" data-i18n>Pulse home</a>
+</footer>
+
+<script type="module" src="/src/status.ts"></script>
+</body>
+</html>
