@@ -3,6 +3,7 @@ import '@fontsource-variable/unbounded';
 import './styles.css';
 
 import { Alerts } from './alerts';
+import { base } from './format';
 import { STANDALONE, pollSummary, startFeed, watchVenues } from './api';
 import { INTERVALS, PriceChart } from './chart';
 import { ClipFrame } from './clip';
@@ -18,13 +19,16 @@ import { Market } from './market';
 import { Masthead } from './masthead';
 import { Palette, type Command } from './palette';
 import { Screener } from './screener';
-import { SetupJournal, welcomeOnce } from './setups';
+import { SetupJournal } from './setups';
+import { tourOnce } from './tour';
+import { mountGlossary } from './glossary';
 import { Layout } from './layout';
 import { Settings } from './settings';
+import { mountPush } from './push';
 import { SignalRecord } from './signals';
 import { save } from './storage';
 import { Tape } from './tape';
-import { currentView, initViews, parseHash, rememberSymbol } from './views';
+import { currentView, initViews, momentLink, parseHash, parseMoment, rememberSymbol } from './views';
 import { hit } from './visit';
 
 localize();
@@ -50,6 +54,10 @@ const instrument = new InstrumentPanel(market);
 let selectSymbol: (symbol: string) => void = () => {};
 const alerts = new Alerts(market, (symbol) => selectSymbol(symbol));
 const chart = new PriceChart(market, alerts);
+// a shared moment opens on its timeframe, centred on the time it points at
+const shared = parseMoment(location.hash, Object.keys(INTERVALS));
+if (shared.tf) chart.setTimeframe(shared.tf);
+if (shared.at !== null) chart.focusMoment(shared.at);
 new Masthead(market);
 new LiquidationsPanel(market);
 const clip = new ClipFrame(market);
@@ -115,6 +123,8 @@ const setPhoneMode = (mode: PhoneMode) => {
   document.body.dataset.phone = mode;
   save('phoneMode', mode);
   if (mode === 'feed') history.replaceState(null, '', location.pathname);
+  // the first look at the full terminal gets its tour (it waited while the feed was on screen)
+  else requestAnimationFrame(() => tourOnce());
   window.scrollTo({ top: 0 });
 };
 const feed = new LiveFeed(
@@ -163,6 +173,38 @@ function saveSnapshot() {
   }, 'image/png');
 }
 document.getElementById('shot-btn')!.addEventListener('click', saveSnapshot);
+
+/** The link to what is on the chart now: the pair, the timeframe and the moment (see shareMoment). */
+const shareLink = () => momentLink(location.origin, location.pathname, screener.selected, chart.timeframe, chart.shareMoment());
+
+/**
+ * Shares the moment: on a phone the share sheet with the picture and the link; elsewhere the link
+ * is copied and the picture saved, and the button says so.
+ */
+async function shareMoment() {
+  const link = shareLink();
+  const shot = chart.snapshot();
+  const blob = shot ? await new Promise<Blob | null>((resolve) => shot.canvas.toBlob(resolve, 'image/png')) : null;
+  const file = blob && shot ? new File([blob], shot.name, { type: 'image/png' }) : null;
+  try {
+    if (file && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], text: `${base(screener.selected)} ${chart.timeframe} · Pulse`, url: link });
+      return;
+    }
+  } catch {
+    return; // the sheet was closed
+  }
+  await navigator.clipboard?.writeText(link).catch(() => {});
+  const button = document.getElementById('share-btn')!;
+  button.title = t('Link copied');
+  const icon = button.querySelector<HTMLElement>('.i')!;
+  icon.innerHTML = ICONS.check;
+  setTimeout(() => {
+    icon.innerHTML = ICONS.link;
+    button.title = t('Share this moment');
+  }, 1_600);
+}
+document.getElementById('share-btn')!.addEventListener('click', () => void shareMoment());
 chart.onPick = (symbol) => selectSymbol(symbol);
 
 const keys = document.getElementById('keys') as HTMLDialogElement;
@@ -208,13 +250,15 @@ const palette = new Palette(market, selectSymbol, (): Command[] => [
   {
     label: t('Copy a link to this chart'),
     icon: 'link',
-    run: () => void navigator.clipboard?.writeText(`${location.origin}${location.pathname}#screener:${screener.selected}`),
+    run: () => void navigator.clipboard?.writeText(shareLink()),
   },
   { label: lang === 'ru' ? 'Switch to English' : 'Переключить на русский', icon: 'translate', run: () => setLang(lang === 'ru' ? 'en' : 'ru') },
 ]);
 document.getElementById('cmd-btn')!.addEventListener('click', () => palette.toggle());
-welcomeOnce();
-const settings = new Settings(welcomeOnce);
+mountGlossary();
+tourOnce();
+void mountPush();
+const settings = new Settings(tourOnce);
 
 document.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

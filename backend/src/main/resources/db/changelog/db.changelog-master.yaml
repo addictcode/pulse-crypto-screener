@@ -21,3 +21,7 @@ databaseChangeLog:
       file: db/changelog/changes/010-visit-day.yaml
   - include:
       file: db/changelog/changes/011-premium.yaml
+  - include:
+      file: db/changelog/changes/012-push-subscription.yaml
+  - include:
+      file: db/changelog/changes/013-bot-language-weekly.yaml

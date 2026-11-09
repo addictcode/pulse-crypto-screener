@@ -24,6 +24,12 @@ function pageLangs(): Lang[] {
  * checks that nothing is missing.
  */
 function detect(): Lang {
+  // a Russian twin (/ru/...) is Russian whatever the browser says: its text is already in the HTML
+  // (and the terminal opened from it follows)
+  if (typeof document !== 'undefined' && document.documentElement.dataset.pageLang === 'ru') {
+    save('lang', 'ru');
+    return 'ru';
+  }
   const langs = pageLangs();
   const saved = load<string | null>('lang', null);
   if (saved && (langs as string[]).includes(saved)) return saved as Lang;
@@ -77,10 +83,25 @@ export function localize(root: ParentNode = document) {
   });
 }
 
-/** The EN / RU switch. */
+/**
+ * The EN / RU switch. A page with a twin in the other language (data-twin, set by seo.ts) goes to
+ * it: two addresses a search engine can see. The terminal has no twin and reloads in place.
+ */
 export function mountLangSwitch(el: HTMLElement) {
   el.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
-    button.addEventListener('click', () => setLang(button.dataset.lang as Lang));
+    button.addEventListener('click', () => {
+      const next = button.dataset.lang as Lang;
+      if (next === lang) return;
+      const twin = el.dataset.twin;
+      // the English page of a visitor who reads Russian is translated in place, not a twin
+      const onTwin = document.documentElement.dataset.pageLang === 'ru';
+      if (twin && (next === 'ru' || onTwin)) {
+        save('lang', next);
+        location.href = new URL(twin, location.href).href + location.hash;
+      } else {
+        setLang(next);
+      }
+    });
   });
 }

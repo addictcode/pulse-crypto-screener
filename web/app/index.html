@@ -94,6 +94,7 @@
           <button type="button" class="btn" id="ind-btn" aria-expanded="false" aria-controls="ind-menu"><span class="i" data-icon="indicators"></span><span data-i18n>Indicators</span><span class="count"></span></button>
           <div class="menu ind-menu" id="ind-menu" hidden></div>
         </div>
+        <button type="button" class="btn icon-only" id="share-btn" data-i18n-attrs="aria-label,title" aria-label="Share this moment" title="Share this moment"><span class="i" data-icon="link"></span></button>
         <button type="button" class="btn icon-only" id="shot-btn" data-i18n-attrs="aria-label,title" aria-label="Save the chart as a picture" title="Save the chart as a picture (S)"><span class="i" data-icon="camera"></span></button>
         <button type="button" class="btn icon-only pane-btn" id="dock-btn" aria-pressed="true" data-i18n-attrs="aria-label,title" aria-label="Feeds under the chart" title="Feeds under the chart (B)"><span class="i" data-icon="dock"></span></button>
         <button type="button" class="btn icon-only pane-btn" id="list-btn" aria-pressed="true" data-i18n-attrs="aria-label,title" aria-label="Pair list" title="Pair list (L)"><span class="i flip" data-icon="sidebar"></span></button>
@@ -140,7 +141,7 @@
   </section>
 
   <section class="panel liqs" data-i18n-attrs="aria-label" aria-label="Liquidations">
-    <div class="p-head"><h2 class="p-title" data-i18n>Liquidations</h2><span class="p-meta" data-i18n>last 5 min</span></div>
+    <div class="p-head"><h2 class="p-title" data-term="liquidation" data-i18n>Liquidations</h2><span class="p-meta" data-i18n>last 5 min</span></div>
     <div class="split">
       <span class="down" id="liq-l">&nbsp;</span>
       <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
@@ -191,7 +192,7 @@
 
   <section class="panel densmap" data-i18n-attrs="aria-label" aria-label="Density map">
     <div class="p-head">
-      <h2 class="p-title" data-i18n>Densities</h2>
+      <h2 class="p-title" data-term="wall" data-i18n>Densities</h2>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Distance from price" id="dm-dist"></div>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Minimum wall size" id="dm-size"></div>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Side" id="dm-side"></div>
@@ -218,7 +219,7 @@
   </section>
 
   <section class="panel walllist" data-i18n-attrs="aria-label" aria-label="Walls">
-    <div class="p-head"><h2 class="p-title" data-i18n>Walls</h2><span class="p-meta" id="wl-meta" data-i18n>nearest to price first</span></div>
+    <div class="p-head"><h2 class="p-title" data-term="wall" data-i18n>Walls</h2><span class="p-meta" id="wl-meta" data-i18n>nearest to price first</span></div>
     <div class="table-wrap">
       <table class="grid walls-grid">
         <thead><tr>
@@ -325,6 +326,14 @@
   <div class="set-row">
     <div><b data-i18n>Risk per trade</b><span data-i18n>What a stop costs you. Pulse Setups sizes the position from it.</span></div>
     <label class="field set-money"><span>$</span><span class="sr" data-i18n>Risk per trade</span><input id="set-risk" type="text" inputmode="decimal" autocomplete="off"></label>
+  </div>
+  <div class="set-row" id="set-push-row" hidden>
+    <div><b data-i18n>Notifications</b><span data-i18n>Without Telegram: straight to this browser or phone, a few an hour at most.</span><span id="set-push-note" role="status"></span></div>
+    <select class="btn" id="set-push" data-i18n-attrs="aria-label" aria-label="Notifications">
+      <option value="off" data-i18n>Off</option>
+      <option value="watchlist" data-i18n>My watchlist pairs</option>
+      <option value="strong" data-i18n>Strong signals, all pairs</option>
+    </select>
   </div>
   <div class="set-row">
     <div><b data-i18n>Tips for newcomers</b><span data-i18n>The card with the first things to try.</span></div>

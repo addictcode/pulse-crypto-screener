@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -71,6 +72,8 @@ class TelegramBot {
     private final DensityScanner density;
     private volatile LocalDate digestPostedFor;
     private final PremiumService premium;
+    /** Mondays at this hour (UTC) every subscriber gets their week; negative: never. */
+    private final int weeklyHour;
 
     private TelegramApi api;
     private TelegramSender sender;
@@ -79,8 +82,9 @@ class TelegramBot {
 
     TelegramBot(PulseProperties properties, AccountService accounts, SignalHistory history, MarketStore market,
                 OrderBookStore books, DensityScanner density, AlertService alerts, VisitLog visits, TelegramLinks links,
-                PremiumService premium) {
+                PremiumService premium, @Value("${pulse.telegram.weekly-hour:9}") int weeklyHour) {
         this.premium = premium;
+        this.weeklyHour = weeklyHour;
         this.config = properties.telegram();
         this.visits = visits;
         this.links = links;
@@ -117,6 +121,9 @@ class TelegramBot {
         }
         sender.start();
         Thread.ofVirtual().name("telegram-poll").start(this::poll);
+        if (weeklyHour >= 0) {
+            Thread.ofVirtual().name("telegram-weekly").start(this::weeklyLoop);
+        }
         if (channel != null) {
             Thread.ofVirtual().name("telegram-channel").start(this::postToChannel);
             if (config.digestHour() != null) {
@@ -140,7 +147,7 @@ class TelegramBot {
         for (DeliverySettings recipient : accounts.telegramRecipients()) {
             // a closed bot serves only the owner, even if other chats are still in the table
             if ((config.open() || isOwner(recipient.telegramChatId())) && recipient.wants(event.signal(), now)) {
-                sender.enqueue(recipient.telegramChatId(), event.signal());
+                sender.enqueue(recipient.telegramChatId(), event.signal(), recipient.russian(false));
             }
         }
     }
@@ -205,6 +212,12 @@ class TelegramBot {
             onPayment(chat, update.payment());
             return;
         }
+        if (update.callback() != null) {
+            if ((owner || config.open()) && chat > 0) {
+                onButton(chat, update);
+            }
+            return;
+        }
         if (update.text() == null) {
             return;
         }
@@ -225,6 +238,43 @@ class TelegramBot {
         }
         String[] words = update.text().trim().split("\\s+");
         String command = words[0].toLowerCase(Locale.ROOT).replaceFirst("@.*$", "");
+        String arg = words.length > 1 ? words[1].toLowerCase(Locale.ROOT) : null;
+        if (command.equals("/start")) {
+            start(chat, update, words.length > 1 ? words[1] : null);
+            return;
+        }
+        boolean ru = russian(chat, update);
+        if (command.equals("/lang")) {
+            if (!"ru".equals(arg) && !"en".equals(arg)) {
+                reply(chat, ru ? "Так: /lang ru или /lang en." : "Use /lang en or /lang ru.");
+                return;
+            }
+            accounts.setLang(chat, arg);
+            reply(chat, "ru".equals(arg) ? "Теперь по-русски: ответы, сигналы и итоги." : "English from now on: replies, signals and summaries.");
+            return;
+        }
+        if (command.equals("/signals")) {
+            replyWithButtons(chat, commands.handle(accounts.telegramUser(chat).getId(), "/signals", ru), presetButtons(ru));
+            return;
+        }
+        if (command.equals("/mute") && arg == null) {
+            replyWithButtons(chat, ru ? "На сколько поставить сигналы на паузу?" : "Pause signals for how long?", muteButtons(ru));
+            return;
+        }
+        if (command.equals("/weekly")) {
+            if (!"on".equals(arg) && !"off".equals(arg)) {
+                reply(chat, ru ? "Так: /weekly on или /weekly off." : "Use /weekly on or /weekly off.");
+                return;
+            }
+            accounts.setWeekly(chat, "on".equals(arg));
+            reply(chat, "on".equals(arg) ? (ru ? "Итог недели будет приходить по понедельникам." : "The week's summary comes on Mondays.")
+                    : (ru ? "Итог недели больше не придёт. /weekly on вернёт." : "No more weekly summaries. /weekly on brings them back."));
+            return;
+        }
+        if (command.equals("/invite")) {
+            reply(chat, invite(ru));
+            return;
+        }
         if (command.equals("/premium")) {
             premium(chat);
             return;
@@ -234,30 +284,124 @@ class TelegramBot {
             return;
         }
         if (command.equals("/digest")) {
-            reply(chat, digest(words.length > 1 && words[1].equalsIgnoreCase("ru")));
+            reply(chat, digest(ru || words.length > 1 && words[1].equalsIgnoreCase("ru")));
             return;
         }
         if (owner && command.equals("/visits")) {
             reply(chat, visitReport(words.length > 1 ? words[1] : null));
             return;
         }
-        switch (command) {
-            case "/start" -> {
-                boolean fresh = accounts.subscribe(chat);
-                if (fresh) {
-                    // t.me/<bot>?start=site arrives as "/start site": the last step of the funnel
-                    visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.BOT_START, VisitSource.of(words.length > 1 ? words[1] : null));
-                }
-                boolean ru = update.russian();
-                reply(chat, (fresh ? "" : ru ? "С возвращением.\n\n" : "Welcome back.\n\n") + BotCommands.welcome(ru));
-            }
-            case "/stop" -> {
-                accounts.unsubscribe(chat);
-                reply(chat, update.russian() ? "Остановлено. Настройки сохранены, /start включит сигналы снова."
-                        : "Stopped. Your settings are kept; /start turns signals back on.");
-            }
-            default -> reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text(), update.russian()));
+        if (command.equals("/stop")) {
+            accounts.unsubscribe(chat);
+            reply(chat, ru ? "Остановлено. Настройки сохранены, /start включит сигналы снова."
+                    : "Stopped. Your settings are kept; /start turns signals back on.");
+            return;
         }
+        reply(chat, commands.handle(accounts.telegramUser(chat).getId(), update.text(), ru));
+    }
+
+    /**
+     * /start: subscribes, counts where the person came from, and greets. A brand new chat starts on
+     * the calm preset and gets the language of its Telegram app until it says otherwise with /lang.
+     */
+    private void start(long chat, TelegramUpdate update, String source) {
+        boolean brandNew = !accounts.known(chat);
+        boolean fresh = accounts.subscribe(chat);
+        if (fresh) {
+            // t.me/<bot>?start=site arrives as "/start site": the last step of the funnel
+            visits.count(LocalDate.now(ZoneOffset.UTC), FunnelStep.BOT_START, VisitSource.of(source));
+        }
+        if (brandNew) {
+            accounts.setLang(chat, update.russian() ? "ru" : "en");
+            Presets.CALM.apply(accounts, accounts.telegramUser(chat).getId());
+        }
+        boolean ru = russian(chat, update);
+        replyWithButtons(chat, (fresh ? "" : ru ? "С возвращением.\n\n" : "Welcome back.\n\n") + BotCommands.welcome(ru), presetButtons(ru));
+    }
+
+    /** The person's language: the one they chose or were given at /start, else their Telegram app's. */
+    private boolean russian(long chat, TelegramUpdate update) {
+        String lang = accounts.telegramUser(chat).getLang();
+        return lang == null ? update.russian() : "ru".equals(lang);
+    }
+
+    static List<List<TelegramApi.Button>> presetButtons(boolean ru) {
+        return List.of(java.util.Arrays.stream(Presets.values())
+                .map(p -> new TelegramApi.Button(ru ? p.ru : p.en, "preset:" + p.key)).toList());
+    }
+
+    static List<List<TelegramApi.Button>> muteButtons(boolean ru) {
+        return List.of(
+                List.of(new TelegramApi.Button(ru ? "30 мин" : "30 min", "mute:30m"), new TelegramApi.Button(ru ? "1 час" : "1 hour", "mute:1h"),
+                        new TelegramApi.Button(ru ? "4 часа" : "4 hours", "mute:4h")),
+                List.of(new TelegramApi.Button(ru ? "До завтра" : "A day", "mute:1d"), new TelegramApi.Button(ru ? "Снять паузу" : "Unmute", "mute:off")));
+    }
+
+    /** A pressed button: a preset or a pause, applied, and the same message updated in place. */
+    private void onButton(long chat, TelegramUpdate update) {
+        TelegramUpdate.Callback press = update.callback();
+        boolean ru = russian(chat, update);
+        long userId = accounts.telegramUser(chat).getId();
+        String data = press.data();
+        String note = null;
+        try {
+            if (data.startsWith("preset:")) {
+                Presets preset = Presets.fromKey(data.substring(7)).orElseThrow();
+                preset.apply(accounts, userId);
+                note = (ru ? "Пресет: " + preset.ru : "Preset: " + preset.en);
+                api.editMessage(chat, press.messageId(), commands.handle(userId, "/signals", ru), presetButtons(ru));
+            } else if (data.startsWith("mute:")) {
+                String answer = commands.mute(userId, data.substring(5), ru);
+                note = answer;
+                api.editMessage(chat, press.messageId(), answer, muteButtons(ru));
+            }
+        } catch (RuntimeException e) {
+            log.warn("Telegram: button {} failed: {}", data, api.redact(e.getMessage()));
+        }
+        try {
+            api.answerCallback(press.id(), note);
+        } catch (RuntimeException e) {
+            log.warn("Telegram: callback answer failed: {}", api.redact(e.getMessage()));
+        }
+    }
+
+    /** A link to the bot that counts who came by invitation: only the count, no rewards and no names. */
+    private String invite(boolean ru) {
+        if (username.isEmpty()) {
+            return ru ? "Ссылка появится, когда бот узнает своё имя. Попробуй через минуту." : "The link needs the bot's name; try again in a minute.";
+        }
+        String link = "https://t.me/" + username + "?start=invite";
+        return ru ? "Позови друга этой ссылкой:\n" + link + "\n\nПо ней видно только, сколько людей пришло по приглашению, — никаких наград и имён."
+                : "Bring a friend with this link:\n" + link + "\n\nIt only counts how many came by invitation: no rewards, no names.";
+    }
+
+    private void weeklyLoop() {
+        while (running) {
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            if (WeeklySummary.due(weeklyHour, now)) {
+                sendWeekly(now.toInstant());
+            }
+            sleep(60_000);
+        }
+    }
+
+    /** Sends the week to everyone due: once per person per week, even across a restart in that hour. */
+    int sendWeekly(Instant now) {
+        long ms = now.toEpochMilli();
+        List<Signal> week = history.since(now.minusMillis(WeeklySummary.WEEK_MS));
+        int sent = 0;
+        for (var user : accounts.weeklyDue(now)) {
+            if (!config.open() && !isOwner(user.getTelegramChatId())) {
+                continue;
+            }
+            List<String> watchlist = accounts.watchlistOf(user.getId());
+            boolean ru = "ru".equals(user.getLang());
+            reply(user.getTelegramChatId(), WeeklySummary.format(WeeklySummary.moves(week, watchlist, ms), !watchlist.isEmpty(), ru));
+            accounts.weeklySent(user.getId(), now);
+            sent++;
+            sleep(TelegramSender.GAP_MS);
+        }
+        return sent;
     }
 
     /** What premium gives and, when it is on sale, an invoice in Stars. Switched off, it only says so. */
@@ -392,6 +536,16 @@ class TelegramBot {
         while (running) {
             postDigestIfDue(ZonedDateTime.now(ZoneOffset.UTC));
             sleep(30_000);
+        }
+    }
+
+    private void replyWithButtons(long chatId, String html, List<List<TelegramApi.Button>> keyboard) {
+        try {
+            api.sendMessage(chatId, html, keyboard);
+        } catch (TelegramApi.Blocked e) {
+            accounts.unsubscribe(chatId);
+        } catch (RuntimeException e) {
+            log.warn("Telegram: reply failed: {}", api.redact(e.getMessage()));
         }
     }
 

@@ -2,7 +2,6 @@ import { setupBoard } from './api';
 import { STANDALONE } from './api';
 import { base, px } from './format';
 import { ICONS } from './icons';
-import { load, save } from './storage';
 import { lang, t } from './i18n';
 import type { Market } from './market';
 import type { SetupBoard, SetupTrade } from './types';
@@ -148,31 +147,6 @@ export class SetupJournal {
           .join('')
       : `<tr><td class="empty" colspan="8">${t('No setup is open right now. The scanner looks at the 40 most traded pairs every time a 15m or 1h candle closes.')}</td></tr>`;
   }
-}
-
-/**
- * Four things a newcomer would otherwise find by accident, shown once in a corner. It does not
- * block anything and goes away for good on the first click.
- */
-export function welcomeOnce() {
-  if (load('welcomed', false)) return;
-  const card = document.createElement('aside');
-  card.className = 'welcome';
-  card.setAttribute('aria-label', t('Getting started'));
-  const tips: Array<[string, string]> = [
-    [/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K', t('finds any pair, view or command')],
-    ['Alt', t('and a click on the chart sets a price alert')],
-    ['?', t('lists every shortcut')],
-  ];
-  card.innerHTML = `<h2>${t('Getting started')}</h2>
-    <ul>${tips.map(([key, text]) => `<li><kbd>${key}</kbd><span>${text}</span></li>`).join('')}
-    <li><span>${t('Indicators has Pulse Setups: a trade plan with a stop, a target and an honest record. The Setups tab shows how it does live.')}</span></li></ul>
-    <button type="button" class="btn primary">${t('Got it')}</button>`;
-  card.querySelector('button')!.addEventListener('click', () => {
-    save('welcomed', true);
-    card.remove();
-  });
-  document.body.append(card);
 }
 
 /** Day and time in UTC, short: trades run for hours, so the day matters. */

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Caddy fills in the host as it serves this file (templates in Caddyfile): the domain is not known at build time -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://{{.Host}}/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/ru/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/record/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/record/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/record/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/ru/record/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/record/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/record/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/play/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/play/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/ru/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://{{.Host}}/play/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://{{.Host}}/ru/play/"/>
+  </url>
+  <url>
+    <loc>https://{{.Host}}/app/</loc>
+  </url>
+</urlset>

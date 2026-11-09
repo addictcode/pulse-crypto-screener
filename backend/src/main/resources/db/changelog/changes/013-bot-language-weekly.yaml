@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-bot-language-weekly
+      author: pulse
+      comment: >
+        The bot's language for each person (empty: follow their Telegram app) and the weekly
+        summary: whether they want it and when the last one went out, so a restart in the hour it
+        is due does not send it twice.
+      changes:
+        - addColumn:
+            tableName: app_user
+            columns:
+              - column: { name: lang, type: varchar(2) }
+              - column: { name: weekly, type: boolean, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: weekly_sent_at, type: timestamp with time zone }

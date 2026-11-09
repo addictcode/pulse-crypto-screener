@@ -4,6 +4,7 @@ import { base, pct, px, tone, usd } from './format';
 import type { Market } from './market';
 import { sparkline } from './sparkline';
 import { t } from './i18n';
+import type { Term } from './glossary';
 import { ICONS } from './icons';
 import { load, save } from './storage';
 import type { SymbolMetrics, VenueGap, Wall } from './types';
@@ -33,6 +34,8 @@ interface Column {
   /** Columns where the smallest value is the interesting one start ascending. */
   ascendingFirst?: boolean;
   cell: (r: SymbolMetrics, ctx: RowContext) => string;
+  /** A word a newcomer may not know: the header explains it (glossary.ts). */
+  term?: Term;
 }
 
 interface Preset {
@@ -97,13 +100,13 @@ const COLUMNS: Column[] = [
   { key: 'ch24h', label: t('24h'), core: true, cell: (r) => pctCell(r.ch24h) },
   { key: 'vol24h', label: t('Volume'), core: true, cell: (r) => `<td class="dim">${usd(r.vol24h)}</td>` },
   {
-    key: 'surge', label: t('Surge'), cls: 'c-sm',
+    key: 'surge', term: 'surge', label: t('Surge'), cls: 'c-sm',
     cell: (r) =>
       `<td class="c-sm ${(r.surge ?? 0) >= RULES.surge ? 'hot strong' : 'dim'}">${meter(r.surge)}${r.surge === null ? '–' : `${r.surge.toFixed(1)}×`}</td>`,
   },
-  { key: 'natr', label: 'NATR', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${r.natr === null ? '–' : `${r.natr.toFixed(2)}%`}</td>` },
+  { key: 'natr', term: 'natr', label: 'NATR', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${r.natr === null ? '–' : `${r.natr.toFixed(2)}%`}</td>` },
   {
-    key: 'funding', label: t('Funding'), cls: 'c-sm',
+    key: 'funding', term: 'funding', label: t('Funding'), cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${abs(r.funding) >= RULES.funding ? 'hot' : 'dim'}">${pct(r.funding, 4)}</td>`,
   },
   {
@@ -121,20 +124,20 @@ const COLUMNS: Column[] = [
     },
   },
   {
-    key: 'wall', label: t('Wall'), cls: 'c-sm', ascendingFirst: true,
+    key: 'wall', term: 'wall', label: t('Wall'), cls: 'c-sm', ascendingFirst: true,
     value: (_r, { wall }) => (wall ? Math.abs(wall.distance) : null),
     cell: (_r, { wall }) =>
       wall
         ? `<td class="c-sm ${Math.abs(wall.distance) <= RULES.hotWall ? 'hot strong' : wall.side === 'BID' ? 'up' : 'down'}" title="${wall.side === 'BID' ? t('Bid wall') : t('Ask wall')} ${usd(wall.size)}">${pct(wall.distance, 2)}</td>`
         : '<td class="c-sm flat">\u2013</td>',
   },
-  { key: 'oi', label: 'OI', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${usd(r.oi)}</td>` },
+  { key: 'oi', term: 'oi', label: 'OI', cls: 'c-lg', cell: (r) => `<td class="dim c-lg">${usd(r.oi)}</td>` },
   {
-    key: 'oiCh15m', label: t('OI 15m'), cls: 'c-sm',
+    key: 'oiCh15m', term: 'oi', label: t('OI 15m'), cls: 'c-sm',
     cell: (r) => `<td class="c-sm ${tone(r.oiCh15m, 0.1)}${(r.oiCh15m ?? 0) >= RULES.oiRise ? ' strong' : ''}">${pct(r.oiCh15m, 1)}</td>`,
   },
   {
-    key: 'liq5m', label: t('Liq 5m'), cls: 'c-lg',
+    key: 'liq5m', term: 'liquidation', label: t('Liq 5m'), cls: 'c-lg',
     cell: (r) => `<td class="c-lg ${r.liq5m >= RULES.bigLiquidations ? 'strong' : 'dim'}">${r.liq5m > 0 ? usd(r.liq5m) : '–'}</td>`,
   },
 ];
@@ -415,7 +418,8 @@ export class Screener {
       const aria = on ? ` aria-sort="${this.state.ascending ? 'ascending' : 'descending'}"` : '';
       // the star column has no visible title, but a screen reader still needs one
       const label = c.key === 'star' ? `<span class="sr-only">${t('Watchlist')}</span>` : c.label;
-      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${aria}>${label}</th>`;
+      const term = c.term ? ` data-term="${c.term}"` : '';
+      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${term}${aria}>${label}</th>`;
     }).join('');
   }
 

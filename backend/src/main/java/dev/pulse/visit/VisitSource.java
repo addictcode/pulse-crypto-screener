@@ -17,6 +17,10 @@ public enum VisitSource {
     SITE("site"),
     /** A result card of the game, shared by a player. */
     GAME("game"),
+    /** The bot opened from a friend's /invite link: t.me/<bot>?start=invite. */
+    INVITE("invite"),
+    /** A moment shared from the terminal: ?utm_source=share. */
+    SHARE("share"),
     OTHER("other");
 
     private final String key;
@@ -54,6 +58,12 @@ public enum VisitSource {
         }
         if (value.equals("game")) {
             return GAME;
+        }
+        if (value.equals("invite")) {
+            return INVITE;
+        }
+        if (value.equals("share")) {
+            return SHARE;
         }
         if (value.equals("direct")) {
             return DIRECT;

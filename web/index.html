@@ -44,15 +44,16 @@
 <main>
   <section class="hero" data-planet="horizon">
     <h1 class="mega">
-      <span data-i18n>The whole</span>
-      <span class="hollow" data-i18n>futures market</span>
-      <span data-i18n-html>on <em>one radar</em>.</span>
+      <span data-i18n>See where</span>
+      <span class="hollow" data-i18n>the market</span>
+      <span data-i18n-html><em>wakes up</em>.</span>
     </h1>
     <div class="hero-foot">
       <div class="hero-pitch">
-        <p class="lede" data-i18n>Pulse watches every Binance perpetual twice a second and shows you pumps, volume surges, liquidations and the order book walls that hold price before you would notice them yourself.</p>
+        <p class="lede" data-i18n>Pulse watches every Binance futures pair twice a second and shows sharp moves, volume bursts and liquidations the moment they happen. Where the price goes next it does not guess, and neither does anyone honest.</p>
         <div class="actions">
-          <a class="cta" href="app/" data-i18n>Open terminal</a>
+          <a class="cta" href="play/" data-i18n>Guess what's next</a>
+          <a class="ghost" href="app/" data-i18n>Open terminal</a>
           <a class="ghost" href="#live" id="hero-live" data-i18n>See it live</a>
         </div>
       </div>
@@ -69,6 +70,21 @@
   </section>
 
   <div class="ticker" id="ticker" data-i18n-attrs="aria-label" aria-label="The most traded pairs right now"><div class="ticker-track" id="ticker-track"></div></div>
+
+  <!-- the honest part, early: what the signals are worth, measured on the archive -->
+  <section class="band flip proof" id="proof" data-planet="left">
+    <div class="band-body reveal">
+      <h2 data-i18n>We checked the signals ourselves.</h2>
+      <p data-i18n>Before asking anyone to trust them, we replayed Pulse's own rules on 91 days of Binance's archive, 150 pairs. This is what came out.</p>
+      <dl class="proof-stats">
+        <div><dt data-i18n>signals replayed and followed for an hour</dt><dd>60 329</dd></div>
+        <div><dt data-i18n>went the signal's way within the hour: no better than a coin</dt><dd>44–48%</dd></div>
+        <div><dt data-i18n>how much livelier the hour after a signal is than an ordinary hour</dt><dd>×1.3–2.4</dd></div>
+      </dl>
+      <p class="proof-so" data-i18n>So Pulse does not tell you where the price goes. It shows where the market just woke up, while it is happening.</p>
+      <div class="actions"><a class="ghost" href="record/" data-i18n>The live record</a><a class="ghost" href="https://github.com/addictcode/pulse-crypto-screener/blob/main/research/oi-funding-2026-11.md" target="_blank" rel="noopener" data-i18n>The study</a></div>
+    </div>
+  </section>
 
   <section class="band" id="live" data-planet="right">
     <div class="band-body reveal">
