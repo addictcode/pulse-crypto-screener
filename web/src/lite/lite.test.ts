@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { SymbolMetrics } from '../types';
 import { compareVenues } from './compare';
-import { candleFromTicker, klineToCandle, mergeHistory, tapeItems, upsertCandle } from './feed';
+import { SymbolState, candleFromTicker, klineToCandle, mergeHistory, tapeItems, upsertCandle } from './feed';
 import { changePct, natr, openInterestChangePct, sparkline, surge, toBuckets, type Candle } from './metrics';
 import { coveragePct, detectWalls, WALL_PARAMS, WallTracker, type Levels } from './walls';
 
@@ -166,5 +166,31 @@ describe('statistics for the panes under the chart', () => {
       { time: 1_791_150_300, value: 1.85 },
     ]);
     expect(toPoints([{ fundingTime: 1_791_129_600_000, fundingRate: '0.0001' }], 'fundingTime', 'fundingRate', 100)[0].value).toBeCloseTo(0.01, 12);
+  });
+});
+
+describe('outlier prices (SymbolState#plausible on the server)', () => {
+  it('holds back a stray price and drops it when the next update disagrees', () => {
+    const s = new SymbolState('WIFUSDT');
+    s.price = 1;
+    expect(s.plausible(83_000)).toBe(false);
+    expect(s.plausible(1.01)).toBe(true);
+    expect(s.rejected).toBe(1);
+  });
+
+  it('takes a real sharp move on the second update', () => {
+    const s = new SymbolState('WIFUSDT');
+    s.price = 1;
+    expect(s.plausible(2.5)).toBe(false);
+    expect(s.plausible(2.55)).toBe(true);
+    expect(s.rejected).toBe(0);
+  });
+
+  it('never holds an ordinary move and never takes zero', () => {
+    const s = new SymbolState('WIFUSDT');
+    s.price = 1;
+    expect(s.plausible(1.4)).toBe(true);
+    expect(s.plausible(0)).toBe(false);
+    expect(s.plausible(Number.NaN)).toBe(false);
   });
 });
