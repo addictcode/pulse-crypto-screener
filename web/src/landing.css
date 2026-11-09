@@ -384,6 +384,24 @@ html[lang="ru"] .final .mega { --mega: min(5.6vw, 14svh); max-width: 18ch; }
   .nav .lang { margin-left: auto; }
   .nav .lang button { height: 32px; padding: 0 9px; }
   .cta.small { padding: 0 13px; font-size: 13px; }
+}
+/* four languages and the terminal button do not fit across a phone: only the current language
+   shows, and a tap unfolds the rest in a column under it (mountLangSwitch) */
+@media (max-width: 560px) {
+  .nav .lang { position: relative; }
+  .nav .lang button:not([aria-pressed="true"]) { display: none; }
+  .nav .lang button[aria-pressed="true"]::after { content: ""; display: inline-block; margin-left: 6px; border: 4px solid transparent; border-top-color: currentColor; transform: translateY(2px); }
+  .nav .lang.open button:not([aria-pressed="true"]) {
+    display: block; position: absolute; z-index: 30; left: -1px; width: calc(100% + 2px);
+    top: calc(100% + 1px + var(--row, 0) * 32px); background: var(--bg-1); border: 1px solid var(--rule-strong); border-top: 0;
+  }
+}
+/* the narrowest phones (320px): "Открыть терминал" needs the last few pixels */
+@media (max-width: 360px) {
+  .nav { gap: 8px; }
+  .cta.small { padding: 0 10px; }
+}
+@media (max-width: 900px) {
   .hero { height: calc(100svh - 64px); }
   /* on a phone the lines may break, so the type can stay large */
   .hero .mega { --mega: min(11.4vw, 9.4svh); margin-top: 2svh; }

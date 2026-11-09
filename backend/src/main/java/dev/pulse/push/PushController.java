@@ -14,7 +14,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * {@code /api/push/*}: the key a browser needs to subscribe, subscribing and unsubscribing. While
- * no VAPID keys are set every call answers 404, and the site does not offer notifications.
+ * no VAPID keys are set the site does not offer notifications: the key answers 204 (every terminal
+ * asks for it, and a 404 would put an error in each visitor's console), the rest 404.
  */
 @RestController
 class PushController {
@@ -30,7 +31,7 @@ class PushController {
 
     @GetMapping("/api/push/key")
     ResponseEntity<Map<String, String>> key() {
-        return push.enabled() ? ResponseEntity.ok(Map.of("key", properties.vapidPublicKey())) : ResponseEntity.notFound().build();
+        return push.enabled() ? ResponseEntity.ok(Map.of("key", properties.vapidPublicKey())) : ResponseEntity.noContent().build();
     }
 
     @PostMapping("/api/push/subscribe")
