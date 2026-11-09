@@ -37,4 +37,16 @@ interface SignalRepository extends JpaRepository<SignalEntity, Long> {
             group by s.type, s.direction
             """)
     List<OutcomeRow> outcomesSince(Instant since);
+
+    /** The same, for signals fired in [from, to): the edges of a period the daily rollup does not cover. */
+    @Query("""
+            select new dev.pulse.signal.OutcomeRow(s.type, s.direction,
+                count(s.ret5m), avg(s.ret5m), sum(case when s.ret5m > 0 then 1 else 0 end),
+                count(s.ret15m), avg(s.ret15m), sum(case when s.ret15m > 0 then 1 else 0 end),
+                count(s.ret1h), avg(s.ret1h), sum(case when s.ret1h > 0 then 1 else 0 end))
+            from SignalEntity s
+            where s.firedAt >= :from and s.firedAt < :to
+            group by s.type, s.direction
+            """)
+    List<OutcomeRow> outcomesBetween(Instant from, Instant to);
 }

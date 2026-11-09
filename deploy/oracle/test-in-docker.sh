@@ -73,6 +73,7 @@ RULES
   grep -Eq "^POSTGRES_PASSWORD=[0-9a-f]{48}$" /opt/pulse/.env || fail "no database password"
   [ "$(grep -c "^PULSE_BACKEND_IMAGE=ghcr.io/addictcode/pulse-backend$" /opt/pulse/.env)" = 1 ] || fail "ready images not set exactly once"
   [ "$(grep -c backup.sh /etc/cron.d/pulse-backup)" = 1 ] || fail "nightly backup not exactly once"
+  [ "$(grep -c restore-check.sh /etc/cron.d/pulse-restore-check)" = 1 ] || fail "weekly restore check not exactly once"
   [ -x /opt/pulse/deploy/backup.sh ] || fail "backup.sh not executable in the clone"
   [ "$(grep -c heartbeat.sh /etc/cron.d/pulse-heartbeat)" = 1 ] || fail "heartbeat not exactly once"
   [ -x /opt/pulse/deploy/heartbeat.sh ] || fail "heartbeat.sh not executable in the clone"

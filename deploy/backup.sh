@@ -28,7 +28,13 @@ fi
 mkdir -p "$dir"
 chmod 700 "$dir"
 file="$dir/pulse-$(date -u +%Y%m%d-%H%M%S)${1:+-$1}.dump"
-trap 'rm -f "$file.part"' EXIT
+trap 'rm -f "$file.part" "$file.counts.part"' EXIT
+# the rows of every table just before the dump, for deploy/restore-check.sh to hold the restored
+# copy against (rows written during the dump only add to it)
+sql=$(compose exec -T postgres psql -U pulse -d pulse -At -c \
+  "select string_agg(format('select %L, count(*) from %I', table_name, table_name), ' union all ' order by table_name)
+   from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'")
+compose exec -T postgres psql -U pulse -d pulse -At -F ' ' -c "$sql" > "$file.counts.part"
 compose exec -T postgres pg_dump -U pulse -d pulse -Fc > "$file.part"
 
 # a dump that lists no table data is not a backup, whatever its size
@@ -38,5 +44,7 @@ if [ "$tables" -eq 0 ]; then
   exit 1
 fi
 mv "$file.part" "$file"
+mv "$file.counts.part" "$file.counts"
 find "$dir" -name 'pulse-*.dump' -mtime +"$keep" -delete
+find "$dir" -name 'pulse-*.dump.counts' -mtime +"$keep" -delete
 echo "$file: $(du -h "$file" | cut -f1), $tables tables"

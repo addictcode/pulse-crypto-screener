@@ -171,6 +171,9 @@ log "Cron: nightly database dump (two weeks in /home/pulse/backups), uptime hear
 # 03:40 UTC, before the 04:30 reboot window of the security updates; deploys also dump first
 echo '40 3 * * * pulse cd /opt/pulse && deploy/backup.sh nightly >> /home/pulse/backup.log 2>&1' > /etc/cron.d/pulse-backup
 chmod 644 /etc/cron.d/pulse-backup
+# once a week the newest dump is restored aside and its rows compared: a backup nobody restored is not one
+echo '20 4 * * 0 pulse cd /opt/pulse && deploy/restore-check.sh >> /home/pulse/restore-check.log 2>&1' > /etc/cron.d/pulse-restore-check
+chmod 644 /etc/cron.d/pulse-restore-check
 # the uptime alarm: pings PULSE_HEARTBEAT_URL from .env while the site answers (empty: does nothing)
 echo '* * * * * pulse /opt/pulse/deploy/heartbeat.sh > /dev/null 2>&1' > /etc/cron.d/pulse-heartbeat
 chmod 644 /etc/cron.d/pulse-heartbeat
