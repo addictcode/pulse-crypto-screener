@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 015-signal-audit
+      author: pulse
+      comment: >
+        Each night a sample of the day's signals is checked against the exchange's minute candles
+        (SignalAudit). One row a run; /record/ shows the totals as "checked against candles".
+      changes:
+        - createTable:
+            tableName: signal_audit
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, primaryKeyName: pk_signal_audit } }
+              - column: { name: checked_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: sampled, type: int, constraints: { nullable: false } }
+              - column: { name: checked, type: int, constraints: { nullable: false } }
+              - column: { name: confirmed, type: int, constraints: { nullable: false } }
+              - column: { name: failures, type: varchar(2000), constraints: { nullable: false } }
+        - createIndex:
+            tableName: signal_audit
+            indexName: ix_signal_audit_checked_at
+            columns:
+              - column: { name: checked_at }

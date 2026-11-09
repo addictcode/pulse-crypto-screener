@@ -1,5 +1,5 @@
 import { connect, type Market } from './market';
-import type { CandleDto, Liquidation, OutcomeStats, Positioning, SetupBoard, Signal, SymbolMetrics, TapeItem, TelegramLinks, VenueGap, Wall } from './types';
+import type { CandleDto, Liquidation, OutcomeStats, Positioning, SetupBoard, Signal, SignalAudit, SymbolMetrics, TapeItem, TelegramLinks, VenueGap, Wall } from './types';
 
 /**
  * Built as the standalone demo: no Pulse server, the page talks to the exchanges itself. Set at
@@ -58,6 +58,11 @@ export async function telegramLinks(): Promise<TelegramLinks> {
 
 export async function signalStats(days: number): Promise<OutcomeStats[]> {
   return STANDALONE ? [] : getJson(`/api/signals/stats?days=${days}`);
+}
+
+/** How many of the period's sampled signals the exchange's candles confirmed; null without a server. */
+export async function signalAudit(days: number): Promise<SignalAudit | null> {
+  return STANDALONE ? null : getJson(`/api/signals/audit?days=${days}`);
 }
 
 /**

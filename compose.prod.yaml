@@ -57,6 +57,8 @@ services:
       PULSE_STREAM_CLIENTS: ${PULSE_STREAM_CLIENTS:-300}
       # browser errors from visitors, summed up once a day (web/src/client-errors.ts)
       PULSE_CLIENT_ERRORS_ENABLED: ${PULSE_CLIENT_ERRORS_ENABLED:-true}
+      # the nightly check of signals against the exchange's candles (README, «Сигналы»)
+      PULSE_AUDIT_ENABLED: ${PULSE_AUDIT_ENABLED:-true}
       PULSE_STREAM_CLIENTS_PER_ADDRESS: ${PULSE_STREAM_CLIENTS_PER_ADDRESS:-30}
     # the heap is 70% of this (MaxRAMPercentage in the Dockerfile); raise both together on a server
     mem_limit: ${PULSE_BACKEND_MEMORY:-1536m}

@@ -6,7 +6,7 @@ import './theme.css';
 import './landing.css';
 import './record.css';
 
-import { STANDALONE, signalStats } from './api';
+import { STANDALONE, signalAudit, signalStats } from './api';
 import { pct } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
 import { followed, overall, type Followed } from './record-math';
@@ -62,6 +62,8 @@ async function show() {
   }
   $('rec-meta').textContent = t('loading');
   let stats: OutcomeStats[];
+  // the nightly check against the exchange's candles: a line of its own, never in the way of the record
+  const audit = signalAudit(days).catch(() => null);
   try {
     stats = (await signalStats(days)).filter((s) => s.horizons.some((h) => h.n > 0));
   } catch {
@@ -70,7 +72,11 @@ async function show() {
   }
   const total = stats.reduce((sum, s) => sum + Math.max(...s.horizons.map((h) => h.n)), 0);
   const hour = overall(stats, HOUR);
-  $('rec-meta').textContent = t('last {days} days', { days });
+  const checked = await audit;
+  $('rec-meta').textContent = [
+    t('last {days} days', { days }),
+    checked?.checked ? t('checked against exchange candles: {ok} of {n}', { ok: checked.confirmed, n: checked.checked }) : '',
+  ].filter(Boolean).join(' · ');
   $('rec-kpi').hidden = !hour;
   if (hour) {
     $('rec-n').textContent = String(total);

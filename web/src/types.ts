@@ -96,6 +96,14 @@ export interface SetupBoard {
 }
 
 /** Mirror of dev.pulse.signal.OutcomeStats: how one kind of signal played out. */
+/** The nightly check of signals against the exchange's minute candles (SignalAudit). */
+export interface SignalAudit {
+  days: number;
+  checked: number;
+  confirmed: number;
+  lastRun: string | null;
+}
+
 export interface OutcomeStats {
   type: SignalType;
   direction: number;
