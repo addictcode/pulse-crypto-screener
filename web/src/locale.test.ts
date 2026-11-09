@@ -55,7 +55,7 @@ function dynamicKeys(): string[] {
     'Shorts liquidated', 'Longs liquidated', 'Near bid wall', 'Near ask wall',
     // glossary.ts: the explanations, and tour.ts: the steps, both reach t() through a variable
     ...[...read(join(src, 'glossary.ts')).matchAll(/^  [a-z]+: '((?:[^'\\]|\\.)*)',$/gm)].map((m) => m[1].replace(/\\'/g, "'")),
-    ...[...read(join(src, 'tour.ts')).matchAll(/^    (?:title|text): '([^']*)',$/gm)].map((m) => m[1]),
+    ...[...read(join(src, 'tour.ts')).matchAll(/^    (?:title|text|keyboard): '([^']*)',$/gm)].map((m) => m[1]),
     // the game's verdict, picked by play-game.ts#verdict
     ...[...read(join(src, 'play-game.ts')).matchAll(/return '([^']*)';/g)].map((m) => m[1]),
   ];

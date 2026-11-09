@@ -88,11 +88,28 @@ export function localize(root: ParentNode = document) {
  * it: two addresses a search engine can see. The terminal has no twin and reloads in place.
  */
 export function mountLangSwitch(el: HTMLElement) {
-  el.querySelectorAll<HTMLButtonElement>('[data-lang]').forEach((button) => {
+  const buttons = [...el.querySelectorAll<HTMLButtonElement>('[data-lang]')];
+  // on a phone the four languages do not fit next to the terminal button: the switch shows only the
+  // current one (landing.css), and tapping it unfolds the others below it
+  const folded = () => buttons.some((b) => getComputedStyle(b).display === 'none');
+  const fold = (open: boolean) => {
+    el.classList.toggle('open', open);
+    buttons.find((b) => b.dataset.lang === lang)?.setAttribute('aria-expanded', String(open));
+  };
+  let row = 0;
+  for (const button of buttons) if (button.dataset.lang !== lang) button.style.setProperty('--row', String(row++));
+  document.addEventListener('click', (e) => {
+    if (el.classList.contains('open') && !el.contains(e.target as Node)) fold(false);
+  });
+  buttons.forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
     button.addEventListener('click', () => {
       const next = button.dataset.lang as Lang;
-      if (next === lang) return;
+      if (next === lang) {
+        if (el.classList.contains('open') || folded()) fold(!el.classList.contains('open'));
+        return;
+      }
+      fold(false);
       const twin = el.dataset.twin;
       // the English page of a visitor who reads Russian is translated in place, not a twin
       const onTwin = document.documentElement.dataset.pageLang === 'ru';

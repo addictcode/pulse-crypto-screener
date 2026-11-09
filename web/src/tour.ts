@@ -6,6 +6,8 @@ interface Step {
   target: string;
   title: string;
   text: string;
+  /** said only where there is a keyboard: a phone has no Ctrl K */
+  keyboard?: string;
 }
 
 const STEPS: Step[] = [
@@ -27,12 +29,15 @@ const STEPS: Step[] = [
   {
     target: '#cmd-btn',
     title: 'Find anything',
-    text: 'Search finds any pair, view or command; on a keyboard it is Ctrl K, and ? lists every shortcut.',
+    text: 'Search finds any pair, view or command.',
+    keyboard: 'On a keyboard it is Ctrl K, and ? lists every shortcut.',
   },
 ];
 
 /** The words of the tour, for locale.test.ts. */
-export const TOUR_TEXTS = STEPS.flatMap((s) => [s.title, s.text]);
+export const TOUR_TEXTS = STEPS.flatMap((s) => [s.title, s.text, ...(s.keyboard ? [s.keyboard] : [])]);
+
+const keyboard = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 const visible = (el: Element | null): el is HTMLElement => {
   if (!(el instanceof HTMLElement)) return false;
@@ -66,9 +71,28 @@ export function tourOnce() {
     ring.remove();
     card.remove();
     window.removeEventListener('resize', place);
+    window.removeEventListener('scroll', place);
+    layout.disconnect();
   };
 
   let index = 0;
+  // the tour starts before the market arrives; when the rows come in, the panels grow and the one
+  // being shown can slide off a phone's screen. Bring it back, unless the visitor scrolled by hand.
+  let handScrolled = false;
+  const byHand = () => (handScrolled = true);
+  window.addEventListener('wheel', byHand, { passive: true });
+  window.addEventListener('touchmove', byHand, { passive: true });
+  function bring() {
+    const target = document.querySelector(steps[index].target) as HTMLElement;
+    const r = target.getBoundingClientRect();
+    if (!handScrolled && (r.top < 0 || r.bottom > window.innerHeight)) {
+      target.scrollIntoView({ block: r.height > window.innerHeight * 0.7 ? 'start' : 'center' });
+    }
+    place();
+  }
+  const layout = new ResizeObserver(bring);
+  layout.observe(document.body);
+
   function place() {
     const target = document.querySelector(steps[index].target) as HTMLElement;
     const r = target.getBoundingClientRect();
@@ -86,14 +110,12 @@ export function tourOnce() {
     const step = steps[index];
     const last = index === steps.length - 1;
     card.innerHTML = `<p class="tour-count">${t('{n} of {total}', { n: index + 1, total: steps.length })}</p>
-      <h2>${t(step.title)}</h2><p>${t(step.text)}</p>
+      <h2>${t(step.title)}</h2><p>${t(step.text)}${step.keyboard && keyboard ? ` ${t(step.keyboard)}` : ''}</p>
       <div class="tour-actions"><button type="button" class="btn ghost" data-act="skip">${t('Skip')}</button>
       <button type="button" class="btn primary" data-act="next">${last ? t('Got it') : t('Next')}</button></div>`;
-    const target = document.querySelector(steps[index].target) as HTMLElement;
     // on a phone the panels are stacked: bring the one being shown into view first
-    const r = target.getBoundingClientRect();
-    if (r.top < 0 || r.bottom > window.innerHeight) target.scrollIntoView({ block: 'center' });
-    place();
+    handScrolled = false;
+    bring();
     (card.querySelector('[data-act="next"]') as HTMLElement).focus({ preventScroll: true });
   }
 

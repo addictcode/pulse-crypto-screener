@@ -27,7 +27,8 @@ export function keyBytes(key: string): Uint8Array<ArrayBuffer> {
 async function serverKey(): Promise<string | null> {
   try {
     const response = await fetch('/api/push/key');
-    return response.ok ? ((await response.json()) as { key: string }).key : null;
+    // 204 while the server has no VAPID keys: notifications are simply not offered
+    return response.status === 200 ? ((await response.json()) as { key: string }).key : null;
   } catch {
     return null;
   }

@@ -671,8 +671,8 @@ export const RU: Record<string, string> = {
   'Pumps, dumps, volume bursts and liquidation waves the moment they happen. A signal says what happened, not where the price goes next.':
     'Пампы, дампы, всплески объёма и волны ликвидаций в момент события. Сигнал говорит, что произошло, а не куда цена пойдёт дальше.',
   'Find anything': 'Найти что угодно',
-  'Search finds any pair, view or command; on a keyboard it is Ctrl K, and ? lists every shortcut.':
-    'Поиск находит любую пару, раздел или команду; с клавиатуры — Ctrl K, а ? покажет все горячие клавиши.',
+  'Search finds any pair, view or command.': 'Поиск находит любую пару, раздел или команду.',
+  'On a keyboard it is Ctrl K, and ? lists every shortcut.': 'С клавиатуры — Ctrl K, а ? покажет все горячие клавиши.',
   '{n} of {total}': '{n} из {total}',
   Skip: 'Пропустить',
   Next: 'Дальше',
