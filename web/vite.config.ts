@@ -2,6 +2,9 @@ import { resolve } from 'node:path';
 
 import { defineConfig } from 'vite';
 
+import { seoPages } from './seo';
+import { RU } from './src/locale-ru';
+
 // Four pages: the landing at /, the terminal at /app/, the signal record at /record/ and the game at /play/. In development the browser talks to
 // Vite only; the API and the market stream are proxied to the Spring Boot backend.
 // PULSE_BACKEND points the dev server at another backend, e.g. the Docker stack on :8088,
@@ -11,6 +14,8 @@ const backend = process.env.PULSE_BACKEND ?? 'http://localhost:8080';
 const headers = process.env.PULSE_BACKEND ? { origin: backend } : undefined;
 
 export default defineConfig({
+  // Russian twins at /ru/ with the text in the HTML, canonical and hreflang (seo.ts)
+  plugins: [seoPages(RU, process.env.VITE_STANDALONE === '1')],
   build: {
     rollupOptions: {
       input: {

@@ -29,15 +29,21 @@ let series: Series | null = storedSeries();
 /** the frame on screen, redrawn when the window changes size */
 let frame: (() => void) | null = null;
 
-/** Rounds of one pack, from the folder this page is in (also on GitHub Pages, under a sub-path). */
+/**
+ * Where the rounds are: the folder of the English page. The Russian twin (/ru/play/) is one folder
+ * down and fetches them from there; relative, so it also works on GitHub Pages under a sub-path.
+ */
+const ROUNDS_DIR = document.documentElement.dataset.pageLang === 'ru' ? '../../play/' : '';
+
+/** Rounds of one pack. */
 async function loadPack(pack: number): Promise<Round[]> {
-  const response = await fetch(`rounds-${String(pack).padStart(2, '0')}.json`);
+  const response = await fetch(`${ROUNDS_DIR}rounds-${String(pack).padStart(2, '0')}.json`);
   if (!response.ok) throw new Error(`pack ${pack}: ${response.status}`);
   return (await response.json()) as Round[];
 }
 
 async function packCount(): Promise<number> {
-  const response = await fetch('index.json');
+  const response = await fetch(`${ROUNDS_DIR}index.json`);
   return response.ok ? ((await response.json()) as { packs: number }).packs : 1;
 }
 

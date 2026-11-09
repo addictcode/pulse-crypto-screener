@@ -23,7 +23,8 @@ test('the landing page speaks Russian', async ({ page }) => {
   await page.locator('#lang [data-lang="ru"]').click();
   await expect(page.locator('.hero h1')).toContainText(/Смотри, где\s+рынок\s+просыпается/);
   await expect(page.locator('.hero .cta')).toHaveText('Угадай, что дальше');
-  await expect(page.locator('.hero a[href="app/"]')).toHaveText('Открыть терминал');
+  // the Russian twin lives one folder down: its link to the terminal is ../app/
+  await expect(page.locator('.hero a[href$="app/"]')).toHaveText('Открыть терминал');
   await expect(page.locator('#proof h2')).toHaveText('Мы проверили сигналы сами.');
 });
 

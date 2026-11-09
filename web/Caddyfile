@@ -31,6 +31,12 @@
 		header ?Cache-Control "no-cache"
 		# /app/ is the terminal, anything else unknown falls back to the landing page
 		try_files {path} {path}/index.html /index.html
+		# the public pages, the sitemap and robots.txt carry absolute addresses (canonical, hreflang),
+		# written as https://{{.Host}}: the domain is known only here, not where the image was built
+		@seo path /index.html /ru/* /record/* /play/* /sitemap.xml /robots.txt
+		templates @seo {
+			mime text/html text/plain text/xml application/xml
+		}
 		file_server
 	}
 
