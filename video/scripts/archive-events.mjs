@@ -1,17 +1,20 @@
 // Finds real sharp moves straight in Binance's archive of minute candles, without the signal
 // database, so a new batch of videos can be made anywhere (the cloud, GitHub Actions).
-//   node scripts/archive-events.mjs [--days 30] [--pairs 120] [--min 5] [--max 60] [--per-coin 3] [--file other.json]
+//   node scripts/archive-events.mjs [--days 30] [--pairs 120] [--min 5] [--max 60] [--per-coin 3] [--file other.json] [--clean]
 // Takes the most traded USDT perpetuals of the newest archived day, looks through each day of the
 // period for minutes where the price moved at least --min percent in five minutes, keeps the
 // strongest such minute per coin and day, and adds up to --max of them to public/events.json
 // (strongest first, pumps and dumps in turn). Events already in the file stay as they are.
 // Zips are cached in .cache/, so a second run downloads only what is new.
+// Only crypto, at most 30% in five minutes and no one-candle spikes (scripts/clean.mjs); --clean
+// also drops events already in the file that break those rules, before adding new ones.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { addDays } from './days.mjs';
 import { addPulse } from './pulse.mjs';
 import { DAY, MINUTE, confirm, dayVolume, findMoves, lastDay, listSymbols, merge, minuteCandles, pool, toEvent } from './archive.mjs';
+import { fromEvent, isCrypto, problem as unfit } from './clean.mjs';
 
 const { values } = parseArgs({
   options: {
@@ -22,6 +25,7 @@ const { values } = parseArgs({
     'per-coin': { type: 'string', default: '3' },
     // another events file, e.g. a bigger set for the site's game; the videos' extras are left alone
     file: { type: 'string' },
+    clean: { type: 'boolean', default: false },
   },
 });
 const DAYS = Number(values.days);
@@ -32,10 +36,21 @@ const PER_COIN = Number(values['per-coin']);
 
 const ownFile = values.file !== undefined;
 const file = ownFile ? values.file : new URL('../public/events.json', import.meta.url);
-const existing = ownFile && !existsSync(file) ? [] : JSON.parse(readFileSync(file));
+const spot = new Set(JSON.parse(readFileSync(new URL('../public/spot-usdt.json', import.meta.url))));
+let existing = ownFile && !existsSync(file) ? [] : JSON.parse(readFileSync(file));
+if (values.clean) {
+  const kept = existing.filter((e) => {
+    const why = unfit(fromEvent(e), spot);
+    if (why) console.log(`drop ${e.id}: ${why}`);
+    return !why;
+  });
+  console.log(`${existing.length - kept.length} events dropped, ${kept.length} kept`);
+  existing = kept;
+}
 
 const last = await lastDay();
-const symbols = await listSymbols();
+// shares, funds and metals have perpetuals too: only coins with a spot market are searched
+const symbols = (await listSymbols()).filter((s) => isCrypto(s, spot));
 console.log(`${symbols.length} USDT perpetuals in the archive, newest day ${new Date(last).toISOString().slice(0, 10)}`);
 
 // liquidity: turnover on the newest day; a coin without that day is delisted or paused
@@ -86,7 +101,7 @@ for (const e of queue) {
   const n = perCoin.get(e.symbol) ?? 0;
   if (n >= PER_COIN) continue;
   // the same check scripts/events.mjs makes of database signals
-  const problem = confirm(e);
+  const problem = confirm(e) ?? unfit(fromEvent(e), spot);
   if (problem) {
     console.warn(`skip ${e.symbol}: ${problem}`);
     continue;
@@ -97,6 +112,16 @@ for (const e of queue) {
 
 const { events, added } = merge(existing, picked);
 writeFileSync(file, JSON.stringify(events));
+if (values.clean && !ownFile) {
+  // the day and the market hour kept for each event: none for the dropped ones
+  const ids = new Set(events.map((e) => e.id));
+  for (const name of ['days.json', 'pulse.json']) {
+    const extra = new URL(`../public/${name}`, import.meta.url);
+    if (!existsSync(extra)) continue;
+    const all = JSON.parse(readFileSync(extra));
+    writeFileSync(extra, JSON.stringify(Object.fromEntries(Object.entries(all).filter(([id]) => ids.has(id)))));
+  }
+}
 for (const e of added) console.log(`ok ${e.symbol} ${e.type} ${e.move}%`);
 console.log(`${added.length} new events, ${events.length} in ${ownFile ? file : 'public/events.json'}`);
 if (!ownFile) {
