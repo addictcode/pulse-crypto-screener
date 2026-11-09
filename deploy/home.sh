@@ -8,6 +8,7 @@
 #   deploy/home.sh watch     keep it online: restart a dead tunnel and republish, until Ctrl+C
 #   deploy/home.sh autostart      run watch by itself whenever this user is logged in (macOS)
 #   deploy/home.sh autostart-off  undo that
+#   deploy/home.sh check     restore the newest dump in a throwaway container and compare the rows
 #   deploy/home.sh stop      stop everything (data stays in Docker volumes)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -165,6 +166,10 @@ ENV
     curl -fsS -m 10 -o /dev/null http://localhost:8088/api/status && echo "site: answers on http://localhost:8088"
     echo "Pulse is at: $(url)"
     [ "$state" = healthy ]
+    ;;
+  check)
+    # a backup nobody restored is not a backup: the newest dump of ~/Backups/pulse, restored aside
+    PULSE_BACKUP_DIR="$HOME/Backups/pulse" deploy/restore-check.sh
     ;;
   autostart)
     # A LaunchAgent of the logged-in user: it has the keychain (for the GitHub CLI) and starts

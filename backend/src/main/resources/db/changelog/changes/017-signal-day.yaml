@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 017-signal-day
+      author: pulse
+      comment: >
+        Outcome statistics per UTC day, type and direction (SignalRollup): /record/ and the bot add
+        up days instead of scanning every signal of the period. Sums and counts, so days add up.
+      changes:
+        - createTable:
+            tableName: signal_day
+            columns:
+              - column: { name: day, type: date, constraints: { nullable: false } }
+              - column: { name: type, type: varchar(32), constraints: { nullable: false } }
+              - column: { name: direction, type: int, constraints: { nullable: false } }
+              - column: { name: n5, type: bigint, constraints: { nullable: false } }
+              - column: { name: s5, type: double precision, constraints: { nullable: false } }
+              - column: { name: u5, type: bigint, constraints: { nullable: false } }
+              - column: { name: n15, type: bigint, constraints: { nullable: false } }
+              - column: { name: s15, type: double precision, constraints: { nullable: false } }
+              - column: { name: u15, type: bigint, constraints: { nullable: false } }
+              - column: { name: n60, type: bigint, constraints: { nullable: false } }
+              - column: { name: s60, type: double precision, constraints: { nullable: false } }
+              - column: { name: u60, type: bigint, constraints: { nullable: false } }
+        - addPrimaryKey:
+            tableName: signal_day
+            columnNames: day, type, direction
+            constraintName: pk_signal_day
+        - createTable:
+            tableName: signal_day_rolled
+            columns:
+              - column: { name: day, type: date, constraints: { primaryKey: true, primaryKeyName: pk_signal_day_rolled } }
