@@ -324,7 +324,8 @@ test('settings keep the risk, and a saved file brings everything back', async ({
   await page.locator('#settings-btn').click();
   await page.locator('#set-file').setInputFiles(file);
   await expect(page.locator('#rows tr[data-sym]')).toHaveCount(ROWS.length);
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('pulse.planRisk'))).toBe('120');
+  // the file reloads the page; a poll that lands mid-reload asks again instead of failing
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('pulse.planRisk')).catch(() => null)).toBe('120');
 });
 
 test.describe('the tab bar on a phone', () => {

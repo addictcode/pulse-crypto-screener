@@ -41,6 +41,7 @@ loadtest/run.sh burst
 ```
 
 ```bash
+loadtest/run.sh up      # только поднять стек и дождаться здоровья, без k6 (для обхода web/e2e-stack)
 loadtest/run.sh down
 ```
 

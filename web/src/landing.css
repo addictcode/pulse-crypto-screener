@@ -396,6 +396,14 @@ html[lang="ru"] .final .mega { --mega: min(5.6vw, 14svh); max-width: 18ch; }
     top: calc(100% + 1px + var(--row, 0) * 32px); background: var(--bg-1); border: 1px solid var(--rule-strong); border-top: 0;
   }
 }
+/* the walls preview with real pairs (1000PEPE, prices in the tens of thousands) was wider than a
+   phone and the page slid sideways; on a phone the age goes and a long name is cut */
+@media (max-width: 560px) {
+  .mini.walls td { padding: 0 5px; }
+  .mini.walls td:first-child { padding-left: 14px; max-width: 9ch; overflow: hidden; text-overflow: ellipsis; }
+  .mini.walls td:nth-child(5) { padding-right: 14px; }
+  .mini.walls td:nth-child(6) { display: none; }
+}
 /* the narrowest phones (320px): "Открыть терминал" needs the last few pixels */
 @media (max-width: 360px) {
   .nav { gap: 8px; }
