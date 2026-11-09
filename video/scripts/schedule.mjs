@@ -19,21 +19,25 @@ export const GAP = 5;
 export function schedule(jobs, { days, perDay = 2, gap = GAP }) {
   const used = new Set();
   const lastDay = new Map(); // event id → day it was last posted
+  const posted = new Map(); // template → videos of it posted so far
   const rows = [];
   let previous = null;
   for (let day = 0; day < days; day++) {
     const today = new Set();
     for (let slot = 0; slot < perDay; slot++) {
-      const k = jobs.findIndex(
-        (job, i) =>
-          !used.has(i) &&
-          job.template !== previous &&
-          !today.has(job.template) &&
-          eventsOf(job).every((e) => !lastDay.has(e.id) || day - lastDay.get(e.id) >= gap),
-      );
+      // of the videos that fit, the one whose template has been posted least so far (the plan's
+      // order breaks ties): the first fit alone let the event gap starve whole templates when
+      // several templates tell the same events in the same order
+      let k = -1;
+      jobs.forEach((job, i) => {
+        if (used.has(i) || job.template === previous || today.has(job.template)) return;
+        if (!eventsOf(job).every((e) => !lastDay.has(e.id) || day - lastDay.get(e.id) >= gap)) return;
+        if (k < 0 || (posted.get(job.template) ?? 0) < (posted.get(jobs[k].template) ?? 0)) k = i;
+      });
       if (k < 0) throw new Error(`no video fits day ${day + 1}, slot ${slot + 1}: render more or schedule fewer days`);
       used.add(k);
       today.add(jobs[k].template);
+      posted.set(jobs[k].template, (posted.get(jobs[k].template) ?? 0) + 1);
       for (const e of eventsOf(jobs[k])) lastDay.set(e.id, day);
       previous = jobs[k].template;
       rows.push({ day, slot, number: k + 1, job: jobs[k] });

@@ -86,6 +86,23 @@ The videos are split over parallel jobs, one render tab each, and every one is c
 `captions-reels.txt` and `captions-shorts.txt` for both languages, the
 60-day `schedule.csv` and the `events.json` the batch was made from).
 
+### Which events are fit (`scripts/clean.mjs`)
+
+The archive search finds every sharp minute; a video or a round of the game takes only:
+
+- **crypto** — a coin with a Binance spot market (`public/spot-usdt.json`, as in `research/`):
+  perpetuals on shares, funds, metals and futures-only listings stay out;
+- **at most 30% in five minutes** — past that it is a listing, a delisting or a broken feed;
+- **no one-candle spike** — a move of which less than a fifth is left by the close of the next
+  minute is a wick in a thin book;
+- **no coin named like a caption word** (THE, ONE, ON...): the videos never name the coin, and the
+  test that looks for tickers in the text cannot tell "the" from THE.
+
+`archive-events.mjs` applies them to what it finds; `--clean` also drops events already in the
+file that break them (`--clean --max 0` only cleans). `npm test` holds `public/events.json` and the
+site's rounds to the same rules. On 9.11.2026 the clean-up dropped 78 of 142 events (73 not crypto,
+three past 30%, one spike, five named like words) and the search added 60 fit ones.
+
 ## Rounds of the game
 
 The site has the Guess format as a game (`web/play/`, at `/play/`): a real chart stops at the

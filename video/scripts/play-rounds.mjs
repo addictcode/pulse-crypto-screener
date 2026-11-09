@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { parseArgs } from 'node:util';
 
 import { ARCHIVE } from './archive.mjs';
+import { fromEvent, isCrypto as cryptoSymbol, problem as unfit } from './clean.mjs';
 
 export const PACK = 10;
 /** Candles shown before the question, the signal candle included, and played after it. */
@@ -84,11 +85,13 @@ export async function spotUsdt() {
 }
 
 /** 1000PEPEUSDT on futures is PEPEUSDT on spot. */
-export const isCrypto = (event, spot) => spot.has(event.symbol) || spot.has(event.symbol.replace(/^1000+/, ''));
+export const isCrypto = (event, spot) => cryptoSymbol(event.symbol, spot);
 
 export function packs(events, spot) {
   const clear = events
     .filter((e) => isCrypto(e, spot))
+    // the rules of the videos: no move past the cap, no one-candle spike (scripts/clean.mjs)
+    .filter((e) => unfit(fromEvent(e), spot) === null)
     .filter((e) => e.candles.length >= e.at + AFTER + 1 && e.at + 1 >= BEFORE)
     .filter((e) => Math.abs(hourAfter(e)) >= CLEAR)
     .map(toRound);

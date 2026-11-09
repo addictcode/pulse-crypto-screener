@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 
+import { fromRound, problem } from './clean.mjs';
 import { AFTER, BEFORE, PACK, hourAfter, isCrypto, packs, toRound } from './play-rounds.mjs';
 
 const events = JSON.parse(readFileSync(new URL('../public/events.json', import.meta.url)));
@@ -55,4 +56,8 @@ test('only crypto: perpetuals on shares stay out of the game', () => {
   for (const share of ['INTC', 'HOOD', 'AMZN', 'MRVL', 'SOXL']) assert.ok(!coins.has(share), share);
   assert.ok(isCrypto({ symbol: '1000PEPEUSDT' }, new Set(['PEPEUSDT'])));
   assert.ok(!isCrypto({ symbol: 'INTCUSDT' }, new Set(['BTCUSDT'])));
+});
+
+test('the rounds the site serves keep the rules of the videos (scripts/clean.mjs)', () => {
+  for (const r of committed.flat()) assert.equal(problem(fromRound(r), spot), null, r.id);
 });
