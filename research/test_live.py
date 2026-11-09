@@ -56,6 +56,31 @@ class LiveTest(unittest.TestCase):
         self.assertIn("| PUMP (памп) | 3 |", text)
         self.assertIn("Внимание: дней меньше 14", text)
 
+    def test_downtime_days_are_not_counted_and_signals_across_a_stop_are_left_out(self):
+        # the real case: Pulse stood still from 2 November afternoon to the 5th in the morning
+        raw = pd.DataFrame(rows("PUMP", 1, 1.0, days=20))
+        uptime = pd.DataFrame({"started_at": ["2026-10-31T00:00:00Z", "2026-11-05T09:00:00Z"],
+                               "last_seen_at": ["2026-11-02T11:30:00Z", "2026-11-21T00:00:00Z"]})
+        frame = live.prepare(raw, SINCE, UNTIL)
+        kept, days, dropped = live.apply_uptime(frame, uptime, SINCE, UNTIL)
+        # 2 Nov noon: its hour runs into the stop at 11:30; 3 and 4 Nov: no signals were fired then
+        # anyway in real life, but a made-up one would be inside the stop
+        self.assertEqual(dropped, 3)
+        self.assertEqual(len(kept), 17)
+        self.assertNotIn(date(2026, 11, 3), days)
+        self.assertNotIn(date(2026, 11, 4), days)
+        self.assertIn(date(2026, 11, 2), days)
+        self.assertIn(date(2026, 11, 5), days)
+        self.assertEqual(len(days), 18)
+        text = live.report(kept, SINCE, UNTIL, days, dropped)
+        self.assertIn("Pulse работал 18 дн. из 20", text)
+        self.assertIn("3 сигн.", text)
+
+    def test_a_restart_a_minute_later_is_not_a_stop(self):
+        uptime = pd.DataFrame({"started_at": ["2026-11-01T00:00:00Z", "2026-11-01T10:01:00Z"],
+                               "last_seen_at": ["2026-11-01T10:00:00Z", "2026-11-02T00:00:00Z"]})
+        self.assertEqual(live.downtime(uptime), [])
+
 
 if __name__ == "__main__":
     unittest.main()

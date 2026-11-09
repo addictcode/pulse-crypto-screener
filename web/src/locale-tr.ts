@@ -235,4 +235,6 @@ export const TR: Record<string, string> = {
   "No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.": "{v} süredir Binance'ten veri yok. Demo verileri doğrudan tarayıcından okur; Binance ağından erişilemiyor olabilir.",
   "Status": "Durum",
   "now": "şimdi",
+  "Pulse was not running for {time} of these {days} days ({when}, UTC): there are no signals from then, and nothing is counted for it.": "Pulse bu {days} günün {time} kadarında çalışmıyordu ({when}, UTC): o zamandan sinyal yok ve hesaba katılmıyor.",
+  "{n} d": "{n} g",
 };

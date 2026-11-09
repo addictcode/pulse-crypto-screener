@@ -121,4 +121,16 @@ class SymbolStateTest {
         assertThat(state.applyTicker(ticker(Double.NaN))).isFalse();
         assertThat(state.toMetrics(30_000).price()).isEqualTo(1.00);
     }
+
+    @Test
+    void minutesTheStreamMissedAreReportedOnceForRefilling() {
+        SymbolState state = new SymbolState("WIFUSDT");
+        state.applyCandle(new Candle(0, 1, 1, 1, 1, 1, true));
+        state.applyCandle(new Candle(60_000, 1, 1, 1, 1, 1, false));
+        assertThat(state.takeGap()).isFalse();
+        // the stream was down for ten minutes
+        state.applyCandle(new Candle(12 * 60_000, 1, 1, 1, 1, 1, false));
+        assertThat(state.takeGap()).isTrue();
+        assertThat(state.takeGap()).as("handed out once").isFalse();
+    }
 }

@@ -43,6 +43,8 @@ final class SymbolState {
     /** A price that jumped past {@link #OUTLIER}, waiting for the next update to confirm it; 0 if none. */
     private double held;
     private long rejected;
+    /** The stream skipped minutes since the history was last filled in (see takeGap). */
+    private boolean gap;
 
     SymbolState(String symbol) {
         this.symbol = symbol;
@@ -75,6 +77,10 @@ final class SymbolState {
         }
         Candle last = candles.peekLast();
         if (last == null || c.openTime() > last.openTime()) {
+            // a minute or more is missing between the last candle and this one: the stream was down
+            if (last != null && c.openTime() > last.openTime() + MetricsCalculator.MINUTE_MS) {
+                gap = true;
+            }
             candles.addLast(c);
             trimCandles();
         } else if (c.openTime() == last.openTime()) {
@@ -117,6 +123,13 @@ final class SymbolState {
         }
         held = next;
         return false;
+    }
+
+    /** Whether minutes are missing; true once per gap (the caller fills it in). */
+    synchronized boolean takeGap() {
+        boolean was = gap;
+        gap = false;
+        return was;
     }
 
     /** Streamed prices dropped as outliers since start. */

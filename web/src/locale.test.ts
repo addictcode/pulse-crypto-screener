@@ -113,7 +113,7 @@ describe('the words of /status/', () => {
 describe('draft translations of the public pages', () => {
   // the landing, the record and the game, with the modules they use; the terminal is English and Russian only
   const keys = [
-    ...codeKeys(['landing.ts', 'record.ts', 'play.ts', 'telegram.ts', 'tape.ts', 'format.ts', 'stale.ts', 'status.ts']),
+    ...codeKeys(['landing.ts', 'record.ts', 'play.ts', 'telegram.ts', 'tape.ts', 'format.ts', 'stale.ts', 'status.ts', 'ago.ts']),
     ...htmlKeys(join(src, '../index.html')),
     ...htmlKeys(join(src, '../status/index.html')),
     ...htmlKeys(join(src, '../record/index.html')),

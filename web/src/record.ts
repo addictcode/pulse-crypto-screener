@@ -6,7 +6,8 @@ import './theme.css';
 import './landing.css';
 import './record.css';
 
-import { STANDALONE, signalAudit, signalStats } from './api';
+import { duration } from './ago';
+import { STANDALONE, downtime, signalAudit, signalStats } from './api';
 import { pct } from './format';
 import { localize, mountLangSwitch, t } from './i18n';
 import { followed, overall, type Followed } from './record-math';
@@ -64,6 +65,7 @@ async function show() {
   let stats: OutcomeStats[];
   // the nightly check against the exchange's candles: a line of its own, never in the way of the record
   const audit = signalAudit(days).catch(() => null);
+  const gaps = downtime(days).catch(() => null);
   try {
     stats = (await signalStats(days)).filter((s) => s.horizons.some((h) => h.n > 0));
   } catch {
@@ -73,6 +75,7 @@ async function show() {
   const total = stats.reduce((sum, s) => sum + Math.max(...s.horizons.map((h) => h.n)), 0);
   const hour = overall(stats, HOUR);
   const checked = await audit;
+  showDowntime(await gaps);
   $('rec-meta').textContent = [
     t('last {days} days', { days }),
     checked?.checked ? t('checked against exchange candles: {ok} of {n}', { ok: checked.confirmed, n: checked.checked }) : '',
@@ -87,6 +90,23 @@ async function show() {
   $('rec-rows').innerHTML = stats.length
     ? stats.map(row).join('')
     : `<tr><td colspan="5" class="mute">${t('No measured signals in this period yet.')}</td></tr>`;
+}
+
+/** UTC, without the year: "11-02 13:45". */
+const when = (t: string | number) => new Date(t).toISOString().slice(5, 16).replace('T', ' ');
+
+/** A week with three dead days must not read as a quiet week: the gaps are named before the numbers. */
+function showDowntime(d: Awaited<ReturnType<typeof downtime>>) {
+  const el = $('rec-down');
+  const gone = d?.down.reduce((sum, i) => sum + (new Date(i.to).getTime() - new Date(i.from).getTime()), 0) ?? 0;
+  el.hidden = !d || !d.down.length;
+  if (el.hidden) return;
+  const listed = d!.down.slice(-3).map((i) => `${when(i.from)} – ${when(i.to)}`).join(', ');
+  el.textContent = t('Pulse was not running for {time} of these {days} days ({when}, UTC): there are no signals from then, and nothing is counted for it.', {
+    time: duration(gone),
+    days,
+    when: d!.down.length > 3 ? `${listed}…` : listed,
+  });
 }
 
 void show();

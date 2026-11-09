@@ -73,6 +73,20 @@ public class MarketStore implements MarketSink {
         }
     }
 
+    @Override
+    public List<String> takeCandleGaps(int max) {
+        List<String> out = new ArrayList<>();
+        for (Map.Entry<String, SymbolState> e : states.entrySet()) {
+            if (out.size() >= max) {
+                break;
+            }
+            if (e.getValue().takeGap()) {
+                out.add(e.getKey());
+            }
+        }
+        return out;
+    }
+
     /** Streamed prices dropped as outliers since start, over all pairs (SymbolState#plausible). */
     public long rejectedPrices() {
         return states.values().stream().mapToLong(SymbolState::rejectedPrices).sum();

@@ -235,4 +235,6 @@ export const ES: Record<string, string> = {
   "No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.": "Sin datos de Binance desde hace {v}. La demo los lee directamente desde tu navegador; puede que Binance no sea accesible desde tu red.",
   "Status": "Estado",
   "now": "ahora",
+  "Pulse was not running for {time} of these {days} days ({when}, UTC): there are no signals from then, and nothing is counted for it.": "Pulse no estuvo en marcha {time} de estos {days} días ({when}, UTC): no hay señales de ese tiempo y no se cuenta.",
+  "{n} d": "{n} d",
 };

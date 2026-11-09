@@ -35,3 +35,34 @@ test.describe('in Russian', () => {
     await expect(page.locator('#rec-meta')).toContainText('сверено со свечами биржи: 37 из 38');
   });
 });
+
+test.describe('when Pulse was down for part of the period', () => {
+  const down = [{ from: '2026-11-02T13:45:00Z', to: '2026-11-05T09:00:00Z' }];
+
+  test('the record names the gap before the numbers', async ({ page }) => {
+    await fakeBackend(page, { down });
+    await page.goto('/record/');
+    const note = page.locator('#rec-down');
+    await expect(note).toBeVisible();
+    await expect(note).toContainText('Pulse was not running for 3 d of these 30 days (11-02 13:45 – 11-05 09:00, UTC)');
+  });
+
+  test('and says nothing about a full week', async ({ page }) => {
+    await fakeBackend(page);
+    await page.goto('/record/');
+    await expect(page.locator('#rec-meta')).toContainText('checked against');
+    await expect(page.locator('#rec-down')).toBeHidden();
+  });
+
+  for (const width of [320, 360, 390]) {
+    test(`the note fits a ${width} px phone in Russian`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await fakeBackend(page, { down });
+      await page.addInitScript(() => localStorage.setItem('pulse.lang', '"ru"'));
+      await page.goto('/record/');
+      await expect(page.locator('#rec-down')).toContainText('Pulse не работал 3 д');
+      const { scroll, screen } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, screen: document.documentElement.clientWidth }));
+      expect(scroll).toBeLessThanOrEqual(screen);
+    });
+  }
+});

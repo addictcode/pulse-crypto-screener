@@ -201,6 +201,37 @@ public class BinanceAdapter implements ExchangeAdapter {
         connections.forEach(c -> c.restartIfStale(config.staleAfter()));
     }
 
+    /** Pairs filled in from REST per round: 40 × weight 2 every 20 s is 240 of the 2400 a minute. */
+    static final int GAPS_PER_ROUND = 40;
+
+    /**
+     * After the stream dropped, the minutes it missed are holes in every pair's candles, and the
+     * 5-minute and hour changes are computed across them. The missing history comes back from REST,
+     * a few dozen pairs at a time; a long outage of all 530 pairs is whole again in about five minutes.
+     */
+    @Scheduled(fixedDelay = 20_000, initialDelay = 60_000)
+    void fillCandleGaps() {
+        if (historyLoaded.get() == 0) {
+            return; // still starting: the full history load is on its way
+        }
+        List<String> symbols = sink.takeCandleGaps(GAPS_PER_ROUND);
+        if (symbols.isEmpty()) {
+            return;
+        }
+        List<Future<?>> pending = new ArrayList<>();
+        for (String symbol : symbols) {
+            pending.add(workers.submit(() -> {
+                try {
+                    sink.onCandleHistory(symbol, rest.historyKlines(symbol, config.klineHistory()));
+                } catch (RuntimeException e) {
+                    log.debug("Binance: refilling klines for {} failed: {}", symbol, e.getMessage());
+                }
+            }));
+        }
+        awaitAll(pending);
+        log.info("Binance: filled in missed candles of {} pairs from REST", symbols.size());
+    }
+
     @Override
     public List<Candle> candles(String symbol, String interval, int limit) {
         return rest.chartKlines(symbol, interval, limit);

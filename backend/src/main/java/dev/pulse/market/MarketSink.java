@@ -21,4 +21,12 @@ public interface MarketSink {
     void onOpenInterest(String symbol, double contracts, long time);
 
     void onLiquidation(Liquidation liquidation);
+
+    /**
+     * Pairs whose streamed candles skipped minutes (the stream dropped or stalled), at most
+     * {@code max}, each handed out once: the adapter fills them in from REST history.
+     */
+    default List<String> takeCandleGaps(int max) {
+        return List.of();
+    }
 }

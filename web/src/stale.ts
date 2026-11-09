@@ -2,6 +2,7 @@ import './stale.css';
 
 import { t } from './i18n';
 import type { Market } from './market';
+import { duration } from './ago';
 import { STALE_MS } from './stale-ms';
 
 // When the data stops, the page says so. A dead exchange feed or a silent server would otherwise
@@ -27,12 +28,6 @@ export function staleness(market: Market, now: number, startedAt: number, demo: 
   return null;
 }
 
-export function duration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  if (s < 120) return t('{n} s', { n: s });
-  const m = Math.round(s / 60);
-  return m < 120 ? t('{n} min', { n: m }) : t('{n} h', { n: Math.round(m / 60) });
-}
 
 export function staleText(s: NonNullable<Staleness>): string {
   const v = duration(s.age);

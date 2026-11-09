@@ -1,13 +1,18 @@
-import { RU } from './locale-ru';
 import { load, save } from './storage';
 
 export type Lang = 'en' | 'ru' | 'es' | 'tr';
 
-/** Draft translations, for the public pages only; loaded only by those who read them. */
-const DRAFTS: Partial<Record<Lang, () => Promise<Record<string, string>>>> = {
+/**
+ * The dictionaries, each its own file loaded only by those who read it: an English visitor from
+ * TikTok downloads no Russian (the whole site's, terminal included, about 9 KB compressed). Spanish
+ * and Turkish are drafts, for the public pages only.
+ */
+const DICTS: Partial<Record<Lang, () => Promise<Record<string, string>>>> = {
+  ru: () => import('./locale-ru').then((m) => m.RU),
   es: () => import('./locale-es').then((m) => m.ES),
   tr: () => import('./locale-tr').then((m) => m.TR),
 };
+const DRAFT_LANGS: Lang[] = ['es', 'tr'];
 
 /**
  * The languages this page speaks: the public pages list theirs in <html data-langs>, the terminal
@@ -39,8 +44,8 @@ function detect(): Lang {
 
 export const lang: Lang = detect();
 /** Whether the words on screen are a draft translation (the footer says so). */
-export const draft = lang in DRAFTS;
-const dict: Record<string, string> = lang === 'ru' ? RU : draft ? await DRAFTS[lang]!() : {};
+export const draft = DRAFT_LANGS.includes(lang);
+const dict: Record<string, string> = DICTS[lang] ? { ...(await DICTS[lang]!()) } : {};
 
 /** Words of one page only (locale-status.ts), added to the dictionary by that page before it speaks. */
 export function extend(extra: Partial<Record<Lang, Record<string, string>>>) {
