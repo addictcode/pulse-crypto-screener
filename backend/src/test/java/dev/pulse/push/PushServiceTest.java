@@ -73,6 +73,10 @@ class PushServiceTest {
         PushProperties off = new PushProperties("", "", "", 0, 0, 0, null, 0, false);
         PushController controller = new PushController(new PushService(null, off), off);
         assertThat(off.enabled()).isFalse();
-        assertThat(controller.key().getStatusCode().value()).isEqualTo(404);
+        // 204, not 404: every terminal asks, and a 404 is a red line in each visitor's console
+        assertThat(controller.key().getStatusCode().value()).isEqualTo(204);
+        assertThat(controller.key().getBody()).isNull();
+        assertThat(controller.subscribe(new PushService.Request("https://fcm.googleapis.com/x", null, List.of(), false, "en"),
+                new org.springframework.mock.web.MockHttpServletRequest()).getStatusCode().value()).isEqualTo(404);
     }
 }
