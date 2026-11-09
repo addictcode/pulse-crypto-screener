@@ -62,7 +62,7 @@ function history() {
 }
 
 const day = (iso: string) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString({ ru: 'ru-RU', es: 'es-ES', tr: 'tr-TR', en: 'en-GB' }[lang], { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 function scoreLine() {
   if (!series) return;

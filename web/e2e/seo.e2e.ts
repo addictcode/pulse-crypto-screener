@@ -8,7 +8,7 @@ test.use({ baseURL: `http://localhost:${BUILD_PORT}` });
 
 test('the Russian landing has its text in the HTML, before any script', async ({ request }) => {
   const html = await (await request.get('/ru/')).text();
-  expect(html).toContain('<html lang="ru" data-page-lang="ru">');
+  expect(html).toMatch(/<html lang="ru" data-page-lang="ru"[ >]/);
   expect(html).toContain('<title>Pulse: радар крипто-фьючерсов</title>');
   expect(html).toContain('>Открыть терминал<');
   expect(html).toContain('rel="canonical" href="https://{{.Host}}/ru/"');
@@ -51,4 +51,13 @@ test('the game has a Russian twin too, and it plays', async ({ page }) => {
   await expect(page.locator('.pl-title')).toHaveText('Угадай, что дальше');
   await page.getByRole('button', { name: 'Сыграть 10 раундов' }).click();
   await expect(page.locator('#pl-step')).toHaveText('Раунд 1 из 10');
+});
+
+test('Spanish chosen on the Russian landing goes to the English address and translates there', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/ru/');
+  await page.locator('#lang [data-lang="es"]').click();
+  await expect(page).toHaveURL(/:\d+\/$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await expect(page.locator('.hero h1')).toContainText('Mira dónde');
 });
