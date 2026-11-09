@@ -80,6 +80,16 @@ TikTok. Личный проект студента БГУИР (владелец 
   `e2e/phone-layout.e2e.ts`; настоящий стек обходит браузером фаза 0 `PLAN-5`.
 - Playwright не может скачать свой браузер в этой сети: e2e локально гонять на установленном Chrome
   (`channel: 'chrome'` через временную обёртку конфига рядом с `playwright.config.ts`).
+- **Обход стека** (`web/e2e-stack/`, `npm run stack` после `loadtest/run.sh --local-build up`) — то,
+  что e2e не видят: вёрстка с настоящими данными, Caddy, консоль, axe, снимки. Идёт в образе
+  Playwright внутри сети стенда, поэтому эталоны снимков одинаковы везде; в облаке это работает,
+  образ `mcr.microsoft.com/playwright` скачивается. 9.11.2026 он сразу нашёл таблицу стен шире
+  телефона и четыре места с низким контрастом, которых поддельный бэкенд не показывал.
+- `toHaveScreenshot({ style })` в Playwright 1.64 стиль не применяет — `page.addStyleTag`. CSP прода
+  не пускает вставленный `<script>`: axe и прочее — через `page.evaluate`.
+- Облако: JDK 25 для Gradle-тулчейна берётся из образа (`docker create eclipse-temurin:25-jdk`,
+  `docker cp …:/opt/java/openjdk /opt/jdk-25`, в `~/.gradle/gradle.properties`
+  `org.gradle.java.installations.paths=/opt/jdk-25`); Maven Central иногда отвечает 429 — повторить.
 
 ## Решения владельца
 
