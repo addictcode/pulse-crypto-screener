@@ -64,6 +64,9 @@ export function tourOnce() {
   card.className = 'tour-card';
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-live', 'polite');
+  card.setAttribute('aria-labelledby', 'tour-title');
+  // where the keyboard was before the tour took it, to give it back at the end
+  const before = document.activeElement as HTMLElement | null;
   document.body.append(ring, card);
 
   const finish = () => {
@@ -72,8 +75,24 @@ export function tourOnce() {
     card.remove();
     window.removeEventListener('resize', place);
     window.removeEventListener('scroll', place);
+    document.removeEventListener('keydown', keys, true);
     layout.disconnect();
+    if (before && before !== document.body && document.contains(before)) before.focus({ preventScroll: true });
   };
+  // Escape from anywhere ends the tour; Tab stays among the card's buttons while it is open
+  function keys(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      finish();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const buttons = [...card.querySelectorAll<HTMLElement>('button')];
+    const at = buttons.indexOf(document.activeElement as HTMLElement);
+    e.preventDefault();
+    buttons[(at + (e.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+  }
 
   let index = 0;
   // the tour starts before the market arrives; when the rows come in, the panels grow and the one
@@ -110,7 +129,7 @@ export function tourOnce() {
     const step = steps[index];
     const last = index === steps.length - 1;
     card.innerHTML = `<p class="tour-count">${t('{n} of {total}', { n: index + 1, total: steps.length })}</p>
-      <h2>${t(step.title)}</h2><p>${t(step.text)}${step.keyboard && keyboard ? ` ${t(step.keyboard)}` : ''}</p>
+      <h2 id="tour-title">${t(step.title)}</h2><p>${t(step.text)}${step.keyboard && keyboard ? ` ${t(step.keyboard)}` : ''}</p>
       <div class="tour-actions"><button type="button" class="btn ghost" data-act="skip">${t('Skip')}</button>
       <button type="button" class="btn primary" data-act="next">${last ? t('Got it') : t('Next')}</button></div>`;
     // on a phone the panels are stacked: bring the one being shown into view first
@@ -130,7 +149,7 @@ export function tourOnce() {
       }
     }
   });
-  card.addEventListener('keydown', (e) => e.key === 'Escape' && finish());
+  document.addEventListener('keydown', keys, true);
   window.addEventListener('resize', place);
   window.addEventListener('scroll', place, { passive: true });
   render();

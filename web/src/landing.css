@@ -290,7 +290,8 @@ rect.sk-break { fill: var(--up); }
 .msg { display: grid; gap: 5px; padding: 13px 15px; background: var(--bg-2); border-radius: 14px 14px 14px 3px; font-size: 14px; line-height: 1.45; }
 .msg b { font-weight: 650; color: var(--ink); }
 .msg span { color: var(--ink-2); }
-.msg i { color: var(--ink-3); font-size: 12.5px; font-style: normal; }
+/* --ink-3 on the bubble (--bg-2) was 4.2:1, under the 4.5 small text needs */
+.msg i { color: var(--ink-2); font-size: 12.5px; font-style: normal; }
 .strip { display: block; width: 100%; height: 64px; }
 .strip .axis { stroke: var(--rule-strong); }
 .strip .price { stroke: var(--ink); stroke-dasharray: 2 3; }

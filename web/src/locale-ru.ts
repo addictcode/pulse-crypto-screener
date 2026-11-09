@@ -685,6 +685,7 @@ export const RU: Record<string, string> = {
     'Настоящий график фьючерсов Binance останавливается сразу после резкого движения. Цена через час будет выше или ниже? Десять раундов, а рядом с тобой играет монетка.',
   'Play ten rounds': 'Сыграть 10 раундов',
   Play: 'Игра',
+  'Signals by type and the price after them': 'Сигналы по типам и цена после них',
   'Minute candles before a sharp move': 'Минутные свечи до резкого движения',
   'An hour from now, higher or lower?': 'Через час выше или ниже?',
   Higher: 'Выше',

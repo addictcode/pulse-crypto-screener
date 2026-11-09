@@ -66,6 +66,18 @@ for (const lang of ['en', 'ru']) {
       expect(await violations(page)).toEqual([]);
     });
 
+    test('the game, a round in play and its end', async ({ page }) => {
+      await fakeBackend(page);
+      await page.goto('/play/');
+      expect(await violations(page)).toEqual([]);
+      await page.locator('#pl-start').click();
+      await expect(page.locator('#pl-round')).toBeVisible();
+      expect(await violations(page)).toEqual([]);
+      await page.locator('.pl-pick').first().click();
+      await expect(page.locator('#pl-verdict')).not.toBeEmpty({ timeout: 5_000 });
+      expect(await violations(page)).toEqual([]);
+    });
+
     test('the terminal and the menus over it', async ({ page }) => {
       await fakeBackend(page);
       await page.goto('/app/');

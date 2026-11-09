@@ -101,6 +101,26 @@ export function mountLangSwitch(el: HTMLElement) {
   document.addEventListener('click', (e) => {
     if (el.classList.contains('open') && !el.contains(e.target as Node)) fold(false);
   });
+  // the keyboard: arrows walk the languages (unfolding a folded switch), Escape folds it back
+  el.addEventListener('keydown', (e) => {
+    const current = buttons.find((b) => b.dataset.lang === lang);
+    if (e.key === 'Escape' && el.classList.contains('open')) {
+      fold(false);
+      current?.focus();
+      e.preventDefault();
+      return;
+    }
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    if (folded() && !el.classList.contains('open')) fold(true);
+    const shown = buttons.filter((b) => getComputedStyle(b).display !== 'none');
+    const at = shown.indexOf(document.activeElement as HTMLButtonElement);
+    shown[(at + step + shown.length) % shown.length]?.focus();
+  });
+  el.addEventListener('focusout', (e) => {
+    if (el.classList.contains('open') && !el.contains(e.relatedTarget as Node)) fold(false);
+  });
   buttons.forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.lang === lang));
     button.addEventListener('click', () => {

@@ -399,6 +399,7 @@ body[data-view="screener"][data-focus] .desk > .panel:not(.instrument) { display
 .badge.hot { --tone: var(--accent); }
 .tape-row.alert { background: var(--bg-sel); }
 .tape-row.alert:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.tape-row.alert time { color: var(--ink-2); } /* --ink-3 on the lighter alert row is 4.1:1 */
 .tape-row.alert .v { text-align: left; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .split { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 2px 14px 8px; font-size: 11.5px; }

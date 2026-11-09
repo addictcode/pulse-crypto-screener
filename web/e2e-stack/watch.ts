@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
 import { expect, type Page } from '@playwright/test';
 
 import { STACK } from './playwright.config';
@@ -67,4 +70,33 @@ export async function noBrokenNumbers(page: Page) {
   const text = await page.evaluate(() => document.body.innerText);
   const broken = text.match(/.{0,30}\b(NaN|undefined|Infinity|null)\b.{0,30}/g) ?? [];
   expect(broken, 'no NaN, undefined, Infinity or null in the text').toEqual([]);
+}
+
+const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+
+/**
+ * axe-core over the page with real data: contrast of live numbers, names of controls drawn from
+ * the stream. Serious and critical findings fail; e2e/a11y.e2e.ts holds the fake-backend pages to
+ * every rule.
+ */
+export async function noSeriousA11y(page: Page) {
+  // a row fading in is measured at its final colour, not halfway: motion off, running fades finished
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(() =>
+    Promise.all(
+      document.getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
+  // through the debugger, not a <script>: the production CSP rightly refuses inline scripts
+  await page.evaluate(AXE);
+  const found = await page.evaluate(async () => {
+    const axe = (window as unknown as { axe: { run(c: Document, o: object): Promise<{ violations: Array<{ id: string; impact: string; nodes: Array<{ target: string[] }> }> }> } }).axe;
+    const result = await axe.run(document, { resultTypes: ['violations'] });
+    return result.violations
+      .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      .map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(', ')}`);
+  });
+  expect(found, 'no serious or critical accessibility violations').toEqual([]);
 }

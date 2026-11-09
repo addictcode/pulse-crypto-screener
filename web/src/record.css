@@ -22,7 +22,8 @@
 .rec-table .mini tr:last-child td { border-bottom: 0; }
 .rec-table .mini td .up { color: var(--up); }
 .rec-table .mini td .down { color: var(--down); }
-.rec-table .mini tr.thin td { opacity: .45; }
+/* too few cases to read much into: muted, but still readable (opacity .45 fell to 2:1 contrast) */
+.rec-table .mini tr.thin td, .rec-table .mini tr.thin td * { color: var(--ink-3); }
 .rec-share { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
 
 .rec-how { margin-top: 56px; max-width: 72ch; }

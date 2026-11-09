@@ -53,6 +53,7 @@ let tip: HTMLElement | null = null;
 let owner: HTMLElement | null = null;
 
 function hide() {
+  owner?.removeAttribute('aria-describedby');
   tip?.remove();
   tip = null;
   owner = null;
@@ -67,6 +68,8 @@ function showFor(el: HTMLElement) {
   tip = document.createElement('div');
   tip.className = 'term-tip';
   tip.setAttribute('role', 'tooltip');
+  tip.id = 'term-tip';
+  el.setAttribute('aria-describedby', tip.id);
   tip.textContent = t(TERMS[term]);
   document.body.append(tip);
   const r = el.getBoundingClientRect();
@@ -98,6 +101,9 @@ export function mountGlossary(root: HTMLElement | Document = document) {
   root.addEventListener('focusin', (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-term]');
     if (el) showFor(el);
+  });
+  root.addEventListener('focusout', (e) => {
+    if (owner && (e.target as HTMLElement).closest('[data-term]') === owner) hide();
   });
   document.addEventListener('keydown', (e) => e.key === 'Escape' && hide());
   window.addEventListener('scroll', hide, { passive: true, capture: true });
