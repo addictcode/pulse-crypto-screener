@@ -137,11 +137,11 @@
       <span class="p-meta" id="tape-meta"></span>
       <button type="button" class="btn ghost" id="tape-sound" aria-pressed="false"></button>
     </div>
-    <ol class="tape-list" id="tape"></ol>
+    <ol class="tape-list" id="tape" tabindex="0" data-i18n-attrs="aria-label" aria-label="Signal tape"></ol>
   </section>
 
   <section class="panel liqs" data-i18n-attrs="aria-label" aria-label="Liquidations">
-    <div class="p-head"><h2 class="p-title" data-term="liquidation" data-i18n>Liquidations</h2><span class="p-meta" data-i18n>last 5 min</span></div>
+    <div class="p-head"><h2 class="p-title" data-term="liquidation" tabindex="0" data-i18n>Liquidations</h2><span class="p-meta" data-i18n>last 5 min</span></div>
     <div class="split">
       <span class="down" id="liq-l">&nbsp;</span>
       <span class="split-bar" aria-hidden="true"><i id="liq-lb" style="background:var(--down)"></i><i id="liq-sb" style="background:var(--up)"></i></span>
@@ -192,7 +192,7 @@
 
   <section class="panel densmap" data-i18n-attrs="aria-label" aria-label="Density map">
     <div class="p-head">
-      <h2 class="p-title" data-term="wall" data-i18n>Densities</h2>
+      <h2 class="p-title" data-term="wall" tabindex="0" data-i18n>Densities</h2>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Distance from price" id="dm-dist"></div>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Minimum wall size" id="dm-size"></div>
       <div class="seg" role="group" data-i18n-attrs="aria-label" aria-label="Side" id="dm-side"></div>
@@ -219,7 +219,7 @@
   </section>
 
   <section class="panel walllist" data-i18n-attrs="aria-label" aria-label="Walls">
-    <div class="p-head"><h2 class="p-title" data-term="wall" data-i18n>Walls</h2><span class="p-meta" id="wl-meta" data-i18n>nearest to price first</span></div>
+    <div class="p-head"><h2 class="p-title" data-term="wall" tabindex="0" data-i18n>Walls</h2><span class="p-meta" id="wl-meta" data-i18n>nearest to price first</span></div>
     <div class="table-wrap">
       <table class="grid walls-grid">
         <thead><tr>

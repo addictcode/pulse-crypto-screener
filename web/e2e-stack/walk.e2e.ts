@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { noBrokenNumbers, noSideScroll, watch } from './watch';
+import { noBrokenNumbers, noSeriousA11y, noSideScroll, watch } from './watch';
 
 // Every page in every language it has, on a desktop and on 320 and 390 px phones (the projects in
 // playwright.config.ts). The public pages speak four languages, the terminal two (owner's decision
@@ -60,6 +60,7 @@ for (const v of visits('PAIR')) {
     if (v.live) await v.live(page);
     await noBrokenNumbers(page);
     await noSideScroll(page);
+    await noSeriousA11y(page);
     expect(w.problems, 'no console errors, exceptions, failed requests or CSP violations').toEqual([]);
   });
 }

@@ -41,6 +41,8 @@
 
   <!-- a round: the chart, the question, then the answer in the same place -->
   <section class="pl-round" id="pl-round" hidden>
+    <!-- the intro's heading is hidden with it; a screen reader still needs one while a round plays -->
+    <h1 class="sr" data-i18n>Guess what's next</h1>
     <div class="pl-bar">
       <span id="pl-step"></span>
       <span class="pl-score" id="pl-score"></span>
@@ -64,6 +66,7 @@
 
   <!-- the result: score against the coin, an honest word, the card to share -->
   <section class="pl-done" id="pl-done" hidden>
+    <h1 class="sr" data-i18n>Guess what's next</h1>
     <h2 class="pl-total" id="pl-total"></h2>
     <p class="lede" id="pl-word"></p>
     <p class="pl-note" data-i18n>Pulse does not guess either. On 60,000 real signals the price went their way within the hour 44 to 48% of the time. What it can show is where the market woke up, as it happens.</p>

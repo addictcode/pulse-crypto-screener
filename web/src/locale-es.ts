@@ -144,6 +144,7 @@ export const ES: Record<string, string> = {
   "How Pulse's own signals did": "Cómo les fue a las señales de Pulse",
   "Real Binance charts from the archive. Not financial advice.": "Gráficos reales de Binance del archivo. No es consejo financiero.",
   "A real chart stops at a sharp move. Up or down over the next hour? Ten rounds of real Binance futures, against a coin.": "Un gráfico real se detiene en un movimiento brusco. ¿Sube o baja en la próxima hora? Diez rondas de futuros reales de Binance contra una moneda.",
+  "Signals by type and the price after them": "Señales por tipo y el precio después de ellas",
   "Minute candles before a sharp move": "Velas de un minuto antes de un movimiento brusco",
   "syncing": "sincronizando",
   "{n} / min": "{n} / min",

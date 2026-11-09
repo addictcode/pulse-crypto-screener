@@ -14,6 +14,8 @@ interface Shot {
   langs: string[];
   /** What changes from one run to the next: hidden, its place on the page kept. */
   hide: string[];
+  /** Blocks whose height depends on the data (a fresh stack has no signals yet): left out entirely. */
+  drop?: string[];
   ready?: (page: Page) => Promise<void>;
 }
 
@@ -28,7 +30,8 @@ const SHOTS: Shot[] = [
     name: 'record',
     path: () => '/record/',
     langs: PUBLIC,
-    hide: ['#rec-meta', '#rec-kpi dd', '#rec-n', '#rec-rows', '#rec-move', '#rec-shows'],
+    hide: ['#rec-meta'],
+    drop: ['#rec-kpi', '.rec-table', '.rec-how'],
   },
   {
     name: 'play',
@@ -63,6 +66,7 @@ for (const shot of SHOTS) {
       // the planet and the charts draw on canvases, live every frame. Added as a style tag: the
       // style option of toHaveScreenshot did not reach the page in Playwright 1.64.
       await page.addStyleTag({ content: `canvas, ${shot.hide.join(', ')} { visibility: hidden !important; }` });
+      if (shot.drop) await page.addStyleTag({ content: `${shot.drop.join(', ')} { display: none !important; }` });
       await expect(page).toHaveScreenshot(`${shot.name}-${lang}-${test.info().project.name}.png`);
     });
   }

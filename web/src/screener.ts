@@ -166,6 +166,7 @@ interface ScreenerState {
 
 export class Screener {
   private readonly head = document.getElementById('head')!;
+  private headHtml = '';
   private readonly body = document.getElementById('rows')!;
   private readonly presetsEl = document.getElementById('presets')!;
   private readonly wrap = document.getElementById('table-wrap')!;
@@ -412,15 +413,23 @@ export class Screener {
   }
 
   private renderHead() {
-    this.head.innerHTML = COLUMNS.map((c) => {
+    const html = COLUMNS.map((c) => {
       const on = c.key === this.state.sortKey;
       const sorted = on ? ` sorted${this.state.ascending ? ' asc' : ''}` : '';
       const aria = on ? ` aria-sort="${this.state.ascending ? 'ascending' : 'descending'}"` : '';
       // the star column has no visible title, but a screen reader still needs one
       const label = c.key === 'star' ? `<span class="sr-only">${t('Watchlist')}</span>` : c.label;
       const term = c.term ? ` data-term="${c.term}"` : '';
-      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${term}${aria}>${label}</th>`;
+      // a sortable column or one with an explanation is reachable with Tab: Enter sorts, focus explains
+      const focus = c.sortable !== false || c.term ? ' tabindex="0"' : '';
+      return `<th class="${c.cls ?? ''}${inCompact(c) ? '' : ' x'}${sorted}" data-sort="${c.key}"${term}${aria}${focus}>${label}</th>`;
     }).join('');
+    // drawn anew only when it changed: every market tick would otherwise take the keyboard's focus
+    // off the header it is on (and the explanation shown for it)
+    if (html !== this.headHtml) {
+      this.headHtml = html;
+      this.head.innerHTML = html;
+    }
   }
 
   private toggleStar(symbol: string) {
@@ -670,6 +679,17 @@ export class Screener {
       this.state.ascending = this.state.sortKey === column.key ? !this.state.ascending : column.key === 'symbol' || !!column.ascendingFirst;
       this.state.sortKey = column.key;
       this.render();
+      // the header was drawn anew: the keyboard stays on the column it sorted
+      if (document.activeElement === document.body || !document.contains(document.activeElement)) {
+        this.head.querySelector<HTMLElement>(`[data-sort="${column.key}"]`)?.focus({ preventScroll: true });
+      }
+    });
+    this.head.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const th = (e.target as HTMLElement).closest<HTMLElement>('[data-sort]');
+      if (!th) return;
+      e.preventDefault();
+      th.click();
     });
     this.body.addEventListener('click', (e) => {
       const star = (e.target as HTMLElement).closest<HTMLElement>('[data-star]');

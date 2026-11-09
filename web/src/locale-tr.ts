@@ -144,6 +144,7 @@ export const TR: Record<string, string> = {
   "How Pulse's own signals did": "Pulse'un kendi sinyalleri nasıl çıktı",
   "Real Binance charts from the archive. Not financial advice.": "Arşivden gerçek Binance grafikleri. Yatırım tavsiyesi değildir.",
   "A real chart stops at a sharp move. Up or down over the next hour? Ten rounds of real Binance futures, against a coin.": "Gerçek bir grafik sert bir harekette durur. Sonraki saatte yukarı mı aşağı mı? Gerçek Binance vadeli işlemlerinde yazı turaya karşı on tur.",
+  "Signals by type and the price after them": "Türe göre sinyaller ve sonrasındaki fiyat",
   "Minute candles before a sharp move": "Sert bir hareketten önceki dakikalık mumlar",
   "syncing": "eşitleniyor",
   "{n} / min": "{n} / dk",
