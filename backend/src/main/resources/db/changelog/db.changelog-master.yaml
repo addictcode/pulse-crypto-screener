@@ -29,3 +29,5 @@ databaseChangeLog:
       file: db/changelog/changes/014-client-error.yaml
   - include:
       file: db/changelog/changes/015-signal-audit.yaml
+  - include:
+      file: db/changelog/changes/016-uptime.yaml

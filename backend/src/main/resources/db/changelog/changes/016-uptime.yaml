@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 016-uptime
+      author: pulse
+      comment: >
+        When Pulse ran: one row a start, its end moved by a heartbeat every minute (UptimeLog). The
+        spaces between rows are downtime; /record/ shows them and research/live.py leaves them out.
+      changes:
+        - createTable:
+            tableName: uptime
+            columns:
+              - column: { name: id, type: bigint, autoIncrement: true, constraints: { primaryKey: true, primaryKeyName: pk_uptime } }
+              - column: { name: started_at, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: last_seen_at, type: timestamptz, constraints: { nullable: false } }
+        - createIndex:
+            tableName: uptime
+            indexName: ix_uptime_last_seen_at
+            columns:
+              - column: { name: last_seen_at }

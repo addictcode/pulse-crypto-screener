@@ -49,7 +49,8 @@ export interface FakeBackend {
 
 /** Call before `page.goto`: answers /api and plays /ws/market. */
 /** @param feedAge how old the server says the exchange's data is, in ms (summary and status) */
-export async function fakeBackend(page: Page, options: { links?: TelegramLinks; feedAge?: number } = {}): Promise<FakeBackend> {
+/** @param down when the server says Pulse was not running in the period (/api/status/downtime) */
+export async function fakeBackend(page: Page, options: { links?: TelegramLinks; feedAge?: number; down?: Array<{ from: string; to: string }> } = {}): Promise<FakeBackend> {
   // tests start as a returning visitor: the first-visit card would sit on top of what they click
   await page.addInitScript(() => {
     if (!localStorage.getItem('pulse.welcomed')) localStorage.setItem('pulse.welcomed', 'true');
@@ -112,6 +113,9 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks; 
     errors.push(route.request().postDataJSON() as FakeBackend['errors'][number]);
     return route.fulfill({ status: 204 });
   });
+  await page.route('**/api/status/downtime**', (route) =>
+    route.fulfill({ json: { from: Date.now() - 7 * 86_400_000, to: Date.now(), share: options.down?.length ? 0.6 : 1, down: options.down ?? [] } }),
+  );
   await page.route('**/api/status/full**', (route) => {
     const now = Date.now();
     const full = !route.request().url().includes('history=false');

@@ -745,4 +745,6 @@ export const RU: Record<string, string> = {
   'The exchange data is {v} old: Pulse is reconnecting to Binance. The numbers on screen are not live.': 'Данным биржи уже {v}: Pulse переподключается к Binance. Числа на экране не живые.',
   'No data from Binance for {v}. The demo reads it straight from your browser; Binance may be unreachable from your network.': 'От Binance нет данных уже {v}. Демо читает биржу прямо из браузера; возможно, из вашей сети Binance недоступен.',
   'Status': 'Статус',
+  'Pulse was not running for {time} of these {days} days ({when}, UTC): there are no signals from then, and nothing is counted for it.': 'Pulse не работал {time} из этих дней ({days}) — {when}, UTC: сигналов за это время нет, и в статистику оно не входит.',
+  '{n} d': '{n} д',
 };

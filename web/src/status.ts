@@ -8,7 +8,8 @@ import './status.css';
 
 import { extend, localize, mountLangSwitch, t } from './i18n';
 import { STATUS } from './locale-status';
-import { duration, STALE_MS } from './stale';
+import { duration } from './ago';
+import { STALE_MS } from './stale-ms';
 import { buckets, type Minute } from './status-math';
 
 // /status/: is Pulse live right now, and how was the last day. A poll every ten seconds of

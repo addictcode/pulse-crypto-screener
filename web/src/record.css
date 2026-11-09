@@ -41,3 +41,5 @@
   .rec-kpi > div + div { border-left: 0; border-top: 1px solid var(--rule-soft); }
   .rec-table .mini th, .rec-table .mini td { padding: 0 12px; }
 }
+/* the server was not running for part of the period: said before the numbers, not hidden in them */
+.rec-down { margin: 0 0 14px; padding: 10px 14px; border-left: 2px solid var(--ink-2); background: var(--bg-1); color: var(--ink-2); font-size: 13.5px; line-height: 1.5; }

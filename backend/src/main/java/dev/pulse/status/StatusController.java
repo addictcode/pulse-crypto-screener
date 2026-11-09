@@ -1,10 +1,15 @@
 package dev.pulse.status;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import dev.pulse.depth.OrderBookStore;
 import dev.pulse.exchange.ExchangeAdapter;
@@ -34,14 +39,30 @@ public class StatusController {
     private final OrderBookStore orderBooks;
     private final SignalHistory signals;
     private final StatusHistory history;
+    private final UptimeLog uptime;
+
+    /** @param share of the period Pulse was running, 0–1 */
+    public record Downtime(long from, long to, double share, List<UptimeLog.Interval> down) {
+    }
 
     public StatusController(FeedAge feed, List<ExchangeAdapter> exchanges, OrderBookStore orderBooks, SignalHistory signals,
-                            StatusHistory history) {
+                            StatusHistory history, UptimeLog uptime) {
         this.feed = feed;
         this.exchanges = exchanges;
         this.orderBooks = orderBooks;
         this.signals = signals;
         this.history = history;
+        this.uptime = uptime;
+    }
+
+    /** When Pulse was not running in the last {@code days} days: /record/ says so instead of a quiet week. */
+    @GetMapping("/api/status/downtime")
+    public Downtime downtime(@RequestParam(defaultValue = "7") @Min(1) @Max(90) int days) {
+        Instant to = Instant.now();
+        Instant from = to.minus(Duration.ofDays(days));
+        List<UptimeLog.Interval> down = uptime.down(from, to);
+        long gone = down.stream().mapToLong(i -> Duration.between(i.from(), i.to()).toMillis()).sum();
+        return new Downtime(from.toEpochMilli(), to.toEpochMilli(), 1 - gone / (double) Duration.between(from, to).toMillis(), down);
     }
 
     /** @param history false for the minute-by-minute day too: the terminal only asks how old the data is */

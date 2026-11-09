@@ -108,6 +108,17 @@ export function russianTwin(english: string, file: string, dict: Record<string, 
     .replace(`data-twin="${twinOf(file, false)}"`, `data-twin="${twinOf(file, true)}"`);
 }
 
+/**
+ * The Russian dictionary is loaded on demand (i18n.ts), so an English visitor never downloads it;
+ * a Russian twin asks for it at once, alongside its own script, instead of one round trip later.
+ */
+function preloadRussian(html: string, bundle: Record<string, { type: string; facadeModuleId?: string | null; fileName: string }>): string {
+  const chunk = Object.values(bundle).find((c) => c.type === 'chunk' && c.facadeModuleId?.endsWith('/locale-ru.ts'));
+  const script = html.match(/<script type="module" crossorigin src="([^"]*?)assets\//);
+  if (!chunk || !script) return html;
+  return html.replace(script[0], `<link rel="modulepreload" crossorigin href="${script[1]}${chunk.fileName}">\n    ${script[0]}`);
+}
+
 export function seoPages(dict: Record<string, string>, standalone: boolean): Plugin {
   const fileOf = (path: string) => (path.replace(/^\//, '') || 'index.html').replace(/\/$/, '/index.html');
   return {
@@ -121,7 +132,7 @@ export function seoPages(dict: Record<string, string>, standalone: boolean): Plu
     },
     // the build: a Russian twin of each localized page next to the English one, written after
     // Vite has written the English pages (they are not in the bundle any earlier)
-    async writeBundle(options) {
+    async writeBundle(options, bundle) {
       const { mkdir, readFile, writeFile } = await import('node:fs/promises');
       const { dirname, join } = await import('node:path');
       const dir = options.dir!;
@@ -135,7 +146,7 @@ export function seoPages(dict: Record<string, string>, standalone: boolean): Plu
           continue;
         }
         await mkdir(dirname(join(dir, 'ru', file)), { recursive: true });
-        await writeFile(join(dir, 'ru', file), russianTwin(english, file, dict, standalone));
+        await writeFile(join(dir, 'ru', file), preloadRussian(russianTwin(english, file, dict, standalone), bundle));
       }
     },
     // the dev server: /ru/... is the English page translated on the fly

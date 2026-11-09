@@ -10,19 +10,17 @@ import { expect, test } from '@playwright/test';
 // worth it; write it in the commit.
 const DIST = 'dist-e2e';
 const KB = 1024;
+// 9.11.2026: the Russian dictionary (the whole site's, ~20 KB compressed) moved out of the first
+// load into a chunk of its own, loaded by Russian readers only (i18n.ts) and preloaded by the /ru/
+// twins. Every page lost about 20 KB for an English visitor and the budgets came down with it.
 const BUDGET = {
-  'index.html': { js: 32 * KB, css: 11 * KB },
-  'app/index.html': { js: 150 * KB, css: 17 * KB },
-  // 26 → 27 KB on 9.11.2026: the language switch learned the keyboard (arrows, Escape) and the table
-  // got a label for screen readers in four languages, 0.2 KB together
-  'record/index.html': { js: 27 * KB, css: 12 * KB },
-  // the game: its own canvas chart, no chart library, so mostly the Russian dictionary like /record/;
-  // the rounds load as JSON, about 10 KB a pack. 28 → 29 KB on 9.11.2026 for the browser error
-  // listener (client-errors.ts, 0.3 KB with Vite's loader for its lazy part): worth knowing when the
-  // game breaks on someone's phone
-  'play/index.html': { js: 29 * KB, css: 12 * KB },
-  // the status page: like /record/, the dictionaries and a poll, no chart library
-  'status/index.html': { js: 27 * KB, css: 12 * KB },
+  'index.html': { js: 14 * KB, css: 11 * KB },
+  'app/index.html': { js: 120 * KB, css: 17 * KB },
+  'record/index.html': { js: 9 * KB, css: 12 * KB },
+  // the game: its own canvas chart, no chart library; the rounds load as JSON, about 10 KB a pack
+  'play/index.html': { js: 11 * KB, css: 12 * KB },
+  // the status page: the dictionaries and a poll, no chart library
+  'status/index.html': { js: 7 * KB, css: 12 * KB },
 };
 /** The landing's planet loads after the words and numbers are on screen, as its own file. */
 const PLANET = 165 * KB;

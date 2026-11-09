@@ -60,6 +60,11 @@ export async function signalStats(days: number): Promise<OutcomeStats[]> {
   return STANDALONE ? [] : getJson(`/api/signals/stats?days=${days}`);
 }
 
+/** When Pulse was not running in the period (UptimeLog on the server); null without a server. */
+export async function downtime(days: number): Promise<{ share: number; down: Array<{ from: string | number; to: string | number }> } | null> {
+  return STANDALONE ? null : getJson(`/api/status/downtime?days=${days}`);
+}
+
 /** How many of the period's sampled signals the exchange's candles confirmed; null without a server. */
 export async function signalAudit(days: number): Promise<SignalAudit | null> {
   return STANDALONE ? null : getJson(`/api/signals/audit?days=${days}`);
