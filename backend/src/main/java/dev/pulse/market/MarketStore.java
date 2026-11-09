@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MarketStore implements MarketSink {
 
+    private static final Logger log = LoggerFactory.getLogger(MarketStore.class);
+
     private static final int RECENT_LIQUIDATIONS = 100;
 
     private final Map<String, SymbolState> states = new ConcurrentHashMap<>();
@@ -30,6 +34,7 @@ public class MarketStore implements MarketSink {
     private final Queue<Liquidation> pendingLiquidations = new ConcurrentLinkedQueue<>();
     private final Deque<Liquidation> recentLiquidations = new ArrayDeque<>();
     private final LiquidationTally tally = new LiquidationTally(System.currentTimeMillis());
+    private volatile long outlierLoggedAt;
 
     @Override
     public void onInstruments(List<Instrument> instruments) {
@@ -43,7 +48,7 @@ public class MarketStore implements MarketSink {
 
     @Override
     public void onTicker(TickerUpdate ticker) {
-        update(ticker.symbol(), s -> s.applyTicker(ticker));
+        update(ticker.symbol(), s -> held(ticker.symbol(), ticker.lastPrice(), s.applyTicker(ticker)));
     }
 
     @Override
@@ -53,7 +58,24 @@ public class MarketStore implements MarketSink {
 
     @Override
     public void onCandle(String symbol, Candle candle) {
-        update(symbol, s -> s.applyCandle(candle));
+        update(symbol, s -> held(symbol, candle.close(), s.applyCandle(candle)));
+    }
+
+    /** A held-back price is worth a line in the log, at most once a minute: a flood means a broken stream. */
+    private void held(String symbol, double price, boolean taken) {
+        if (taken) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - outlierLoggedAt >= 60_000) {
+            outlierLoggedAt = now;
+            log.warn("Held back an outlier price for {}: {} (the next update decides; {} dropped so far)", symbol, price, rejectedPrices());
+        }
+    }
+
+    /** Streamed prices dropped as outliers since start, over all pairs (SymbolState#plausible). */
+    public long rejectedPrices() {
+        return states.values().stream().mapToLong(SymbolState::rejectedPrices).sum();
     }
 
     @Override

@@ -28,8 +28,11 @@ const SLEEP_AFTER_HIDDEN_MS = 90_000;
 const TAPE = { move1m: 1, move5m: 2, volume: 3, openInterest: 2.5, liquidations: 150_000, minVolume24h: 5_000_000 };
 const TAPE_COOLDOWN_MS = 3 * 60_000;
 const TAPE_ESCALATION = 1.5;
+/** SymbolState.OUTLIER and CONFIRM on the server: a price twice or half the last waits for a second word. */
+export const OUTLIER = 2;
+const OUTLIER_CONFIRM = 0.1;
 
-class SymbolState {
+export class SymbolState {
   readonly symbol: string;
   candles: Candle[] = [];
   price = 0;
@@ -46,6 +49,36 @@ class SymbolState {
   streamed = false;
   /** 24h quote volume at the previous ticker, to turn the ticker into per-minute volume. */
   lastQuote = 0;
+  /** A price that jumped past OUTLIER, waiting for the next update to confirm it; 0 if none. */
+  held = 0;
+  rejected = 0;
+
+  /**
+   * Whether a streamed price may be taken, as SymbolState#plausible on the server: near the current
+   * one, or a jump the update before already made. A frame of another coin's stream is alone.
+   */
+  plausible(next: number): boolean {
+    if (!(next > 0) || !Number.isFinite(next)) {
+      this.rejected++;
+      return false;
+    }
+    if (this.price <= 0) return true;
+    const ratio = next / this.price;
+    if (ratio <= OUTLIER && ratio >= 1 / OUTLIER) {
+      if (this.held > 0) {
+        this.rejected++;
+        this.held = 0;
+      }
+      return true;
+    }
+    if (this.held > 0 && Math.abs(next / this.held - 1) <= OUTLIER_CONFIRM) {
+      this.held = 0;
+      return true;
+    }
+    if (this.held > 0) this.rejected++;
+    this.held = next;
+    return false;
+  }
 
   constructor(symbol: string) {
     this.symbol = symbol;
@@ -263,6 +296,7 @@ export class BrowserFeed {
       const s = this.states.get(event.s);
       if (!s) return;
       const k = event.k;
+      if (!s.plausible(Number(k.c))) return;
       upsertCandle(s.candles, { openTime: Number(k.t), open: Number(k.o), high: Number(k.h), low: Number(k.l), close: Number(k.c), quoteVolume: Number(k.q) });
       s.price = Number(k.c);
       this.dirty.add(s.symbol);
@@ -288,6 +322,7 @@ export class BrowserFeed {
     const s = this.states.get(String(t.s));
     if (!s) return;
     const price = Number(t.c);
+    if (!s.plausible(price)) return;
     const quote = Number(t.q);
     s.open24h = Number(t.o);
     s.high24h = Number(t.h);

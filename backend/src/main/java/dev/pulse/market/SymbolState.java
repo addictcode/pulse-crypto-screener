@@ -18,6 +18,14 @@ final class SymbolState {
     static final int MAX_CANDLES = 180;
     static final int MAX_OPEN_INTEREST_POINTS = 40;
     static final long LIQUIDATION_WINDOW_MS = 5 * MetricsCalculator.MINUTE_MS;
+    /**
+     * A price more than this many times above or below the current one is held back until the
+     * next update says the same. No futures pair doubles or halves between two updates a second
+     * apart; a frame from another coin's stream (the October 2026 splice) does it every time.
+     */
+    static final double OUTLIER = 2.0;
+    /** How close the next update must come to a held price to confirm it. */
+    static final double CONFIRM = 0.1;
 
     private final String symbol;
     private final Deque<Candle> candles = new ArrayDeque<>();
@@ -32,17 +40,24 @@ final class SymbolState {
     private double markPrice;
     private Double fundingRate;
     private Long nextFundingTime;
+    /** A price that jumped past {@link #OUTLIER}, waiting for the next update to confirm it; 0 if none. */
+    private double held;
+    private long rejected;
 
     SymbolState(String symbol) {
         this.symbol = symbol;
     }
 
-    synchronized void applyTicker(TickerUpdate t) {
+    synchronized boolean applyTicker(TickerUpdate t) {
+        if (!plausible(t.lastPrice())) {
+            return false;
+        }
         price = t.lastPrice();
         openPrice24h = t.openPrice24h();
         highPrice24h = t.highPrice24h();
         lowPrice24h = t.lowPrice24h();
         quoteVolume24h = t.quoteVolume24h();
+        return true;
     }
 
     synchronized void applyMarkPrice(MarkPriceUpdate m) {
@@ -54,7 +69,10 @@ final class SymbolState {
     /**
      * Upserts a streamed candle: the stream repeats the forming candle many times a second.
      */
-    synchronized void applyCandle(Candle c) {
+    synchronized boolean applyCandle(Candle c) {
+        if (!plausible(c.close())) {
+            return false;
+        }
         Candle last = candles.peekLast();
         if (last == null || c.openTime() > last.openTime()) {
             candles.addLast(c);
@@ -63,9 +81,47 @@ final class SymbolState {
             candles.pollLast();
             candles.addLast(c);
         } else {
-            return; // late update for an older minute, the history already has it
+            return true; // late update for an older minute, the history already has it
         }
         price = c.close();
+        return true;
+    }
+
+    /**
+     * Whether a streamed price may be taken: near the current one, or a jump the update before
+     * already made (a real move shows in every update after it; a stray frame is alone). The ticker
+     * and the candle stream confirm each other, so a sharp real move costs at most one update.
+     */
+    private boolean plausible(double next) {
+        if (!(next > 0) || Double.isInfinite(next)) {
+            rejected++;
+            return false;
+        }
+        if (price <= 0) {
+            return true;
+        }
+        double ratio = next / price;
+        if (ratio <= OUTLIER && ratio >= 1 / OUTLIER) {
+            if (held > 0) {
+                rejected++; // the jump was alone: dropped for good
+                held = 0;
+            }
+            return true;
+        }
+        if (held > 0 && Math.abs(next / held - 1) <= CONFIRM) {
+            held = 0;
+            return true;
+        }
+        if (held > 0) {
+            rejected++;
+        }
+        held = next;
+        return false;
+    }
+
+    /** Streamed prices dropped as outliers since start. */
+    synchronized long rejectedPrices() {
+        return rejected;
     }
 
     /**
