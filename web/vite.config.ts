@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 import { defineConfig } from 'vite';
@@ -13,7 +14,18 @@ const backend = process.env.PULSE_BACKEND ?? 'http://localhost:8080';
 // the backend checks the Origin of WebSocket handshakes; through the proxy it must see its own
 const headers = process.env.PULSE_BACKEND ? { origin: backend } : undefined;
 
+/** Which build a browser error came from (client-errors.ts): the commit, or the time without git. */
+function buildId(): string {
+  if (process.env.PULSE_BUILD) return process.env.PULSE_BUILD;
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return new Date().toISOString().slice(0, 16);
+  }
+}
+
 export default defineConfig({
+  define: { 'import.meta.env.VITE_BUILD': JSON.stringify(buildId()) },
   // Russian twins at /ru/ with the text in the HTML, canonical and hreflang (seo.ts)
   plugins: [seoPages(RU, process.env.VITE_STANDALONE === '1')],
   build: {

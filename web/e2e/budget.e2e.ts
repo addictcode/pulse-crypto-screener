@@ -15,8 +15,10 @@ const BUDGET = {
   'app/index.html': { js: 150 * KB, css: 17 * KB },
   'record/index.html': { js: 26 * KB, css: 12 * KB },
   // the game: its own canvas chart, no chart library, so mostly the Russian dictionary like /record/;
-  // the rounds load as JSON, about 10 KB a pack
-  'play/index.html': { js: 28 * KB, css: 12 * KB },
+  // the rounds load as JSON, about 10 KB a pack. 28 → 29 KB on 9.11.2026 for the browser error
+  // listener (client-errors.ts, 0.3 KB with Vite's loader for its lazy part): worth knowing when the
+  // game breaks on someone's phone
+  'play/index.html': { js: 29 * KB, css: 12 * KB },
 };
 /** The landing's planet loads after the words and numbers are on screen, as its own file. */
 const PLANET = 165 * KB;

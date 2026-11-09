@@ -1,3 +1,5 @@
+// first: listens for errors before the rest of the page runs
+import './client-errors';
 import '@fontsource-variable/onest';
 import '@fontsource-variable/unbounded';
 import './styles.css';

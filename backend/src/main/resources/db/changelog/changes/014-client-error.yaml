@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-client-error
+      author: pulse
+      comment: >
+        Errors visitors' browsers caught (POST /api/client-errors), one row per distinct error.
+        Kept a day; the daily summary tells the owner what is new. No address, no identifier:
+        the message, the top of the stack, the page path, the build and the language.
+      changes:
+        - createTable:
+            tableName: client_error
+            columns:
+              - column: { name: fingerprint, type: varchar(64), constraints: { primaryKey: true, primaryKeyName: pk_client_error } }
+              - column: { name: message, type: varchar(500), constraints: { nullable: false } }
+              - column: { name: stack, type: varchar(2000), constraints: { nullable: false } }
+              - column: { name: page, type: varchar(100), constraints: { nullable: false } }
+              - column: { name: build, type: varchar(40), constraints: { nullable: false } }
+              - column: { name: lang, type: varchar(5), constraints: { nullable: false } }
+              - column: { name: count, type: bigint, constraints: { nullable: false } }
+              - column: { name: reported, type: bigint, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: first_seen, type: timestamptz, constraints: { nullable: false } }
+              - column: { name: last_seen, type: timestamptz, constraints: { nullable: false } }
+        - createIndex:
+            tableName: client_error
+            indexName: ix_client_error_last_seen
+            columns:
+              - column: { name: last_seen }
