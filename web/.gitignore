@@ -26,3 +26,5 @@ dist-demo
 test-results
 playwright-report
 dist-e2e
+stack-report
+stack-results

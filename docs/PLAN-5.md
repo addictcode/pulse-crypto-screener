@@ -86,16 +86,16 @@ Testcontainers, 152 юнит-теста сайта, 104 e2e, ролики, `tsc`
 
 ### 0.1 Обход настоящего стека в CI (~4 ч)
 
-- [ ] `e2e-stack/` (свой `playwright.config`): поднимает `compose.prod.yaml` +
+- [x] `e2e-stack/` (свой `playwright.config`): поднимает `compose.prod.yaml` +
   `loadtest/compose.loadtest.yaml` (локальная сборка), ждёт здоровья бэкенда, берёт пару из `/api/summary`.
-- [ ] Обходит `/`, `/ru/`, `/record/`, `/ru/record/`, `/play/`, `/ru/play/`, `/app/#screener:<пара>` на
+- [x] Обходит `/`, `/ru/`, `/record/`, `/ru/record/`, `/play/`, `/ru/play/`, `/app/#screener:<пара>` на
   десктопе и телефонах 320 и 390 px, на всех языках страницы. Падает на: ошибке в консоли,
   `pageerror`, ответе 4xx/5xx, нарушении CSP, горизонтальной прокрутке, `NaN` / `undefined` /
   `Infinity` в тексте, пустых живых числах через 10 секунд.
-- [ ] Отдельно: Caddy подставил хост (в `/`, `/ru/`, `/sitemap.xml`, `/robots.txt` нет `{{`),
+- [x] Отдельно: Caddy подставил хост (в `/`, `/ru/`, `/sitemap.xml`, `/robots.txt` нет `{{`),
   заголовки безопасности на месте, `/actuator` снаружи не виден, стрим `/ws/market` отдаёт снимок,
   `/api/summary` сжат.
-- [ ] Джоб `stack` в CI: на PR, которые задевают `backend/`, `web/`, `compose*.yaml`, `Caddyfile`,
+- [x] Джоб `stack` в CI: на PR, которые задевают `backend/`, `web/`, `compose*.yaml`, `Caddyfile`,
   и раз в сутки. Скриншоты и трейс упавших — артефактом.
 
 **Готово:** четыре ошибки из начала плана, если их вернуть, роняют `stack` (проверить откатом в ветке).

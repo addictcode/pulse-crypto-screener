@@ -1,0 +1,63 @@
+name: stack
+
+# The stack walk (web/e2e-stack): the production stack on a made-up market, walked by a real browser
+# on a desktop and two phones in every language. It catches what web/e2e on its fake backend cannot:
+# layout with real data, Caddy's templates and headers, console errors and failed requests.
+on:
+  pull_request:
+    paths:
+      - backend/**
+      - web/**
+      - compose*.yaml
+      - loadtest/**
+      - .github/workflows/stack.yml
+  push:
+    branches: [main]
+  schedule:
+    # once a day, so a stale dependency or a Docker image update shows up even without a PR
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      # the jar and the site are built here and copied into the production images
+      - run: loadtest/run.sh --local-build up
+      - run: npm run stack
+        working-directory: web
+      - if: failure()
+        run: mkdir -p web/stack-results && docker compose -p pulse-load logs --no-color --tail 300 > web/stack-results/compose.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: stack-report
+          path: |
+            web/stack-report
+            web/stack-results
+          retention-days: 7
+      - if: always()
+        run: loadtest/run.sh down

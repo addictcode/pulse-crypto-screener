@@ -3,6 +3,8 @@
 # containers' CPU and memory meanwhile. Results land in loadtest/results/<scenario>-<time>/.
 #   loadtest/run.sh visitors [k6 -e options...]     e.g. loadtest/run.sh visitors -e VUS=300
 #   loadtest/run.sh burst
+#   loadtest/run.sh up                              start the stack and wait for it, no k6
+#                                                   (the stack walk in web/e2e-stack uses it)
 #   loadtest/run.sh down                            stop the stack and drop its data
 # --local-build (first argument) builds the jar and the site outside Docker, for networks where the
 # Dockerfiles cannot download their dependencies.
@@ -25,7 +27,7 @@ if [ -d loadtest/.build ]; then
 fi
 compose() { docker compose -p "$project" "${files[@]}" --env-file loadtest/loadtest.env "$@"; }
 
-scenario=${1:?usage: loadtest/run.sh [--local-build] visitors|burst|down [k6 options]}
+scenario=${1:?usage: loadtest/run.sh [--local-build] visitors|burst|up|down [k6 options]}
 shift
 if [ "$scenario" = down ]; then
   compose down -v
@@ -38,6 +40,15 @@ for _ in $(seq 1 90); do
   [ "$(docker inspect -f '{{.State.Health.Status}}' "$project-backend-1" 2>/dev/null)" = healthy ] && break
   sleep 2
 done
+if [ "$scenario" = up ]; then
+  [ "$(docker inspect -f '{{.State.Health.Status}}' "$project-backend-1")" = healthy ] || {
+    compose logs --no-color --tail 100 backend
+    echo "the backend did not become healthy" >&2
+    exit 1
+  }
+  echo "up on http://localhost:8088"
+  exit 0
+fi
 # the detectors wait two minutes after start; the stream does not
 out=loadtest/results/$scenario-$(date -u +%Y%m%d-%H%M%S)
 mkdir -p "$out"
