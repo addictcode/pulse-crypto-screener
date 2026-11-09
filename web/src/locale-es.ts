@@ -167,6 +167,7 @@ export const ES: Record<string, string> = {
   "The record is kept by the Pulse server; this demo runs without one.": "La estadística la lleva el servidor de Pulse; esta demo funciona sin él.",
   "loading": "cargando",
   "The record is not available right now.": "La estadística no está disponible ahora.",
+  "checked against exchange candles: {ok} of {n}": "cotejado con las velas del exchange: {ok} de {n}",
   "last {days} days": "últimos {days} días",
   "No measured signals in this period yet.": "Todavía no hay señales medidas en este periodo.",
   "Played so far: {games} games, you guessed {you} of {rounds}, the coin {coin}.": "Jugado hasta ahora: {games} partidas, acertaste {you} de {rounds}, la moneda {coin}.",

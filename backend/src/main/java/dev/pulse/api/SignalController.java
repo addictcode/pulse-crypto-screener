@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.pulse.signal.OutcomeStats;
 import dev.pulse.signal.Signal;
+import dev.pulse.signal.SignalAuditLog;
 import dev.pulse.signal.SignalHistory;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class SignalController {
 
     private final SignalHistory history;
+    private final SignalAuditLog audits;
 
     /** Newest first; with a symbol, that pair's history from the database. */
     @GetMapping
@@ -34,5 +36,11 @@ public class SignalController {
     @GetMapping("/stats")
     public List<OutcomeStats> stats(@RequestParam(defaultValue = "7") @Min(1) @Max(90) int days) {
         return history.outcomes(Instant.now().minus(Duration.ofDays(days)));
+    }
+
+    /** How many signals the nightly check found in the exchange's candles over the last {@code days} days. */
+    @GetMapping("/audit")
+    public SignalAuditLog.Totals audit(@RequestParam(defaultValue = "7") @Min(1) @Max(90) int days) {
+        return audits.since(Instant.now().minus(Duration.ofDays(days)), days);
     }
 }

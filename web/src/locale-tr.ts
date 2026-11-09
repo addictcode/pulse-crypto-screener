@@ -167,6 +167,7 @@ export const TR: Record<string, string> = {
   "The record is kept by the Pulse server; this demo runs without one.": "İstatistiği Pulse sunucusu tutar; bu demo sunucusuz çalışıyor.",
   "loading": "yükleniyor",
   "The record is not available right now.": "İstatistik şu an kullanılamıyor.",
+  "checked against exchange candles: {ok} of {n}": "borsa mumlarıyla karşılaştırıldı: {n} içinden {ok}",
   "last {days} days": "son {days} gün",
   "No measured signals in this period yet.": "Bu dönemde henüz ölçülmüş sinyal yok.",
   "Played so far: {games} games, you guessed {you} of {rounds}, the coin {coin}.": "Şimdiye kadar: {games} oyun, {rounds} turdan {you} doğru, yazı tura {coin}.",

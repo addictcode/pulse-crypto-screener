@@ -584,6 +584,7 @@ export const RU: Record<string, string> = {
   'Average move their way, 1 hour': 'Средний ход в сторону сигнала за час',
   '{share} their way': '{share} в его сторону',
   'no direction to check': 'нет направления для проверки',
+  'checked against exchange candles: {ok} of {n}': 'сверено со свечами биржи: {ok} из {n}',
   'last {days} days': 'за последние дни: {days}',
   'No measured signals in this period yet.': 'За этот период измеренных сигналов пока нет.',
   'The record is kept by the Pulse server; this demo runs without one.': 'Статистику ведёт сервер Pulse, а это демо работает без него.',

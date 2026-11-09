@@ -19,3 +19,19 @@ test('the record says what the numbers mean and links the study behind it', asyn
   await expect(study).toHaveText('Исследование целиком и как оно сделано');
   await expect(shows).toContainText('рынок просыпается');
 });
+
+test('the record says how many signals the exchange candles confirmed', async ({ page }) => {
+  await fakeBackend(page);
+  await page.goto('/record/');
+  await expect(page.locator('#rec-meta')).toContainText('checked against exchange candles: 37 of 38');
+});
+
+test.describe('in Russian', () => {
+  test.use({ locale: 'ru-RU' });
+
+  test('the candle check is translated', async ({ page }) => {
+    await fakeBackend(page);
+    await page.goto('/ru/record/');
+    await expect(page.locator('#rec-meta')).toContainText('сверено со свечами биржи: 37 из 38');
+  });
+});

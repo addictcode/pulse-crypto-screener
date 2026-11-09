@@ -163,3 +163,12 @@ pulse:
   client-errors:
     enabled: ${PULSE_CLIENT_ERRORS_ENABLED:true}
     summary-cron: "0 41 6 * * *"
+  # The night watch: a sample of the day's signals checked against the exchange's minute candles;
+  # above alarm-share unconfirmed the owner hears of it (Telegram with the bot, the log always)
+  audit:
+    enabled: ${PULSE_AUDIT_ENABLED:true}
+    cron: ${PULSE_AUDIT_CRON:0 21 6 * * *}
+    sample: 40
+    max-symbols: 25
+    alarm-share: 0.1
+    min-checked: 10
