@@ -21,6 +21,7 @@ import dev.pulse.account.AccountService;
 import dev.pulse.account.DeliverySettings;
 import dev.pulse.alert.AlertFired;
 import dev.pulse.alert.AlertService;
+import dev.pulse.config.OwnerNotice;
 import dev.pulse.config.PulseProperties;
 import dev.pulse.depth.DensityScanner;
 import dev.pulse.depth.OrderBookStore;
@@ -169,6 +170,11 @@ class TelegramBot {
     @EventListener
     void onSetupClosed(SetupClosed event) {
         tellOwner("telegram-setup", TelegramFormat.setupClosed(event.trade()));
+    }
+
+    @EventListener
+    void onOwnerNotice(OwnerNotice notice) {
+        tellOwner("telegram-notice", TelegramFormat.escape(notice.text()));
     }
 
     private void tellOwner(String thread, String text) {

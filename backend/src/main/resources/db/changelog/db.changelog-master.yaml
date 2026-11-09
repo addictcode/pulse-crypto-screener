@@ -25,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/changes/012-push-subscription.yaml
   - include:
       file: db/changelog/changes/013-bot-language-weekly.yaml
+  - include:
+      file: db/changelog/changes/014-client-error.yaml

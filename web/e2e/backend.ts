@@ -39,6 +39,8 @@ export interface FakeBackend {
   push(message: StreamMessage): void;
   /** What the pages counted with POST /api/hit, in order. */
   hits: Array<{ page: string; source: string }>;
+  /** What the pages reported with POST /api/client-errors, in order. */
+  errors: Array<{ message: string; stack: string; page: string; build: string; lang: string }>;
   /** How many times a page opened /ws/market. */
   streams(): number;
   /** How many of those are open now. */
@@ -103,6 +105,11 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
     hits.push(route.request().postDataJSON() as FakeBackend['hits'][number]);
     return route.fulfill({ status: 204 });
   });
+  const errors: FakeBackend['errors'] = [];
+  await page.route('**/api/client-errors', (route) => {
+    errors.push(route.request().postDataJSON() as FakeBackend['errors'][number]);
+    return route.fulfill({ status: 204 });
+  });
   await page.route('**/api/links', (route) => route.fulfill({ json: options.links ?? { bot: '', channel: '' } }));
   await page.route('**/api/compare', (route) => route.fulfill({ json: [] }));
   // no VAPID keys: the site offers no notifications (push.e2e.ts routes its own key)
@@ -130,6 +137,7 @@ export async function fakeBackend(page: Page, options: { links?: TelegramLinks }
       void page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))).catch(() => undefined);
     },
     hits,
+    errors,
     streams: () => sockets.length,
     openStreams: () => sockets.length - closed,
   };
