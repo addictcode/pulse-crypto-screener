@@ -1,1 +1,1 @@
-https://quality-sink-studies-seo.trycloudflare.com
+https://api.trycloudflare.com
