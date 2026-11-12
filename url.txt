@@ -1,1 +1,1 @@
-https://concrete-chapters-priest-possibility.trycloudflare.com
+https://api.trycloudflare.com
